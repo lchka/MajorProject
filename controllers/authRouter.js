@@ -2,10 +2,12 @@ import express from "express";
 import prisma from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 import UserSecurity from "../models/User.js";
+import { validate } from "../middleware/validateRequest.js";
+import { registerSchema } from "../utils/validators/authValidator.js";
 
 const router = express.Router();
 
-router.post("/register", async (req, res) => {
+router.post("/register", validate(registerSchema), async (req, res) => {
   try {
     const { first_name, last_name, email, password } = req.body;
 
