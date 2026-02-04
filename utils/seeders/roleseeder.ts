@@ -1,6 +1,11 @@
 import prisma from '../../lib/prisma.js';
 
-const roles = [
+interface RoleData {
+  name: string;
+  description: string;
+}
+
+const roles: RoleData[] = [
   {
     name: 'admin',
     description: 'Administrator with full system access and permissions'
@@ -15,7 +20,7 @@ const roles = [
   }
 ];
 
-async function seedRoles() {
+async function seedRoles(): Promise<void> {
   try {
     console.log('Seeding roles...');
 

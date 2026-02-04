@@ -1,7 +1,17 @@
 import prisma from "../../lib/prisma.js";
-import UserSecurity from "../../models/User.js";
+import UserSecurity from "../../utils/UserSecurity.js";
 
-const users = [
+interface UserData {
+  email: string;
+  password: string;
+  profile: {
+    first_name: string;
+    last_name: string;
+  };
+  role: string;
+}
+
+const users: UserData[] = [
   {
     email: "admin@example.com",
     password: "Admin123!",
@@ -31,7 +41,7 @@ const users = [
   },
 ];
 
-async function seedUsers() {
+async function seedUsers(): Promise<void> {
   try {
     console.log("Seeding users...");
 

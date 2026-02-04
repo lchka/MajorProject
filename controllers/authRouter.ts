@@ -1,13 +1,13 @@
-import express from "express";
+import express, { Request, Response, Router } from "express";
 import prisma from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 import UserSecurity from "../utils/UserSecurity.js";
 import { validate } from "../middleware/validateRequest.js";
-import { registerSchema } from "../utils/validators/authValidator.js";
+import { registerSchema, loginSchema, RegisterInput, LoginInput } from "../utils/validators/authValidator.js";
 
-const router = express.Router();
+const router: Router = express.Router();
 
-router.post("/register", validate(registerSchema), async (req, res) => {
+router.post("/register", validate(registerSchema), async (req: Request<{}, {}, RegisterInput>, res: Response): Promise<void> => {
   try {
     const { first_name, last_name, email, password } = req.body;
 
@@ -16,9 +16,10 @@ router.post("/register", validate(registerSchema), async (req, res) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({
+      res.status(400).json({
         message: "User already exists",
       });
+      return;
     }
 
     const hashedPassword = await UserSecurity.hashPassword(password);
@@ -29,9 +30,10 @@ router.post("/register", validate(registerSchema), async (req, res) => {
     });
 
     if (!userRole) {
-      return res.status(500).json({
+      res.status(500).json({
         message: "Default user role not found. Please run role seeder.",
       });
+      return;
     }
 
     const user = await prisma.user.create({
@@ -51,7 +53,7 @@ router.post("/register", validate(registerSchema), async (req, res) => {
       },
     });
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
       expiresIn: "7d",
     });
 
@@ -65,18 +67,19 @@ router.post("/register", validate(registerSchema), async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", validate(loginSchema), async (req: Request<{}, {}, LoginInput>, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({
+      res.status(400).json({
         message: "Email and password are required",
       });
+      return;
     }
 
     const user = await prisma.user.findUnique({
@@ -88,9 +91,10 @@ router.post("/login", async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({
+      res.status(401).json({
         message: "Invalid credentials",
       });
+      return;
     }
 
     const isPasswordValid = await UserSecurity.comparePassword(
@@ -99,12 +103,13 @@ router.post("/login", async (req, res) => {
     );
 
     if (!isPasswordValid) {
-      return res.status(401).json({
+      res.status(401).json({
         message: "Invalid credentials",
       });
+      return;
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
       expiresIn: "7d",
     });
 
@@ -119,11 +124,11 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
-router.post("/logout", async (req, res) => {
+router.post("/logout", async (_req: Request, res: Response): Promise<void> => {
   try {
     // Since we're using JWT, logout is handled client-side by removing the token
     // This endpoint can be used for logging/analytics purposes
@@ -131,7 +136,7 @@ router.post("/logout", async (req, res) => {
       message: "Logout successful",
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: (error as Error).message });
   }
 });
 
