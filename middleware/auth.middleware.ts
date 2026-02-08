@@ -2,15 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import authService from "../services/auth.service.js";
 import { HttpError } from "../utils/HttpError.js";
 
-// Extend Express Request type to include userId
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: string;
-    }
-  }
-}
-
 export const authMiddleware = async (
   req: Request,
   _res: Response,

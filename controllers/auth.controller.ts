@@ -4,7 +4,7 @@ import { RegisterInput, LoginInput } from "../utils/validators/authValidator.js"
 
 export class AuthController {
   async register(
-    req: Request<{}, {}, RegisterInput>,
+    req: Request<Record<string, never>, Record<string, never>, RegisterInput>,
     res: Response,
     next: NextFunction
   ): Promise<void> {
@@ -18,7 +18,7 @@ export class AuthController {
   }
 
   async login(
-    req: Request<{}, {}, LoginInput>,
+    req: Request<Record<string, never>, Record<string, never>, LoginInput>,
     res: Response,
     next: NextFunction
   ): Promise<void> {

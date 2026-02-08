@@ -60,7 +60,7 @@ export class AuthService {
   verifyToken(token: string): { userId: string } {
     try {
       return jwt.verify(token, this.JWT_SECRET) as { userId: string };
-    } catch (error) {
+    } catch {
       throw new HttpError(401, "Invalid or expired token");
     }
   }

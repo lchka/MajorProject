@@ -1,11 +1,10 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { HttpError } from "../utils/HttpError.js";
 
 export const errorHandler = (
   err: Error | HttpError,
   _req: Request,
-  res: Response,
-  _next: NextFunction
+  res: Response
 ): void => {
   console.error("Error:", err);
 

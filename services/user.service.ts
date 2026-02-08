@@ -71,7 +71,12 @@ export class UserService {
     return users.map(user => this.mapToUserResponse(user));
   }
 
-  private mapToUserResponse(user: any): UserResponseDto {
+  private mapToUserResponse(user: {
+    id: string;
+    email: string;
+    role: { name: string };
+    profile?: { first_name: string; last_name: string; nickname?: string | null; age?: number | null } | null;
+  }): UserResponseDto {
     return {
       id: user.id,
       email: user.email,

@@ -9,7 +9,7 @@ export class UserController {
   ): Promise<void> {
     try {
       // Assuming userId comes from auth middleware
-      const userId = (req as any).userId;
+      const userId = req.userId as string;
       
       const user = await userService.getUserById(userId);
       
