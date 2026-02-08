@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js",
-    "start": "tsx index.js",
+    "dev": "nodemon --exec tsx index.ts",
+    "start": "tsx index.ts",
     "seed": "node utils/seeders/roleseeder.js && node utils/seeders/userseeder.js",
     "seed:roles": "node utils/seeders/roleseeder.js",
     "seed:users": "node utils/seeders/userseeder.js"
