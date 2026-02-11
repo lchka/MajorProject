@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import userService from "./user.service.js";
-import roleRepository from "../../repositories/role.repository.js";
+import roleRepository from "../repositories/role.repository.js";
 import { HttpError } from "../utils/HttpError.js";
 import { RegisterRequestDto, LoginRequestDto, AuthResponseDto } from "../types/user.dto.js";
 

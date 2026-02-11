@@ -9,20 +9,18 @@ export class UserRepository {
         deletedAt: null,
       },
       include: {
-        profile: true,
         role: true,
       },
     });
   }
 
-  async findById(id: string) {
+  async findById(id: number) {
     return await prisma.user.findFirst({
       where: { 
         id,
         deletedAt: null,
       },
       include: {
-        profile: true,
         role: true,
       },
     });
@@ -33,39 +31,33 @@ export class UserRepository {
     password: string;
     first_name: string;
     last_name: string;
-    roleId: string;
+    roleId: number;
   }) {
     return await prisma.user.create({
       data: {
         email: data.email,
         password: data.password,
-        profile: {
-          create: {
-            first_name: data.first_name,
-            last_name: data.last_name,
-          },
-        },
+        first_name: data.first_name,
+        last_name: data.last_name,
         roleId: data.roleId,
       },
       include: {
-        profile: true,
         role: true,
       },
     });
   }
 
-  async update(id: string, data: Prisma.UserUpdateInput) {
+  async update(id: number, data: Prisma.UserUpdateInput) {
     return await prisma.user.update({
       where: { id },
       data,
       include: {
-        profile: true,
         role: true,
       },
     });
   }
 
-  async delete(id: string) {
+  async delete(id: number) {
     return await prisma.user.delete({
       where: { id },
     });
@@ -77,52 +69,32 @@ export class UserRepository {
         deletedAt: null,
       },
       include: {
-        profile: true,
         role: true,
       },
     });
   }
 
-  async updateProfile(userId: string, data: {
-    first_name?: string;
-    last_name?: string;
-    nickname?: string;
-    age?: number;
-  }) {
-    return await prisma.profile.update({
-      where: { userId },
-      data,
-    });
-  }
-
-  async softDelete(id: string) {
+  async softDelete(id: number) {
     return await prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },
       include: {
-        profile: true,
         role: true,
       },
     });
   }
 
-  async forceDelete(id: string) {
-    // Delete profile first (due to foreign key constraint)
-    await prisma.profile.deleteMany({
-      where: { userId: id },
-    });
-    
+  async forceDelete(id: number) {
     return await prisma.user.delete({
       where: { id },
     });
   }
 
-  async restore(id: string) {
+  async restore(id: number) {
     return await prisma.user.update({
       where: { id },
       data: { deletedAt: null },
       include: {
-        profile: true,
         role: true,
       },
     });

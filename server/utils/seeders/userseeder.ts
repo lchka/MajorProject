@@ -1,13 +1,11 @@
-import prisma from "../../../lib/prisma.js";
+import prisma from "../../lib/prisma.js";
 import UserSecurity from "../UserSecurity.js";
 
 interface UserData {
   email: string;
   password: string;
-  profile: {
-    first_name: string;
-    last_name: string;
-  };
+  first_name: string;
+  last_name: string;
   role: string;
 }
 
@@ -15,28 +13,22 @@ const users: UserData[] = [
   {
     email: "admin@example.com",
     password: "Admin123!",
-    profile: {
-      first_name: "Admin",
-      last_name: "User",
-    },
+    first_name: "Admin",
+    last_name: "User",
     role: "admin",
   },
   {
     email: "moderator@example.com",
     password: "Moderator123!",
-    profile: {
-      first_name: "Moderator",
-      last_name: "User",
-    },
+    first_name: "Moderator",
+    last_name: "User",
     role: "moderator",
   },
   {
     email: "user@example.com",
     password: "User123!",
-    profile: {
-      first_name: "Regular",
-      last_name: "User",
-    },
+    first_name: "Regular",
+    last_name: "User",
     role: "user",
   },
 ];
@@ -73,13 +65,11 @@ async function seedUsers(): Promise<void> {
         data: {
           email: userData.email,
           password: hashedPassword,
-          profile: {
-            create: userData.profile,
-          },
+          first_name: userData.first_name,
+          last_name: userData.last_name,
           roleId: role.id,
         },
         include: {
-          profile: true,
           role: true,
         },
       });

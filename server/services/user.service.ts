@@ -1,5 +1,5 @@
-import userRepository from "../../repositories/user.repository.js";
-import roleRepository from "../../repositories/role.repository.js";
+import userRepository from "../repositories/user.repository.js";
+import roleRepository from "../repositories/role.repository.js";
 import UserSecurity from "../utils/UserSecurity.js";
 import { HttpError } from "../utils/HttpError.js";
 import { CreateUserDto, UserResponseDto, UpdateUserDto } from "../types/user.dto.js";
@@ -56,7 +56,7 @@ export class UserService {
     return this.mapToUserResponse(user);
   }
 
-  async getUserById(id: string): Promise<UserResponseDto> {
+  async getUserById(id: number): Promise<UserResponseDto> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -71,7 +71,7 @@ export class UserService {
     return users.map(user => this.mapToUserResponse(user));
   }
 
-  async updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
+  async updateUser(id: number, data: UpdateUserDto): Promise<UserResponseDto> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -82,6 +82,8 @@ export class UserService {
     const updateData: {
       email?: string;
       password?: string;
+      first_name?: string;
+      last_name?: string;
     } = {};
 
     if (data.email && data.email !== user.email) {
@@ -97,26 +99,17 @@ export class UserService {
       updateData.password = await UserSecurity.hashPassword(data.password);
     }
 
+    if (data.first_name) {
+      updateData.first_name = data.first_name;
+    }
+
+    if (data.last_name) {
+      updateData.last_name = data.last_name;
+    }
+
     // Update user if there are changes
     if (Object.keys(updateData).length > 0) {
       await userRepository.update(id, updateData);
-    }
-
-    // Update profile if there are profile changes
-    const profileData: {
-      first_name?: string;
-      last_name?: string;
-      nickname?: string;
-      age?: number;
-    } = {};
-
-    if (data.first_name) profileData.first_name = data.first_name;
-    if (data.last_name) profileData.last_name = data.last_name;
-    if (data.nickname !== undefined) profileData.nickname = data.nickname;
-    if (data.age !== undefined) profileData.age = data.age;
-
-    if (Object.keys(profileData).length > 0) {
-      await userRepository.updateProfile(id, profileData);
     }
 
     // Fetch and return updated user
@@ -128,7 +121,7 @@ export class UserService {
     return this.mapToUserResponse(updatedUser);
   }
 
-  async softDeleteUser(id: string): Promise<{ message: string }> {
+  async softDeleteUser(id: number): Promise<{ message: string }> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -140,7 +133,7 @@ export class UserService {
     return { message: "User soft deleted successfully" };
   }
 
-  async forceDeleteUser(id: string): Promise<{ message: string }> {
+  async forceDeleteUser(id: number): Promise<{ message: string }> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -152,7 +145,7 @@ export class UserService {
     return { message: "User permanently deleted" };
   }
 
-  async restoreUser(id: string): Promise<UserResponseDto> {
+  async restoreUser(id: number): Promise<UserResponseDto> {
     const restoredUser = await userRepository.restore(id);
 
     if (!restoredUser) {
@@ -163,21 +156,18 @@ export class UserService {
   }
 
   private mapToUserResponse(user: {
-    id: string;
+    id: number;
     email: string;
-    role: { name: string };
-    profile?: { first_name: string; last_name: string; nickname?: string | null; age?: number | null } | null;
+    first_name: string;
+    last_name: string;
+    role: { id: number; name: string };
   }): UserResponseDto {
     return {
       id: user.id,
       email: user.email,
-      role: user.role.name,
-      profile: user.profile ? {
-        first_name: user.profile.first_name,
-        last_name: user.profile.last_name,
-        nickname: user.profile.nickname,
-        age: user.profile.age,
-      } : undefined,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
     };
   }
 }
