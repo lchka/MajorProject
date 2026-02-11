@@ -1,104 +1,64 @@
-import express, { Router } from "express";
+// routes/user.routes.ts
+import { Router } from "express";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { can, canModifyUser, canViewUser, canDeleteUser } from "../middleware/permission.middleware.js";
+import { Permission } from "../types/permissions.dto.js";
 import userController from "../controllers/user.controller.js";
 import { validate } from "../middleware/validateRequest.js";
 import { updateUserSchema } from "../utils/validators/userValidator.js";
-// import { authMiddleware } from "../middleware/auth.middleware.js"; // TODO: Create this
 
-const router: Router = express.Router();
+const router = Router();
 
-/**
- * @route   GET /api/users/profile
- * @desc    Get current user profile
- * @access  Private
- */
-router.get(
-  "/profile",
-  // authMiddleware, // TODO: Add auth middleware
-  userController.getProfile.bind(userController)
-);
+// Public - no authentication needed
+// (none for users, only auth routes)
 
-/**
- * @route   PUT /api/users/profile
- * @desc    Update current user profile
- * @access  Private
- */
-router.put(
-  "/profile",
-  // authMiddleware, // TODO: Add auth middleware
-  validate(updateUserSchema),
-  userController.updateProfile.bind(userController)
-);
-
-/**
- * @route   GET /api/users
- * @desc    Get all users
- * @access  Private (Admin only)
- */
+// View all users - requires USER_VIEW_ALL permission (admin/moderator)
 router.get(
   "/",
-  // authMiddleware, // TODO: Add auth middleware
-  // adminMiddleware, // TODO: Add admin middleware
-  userController.getAllUsers.bind(userController)
+  authMiddleware,
+  can(Permission.USER_VIEW_ALL),
+  userController.getAllUsers
 );
 
-/**
- * @route   GET /api/users/:id
- * @desc    Get user by ID
- * @access  Private
- */
+// View specific user - admin/moderator can view all, users can view themselves
 router.get(
   "/:id",
-  // authMiddleware, // TODO: Add auth middleware
-  userController.getUserById.bind(userController)
+  authMiddleware,
+  canViewUser,
+  userController.getUserById
 );
 
-/**
- * @route   PUT /api/users/:id
- * @desc    Update user by ID
- * @access  Private (Admin only)
- */
+// Update user - admin can update anyone, users can update themselves
 router.put(
   "/:id",
-  // authMiddleware, // TODO: Add auth middleware
-  // adminMiddleware, // TODO: Add admin middleware
+  authMiddleware,
+  canModifyUser,
   validate(updateUserSchema),
-  userController.updateUser.bind(userController)
+  userController.updateUser
 );
 
-/**
- * @route   DELETE /api/users/:id/soft
- * @desc    Soft delete user (mark as deleted)
- * @access  Private (Admin only)
- */
+// Soft delete - admin can delete anyone, moderators/users can delete themselves
 router.delete(
-  "/:id/soft",
-  // authMiddleware, // TODO: Add auth middleware
-  // adminMiddleware, // TODO: Add admin middleware
-  userController.softDeleteUser.bind(userController)
+  "/:id",
+  authMiddleware,
+  canDeleteUser,
+  userController.softDeleteUser
 );
 
-/**
- * @route   DELETE /api/users/:id/force
- * @desc    Force delete user (permanent deletion)
- * @access  Private (Admin only)
- */
+// Force delete - admin only
 router.delete(
   "/:id/force",
-  // authMiddleware, // TODO: Add auth middleware
-  // adminMiddleware, // TODO: Add admin middleware
-  userController.forceDeleteUser.bind(userController)
+  authMiddleware,
+  can(Permission.USER_DELETE_ANY),
+  userController.forceDeleteUser
 );
 
-/**
- * @route   POST /api/users/:id/restore
- * @desc    Restore soft deleted user
- * @access  Private (Admin only)
- */
+// Restore user - admin only
 router.post(
   "/:id/restore",
-  // authMiddleware, // TODO: Add auth middleware
-  // adminMiddleware, // TODO: Add admin middleware
-  userController.restoreUser.bind(userController)
+  authMiddleware,
+  can(Permission.USER_DELETE_ANY),
+  userController.restoreUser
 );
 
 export default router;
