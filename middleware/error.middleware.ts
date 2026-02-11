@@ -1,10 +1,12 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { HttpError } from "../utils/HttpError.js";
 
 export const errorHandler = (
   err: Error | HttpError,
   _req: Request,
-  res: Response
+  res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _next: NextFunction
 ): void => {
   console.error("Error:", err);
 

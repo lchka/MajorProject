@@ -30,6 +30,21 @@ export class AuthController {
       next(error);
     }
   }
+
+  async logout(
+    _req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+      // Since we're using JWT, logout is handled client-side by removing the token
+      res.status(200).json({
+        message: "Logout successful",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new AuthController();

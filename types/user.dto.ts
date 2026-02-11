@@ -38,3 +38,19 @@ export interface CreateUserDto {
   last_name: string;
   roleId: string;
 }
+
+export interface UpdateUserDto {
+  email?: string;
+  password?: string;
+  first_name?: string;
+  last_name?: string;
+  nickname?: string;
+  age?: number;
+}
+
+export interface UpdateProfileDto {
+  first_name?: string;
+  last_name?: string;
+  nickname?: string;
+  age?: number;
+}

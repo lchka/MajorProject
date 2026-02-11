@@ -8,9 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec tsx index.ts",
     "start": "tsx index.ts",
-    "seed": "node utils/seeders/roleseeder.js && node utils/seeders/userseeder.js",
-    "seed:roles": "node utils/seeders/roleseeder.js",
-    "seed:users": "node utils/seeders/userseeder.js"
+    "seed": "tsx utils/seeders/roleseeder.ts && tsx utils/seeders/userseeder.ts",
+    "seed:roles": "tsx utils/seeders/roleseeder.ts",
+    "seed:users": "tsx utils/seeders/userseeder.ts"
   },
   "keywords": [],
   "author": "",

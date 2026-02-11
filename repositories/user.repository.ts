@@ -3,8 +3,11 @@ import { Prisma } from "@prisma/client";
 
 export class UserRepository {
   async findByEmail(email: string) {
-    return await prisma.user.findUnique({
-      where: { email },
+    return await prisma.user.findFirst({
+      where: { 
+        email,
+        deletedAt: null,
+      },
       include: {
         profile: true,
         role: true,
@@ -13,8 +16,11 @@ export class UserRepository {
   }
 
   async findById(id: string) {
-    return await prisma.user.findUnique({
-      where: { id },
+    return await prisma.user.findFirst({
+      where: { 
+        id,
+        deletedAt: null,
+      },
       include: {
         profile: true,
         role: true,
@@ -67,6 +73,54 @@ export class UserRepository {
 
   async findAll() {
     return await prisma.user.findMany({
+      where: {
+        deletedAt: null,
+      },
+      include: {
+        profile: true,
+        role: true,
+      },
+    });
+  }
+
+  async updateProfile(userId: string, data: {
+    first_name?: string;
+    last_name?: string;
+    nickname?: string;
+    age?: number;
+  }) {
+    return await prisma.profile.update({
+      where: { userId },
+      data,
+    });
+  }
+
+  async softDelete(id: string) {
+    return await prisma.user.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+      include: {
+        profile: true,
+        role: true,
+      },
+    });
+  }
+
+  async forceDelete(id: string) {
+    // Delete profile first (due to foreign key constraint)
+    await prisma.profile.deleteMany({
+      where: { userId: id },
+    });
+    
+    return await prisma.user.delete({
+      where: { id },
+    });
+  }
+
+  async restore(id: string) {
+    return await prisma.user.update({
+      where: { id },
+      data: { deletedAt: null },
       include: {
         profile: true,
         role: true,

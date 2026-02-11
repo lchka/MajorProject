@@ -27,4 +27,14 @@ router.post(
   authController.login.bind(authController)
 );
 
+/**
+ * @route   POST /api/auth/logout
+ * @desc    Logout user
+ * @access  Public
+ */
+router.post(
+  "/logout",
+  authController.logout.bind(authController)
+);
+
 export default router;
