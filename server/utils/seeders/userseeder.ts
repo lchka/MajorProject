@@ -61,16 +61,23 @@ async function seedUsers(): Promise<void> {
         continue;
       }
 
-      const user = await prisma.user.create({
-        data: {
+      const user = await prisma.user.upsert({
+        where: { email: userData.email },
+        update: {},
+        create: {
           email: userData.email,
           password: hashedPassword,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
           roleId: role.id,
+          profile: {
+            create: {
+              first_name: userData.first_name,
+              last_name: userData.last_name,
+            },
+          },
         },
         include: {
           role: true,
+          profile: true,
         },
       });
 

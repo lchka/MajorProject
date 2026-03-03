@@ -11,7 +11,9 @@
   "dependencies": {
     "@gluestack-ui/config": "^1.1.20",
     "@gluestack-ui/themed": "^1.1.73",
+    "@google/generative-ai": "^0.24.1",
     "expo": "~54.0.0",
+    "expo-image-picker": "~17.0.10",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
