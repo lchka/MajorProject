@@ -1,12 +1,12 @@
 // DTOs for User-related operations
 
 export interface UserResponseDto {
-  id: number;
+  id: string;
   email: string;
   first_name: string;
   last_name: string;
   role: {
-    id: number;
+    id: string;
     name: string;
   };
 }
@@ -35,7 +35,7 @@ export interface CreateUserDto {
   password: string;
   first_name: string;
   last_name: string;
-  roleId: number;
+  roleId: string;
 }
 
 export interface UpdateUserDto {

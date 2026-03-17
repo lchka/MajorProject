@@ -10,11 +10,12 @@ export class UserRepository {
       },
       include: {
         role: true,
+        profile: true,
       },
     });
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     return await prisma.user.findFirst({
       where: { 
         id,
@@ -22,6 +23,7 @@ export class UserRepository {
       },
       include: {
         role: true,
+        profile: true,
       },
     });
   }
@@ -31,33 +33,39 @@ export class UserRepository {
     password: string;
     first_name: string;
     last_name: string;
-    roleId: number;
+    roleId: string;
   }) {
     return await prisma.user.create({
       data: {
         email: data.email,
         password: data.password,
-        first_name: data.first_name,
-        last_name: data.last_name,
         roleId: data.roleId,
+        profile: {
+          create: {
+            first_name: data.first_name,
+            last_name: data.last_name,
+          },
+        },
       },
       include: {
         role: true,
+        profile: true,
       },
     });
   }
 
-  async update(id: number, data: Prisma.UserUpdateInput) {
+  async update(id: string, data: Prisma.UserUpdateInput) {
     return await prisma.user.update({
       where: { id },
       data,
       include: {
         role: true,
+        profile: true,
       },
     });
   }
 
-  async delete(id: number) {
+  async delete(id: string) {
     return await prisma.user.delete({
       where: { id },
     });
@@ -70,32 +78,35 @@ export class UserRepository {
       },
       include: {
         role: true,
+        profile: true,
       },
     });
   }
 
-  async softDelete(id: number) {
+  async softDelete(id: string) {
     return await prisma.user.update({
       where: { id },
       data: { deletedAt: new Date() },
       include: {
         role: true,
+        profile: true,
       },
     });
   }
 
-  async forceDelete(id: number) {
+  async forceDelete(id: string) {
     return await prisma.user.delete({
       where: { id },
     });
   }
 
-  async restore(id: number) {
+  async restore(id: string) {
     return await prisma.user.update({
       where: { id },
       data: { deletedAt: null },
       include: {
         role: true,
+        profile: true,
       },
     });
   }

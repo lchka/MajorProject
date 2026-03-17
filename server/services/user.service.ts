@@ -2,6 +2,7 @@ import userRepository from "../repositories/user.repository.js";
 import roleRepository from "../repositories/role.repository.js";
 import UserSecurity from "../utils/UserSecurity.js";
 import { HttpError } from "../utils/HttpError.js";
+import { Prisma } from "@prisma/client";
 import { CreateUserDto, UserResponseDto, UpdateUserDto } from "../types/user.dto.js";
 
 export class UserService {
@@ -56,7 +57,7 @@ export class UserService {
     return this.mapToUserResponse(user);
   }
 
-  async getUserById(id: number): Promise<UserResponseDto> {
+  async getUserById(id: string): Promise<UserResponseDto> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -71,7 +72,7 @@ export class UserService {
     return users.map(user => this.mapToUserResponse(user));
   }
 
-  async updateUser(id: number, data: UpdateUserDto): Promise<UserResponseDto> {
+  async updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -79,9 +80,9 @@ export class UserService {
     }
 
     // Prepare update data
-    const updateData: {
-      email?: string;
-      password?: string;
+    const updateData: Prisma.UserUpdateInput = {};
+
+    const profileUpdateData: {
       first_name?: string;
       last_name?: string;
     } = {};
@@ -100,11 +101,23 @@ export class UserService {
     }
 
     if (data.first_name) {
-      updateData.first_name = data.first_name;
+      profileUpdateData.first_name = data.first_name;
     }
 
     if (data.last_name) {
-      updateData.last_name = data.last_name;
+      profileUpdateData.last_name = data.last_name;
+    }
+
+    if (Object.keys(profileUpdateData).length > 0) {
+      updateData.profile = {
+        upsert: {
+          update: profileUpdateData,
+          create: {
+            first_name: profileUpdateData.first_name ?? "",
+            last_name: profileUpdateData.last_name ?? "",
+          },
+        },
+      };
     }
 
     // Update user if there are changes
@@ -121,7 +134,7 @@ export class UserService {
     return this.mapToUserResponse(updatedUser);
   }
 
-  async softDeleteUser(id: number): Promise<{ message: string }> {
+  async softDeleteUser(id: string): Promise<{ message: string }> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -133,7 +146,7 @@ export class UserService {
     return { message: "User soft deleted successfully" };
   }
 
-  async forceDeleteUser(id: number): Promise<{ message: string }> {
+  async forceDeleteUser(id: string): Promise<{ message: string }> {
     const user = await userRepository.findById(id);
 
     if (!user) {
@@ -145,7 +158,7 @@ export class UserService {
     return { message: "User permanently deleted" };
   }
 
-  async restoreUser(id: number): Promise<UserResponseDto> {
+  async restoreUser(id: string): Promise<UserResponseDto> {
     const restoredUser = await userRepository.restore(id);
 
     if (!restoredUser) {
@@ -156,17 +169,19 @@ export class UserService {
   }
 
   private mapToUserResponse(user: {
-    id: number;
+    id: string;
     email: string;
-    first_name: string;
-    last_name: string;
-    role: { id: number; name: string };
+    profile: {
+      first_name: string;
+      last_name: string;
+    } | null;
+    role: { id: string; name: string };
   }): UserResponseDto {
     return {
       id: user.id,
       email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
+      first_name: user.profile?.first_name ?? "",
+      last_name: user.profile?.last_name ?? "",
       role: user.role,
     };
   }
