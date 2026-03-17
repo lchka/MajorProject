@@ -12,6 +12,8 @@
     "@gluestack-ui/config": "^1.1.20",
     "@gluestack-ui/themed": "^1.1.73",
     "@google/generative-ai": "^0.24.1",
+    "@react-native-aria/overlays": "^0.3.15",
+    "axios": "^1.13.6",
     "expo": "~54.0.0",
     "expo-image-picker": "~17.0.10",
     "expo-status-bar": "~3.0.9",
