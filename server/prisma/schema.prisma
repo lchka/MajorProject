@@ -42,8 +42,37 @@ model Profile {
   last_name     String
   age           String?
   profile_image String?
+  main_profile  Boolean   @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
+  conditions Condition[]
+  allergens Allergen[]
+  preferences Preference[]
   @@index([userId])
+}
+
+model Condition {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profiles      Profile[]
+}
+
+model Allergen {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profiles      Profile[]
+}
+model Preference {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profiles      Profile[]
 }
