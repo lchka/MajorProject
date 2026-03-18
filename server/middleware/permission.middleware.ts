@@ -37,7 +37,7 @@ export const canModifyUser = (
     throw new HttpError(401, "Unauthorized");
   }
 
-  const targetUserId = parseInt(req.params.id as string);
+  const targetUserId = req.params.id as string;
   const currentUserId = req.user.id;
   const userRole = req.user.role.name;
 
@@ -67,7 +67,7 @@ export const canViewUser = (
     throw new HttpError(401, "Unauthorized");
   }
 
-  const targetUserId = parseInt(req.params.id as string);
+  const targetUserId = req.params.id as string;
   const currentUserId = req.user.id;
   const userRole = req.user.role.name;
 
@@ -100,7 +100,7 @@ export const canDeleteUser = (
     throw new HttpError(401, "Unauthorized");
   }
 
-  const targetUserId = parseInt(req.params.id as string);
+  const targetUserId = req.params.id as string;
   const currentUserId = req.user.id;
   const userRole = req.user.role.name;
 

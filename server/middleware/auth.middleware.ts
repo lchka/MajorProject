@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import authService from "../services/auth.service.js";
+import userRepository from "../repositories/user.repository.js";
 import { HttpError } from "../utils/HttpError.js";
 
 export const authMiddleware = async (
@@ -19,6 +20,23 @@ export const authMiddleware = async (
     const decoded = authService.verifyToken(token);
 
     req.userId = decoded.userId;
+
+    const user = await userRepository.findById(decoded.userId);
+
+    if (!user) {
+      throw new HttpError(401, "Unauthorized");
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      first_name: user.profile?.first_name || "",
+      last_name: user.profile?.last_name || "",
+      role: {
+        id: user.role.id,
+        name: user.role.name,
+      },
+    };
 
     next();
   } catch (error) {
