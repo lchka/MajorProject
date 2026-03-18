@@ -12,6 +12,10 @@ export const permissionSchema = z.enum([
   "preference:create",
   "preference:update",
   "preference:delete",
+  "allergen:view",
+  "allergen:create",
+  "allergen:update",
+  "allergen:delete",
   "admin:panel-access",
   "role:manage",
   "system:settings",
@@ -29,6 +33,10 @@ export const Permission = {
   PREFERENCE_CREATE: "preference:create",
   PREFERENCE_UPDATE: "preference:update",
   PREFERENCE_DELETE: "preference:delete",
+  ALLERGEN_VIEW: "allergen:view",
+  ALLERGEN_CREATE: "allergen:create",
+  ALLERGEN_UPDATE: "allergen:update",
+  ALLERGEN_DELETE: "allergen:delete",
   ADMIN_PANEL_ACCESS: "admin:panel-access",
   ROLE_MANAGE: "role:manage",
   SYSTEM_SETTINGS: "system:settings",
@@ -47,14 +55,22 @@ export const rolePermissionsSchema = z.record(
 export const rolePermissions: Record<RoleName, Permission[]> = {
   //admin has permission to do anything
   admin: [
+    //permissions to crud all users
     Permission.USER_VIEW_ALL,
     Permission.USER_CREATE,
     Permission.USER_UPDATE_ANY,
     Permission.USER_DELETE_ANY,
+    //permissions to crud preference
     Permission.PREFERENCE_VIEW,
     Permission.PREFERENCE_CREATE,
     Permission.PREFERENCE_UPDATE,
     Permission.PREFERENCE_DELETE,
+    //permissions to crud allergen
+    Permission.ALLERGEN_CREATE,
+    Permission.ALLERGEN_UPDATE,
+    Permission.ALLERGEN_VIEW,
+    Permission.ALLERGEN_DELETE,
+    //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
     Permission.ROLE_MANAGE,
     Permission.SYSTEM_SETTINGS,
@@ -64,14 +80,21 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.USER_UPDATE_ANY,
     Permission.USER_UPDATE_OWN,
     Permission.USER_DELETE_ANY,
+    //Read, Update only for Preference
     Permission.PREFERENCE_VIEW,
     Permission.PREFERENCE_UPDATE,
+    //Read, Update only for Allergen
+    Permission.ALLERGEN_UPDATE,
+    Permission.ALLERGEN_VIEW
   ],
   user: [
     Permission.USER_VIEW_OWN,
     Permission.USER_UPDATE_OWN,
     Permission.USER_DELETE_OWN,
+    //Read only for Preference
     Permission.PREFERENCE_VIEW,
+    //Read only for Allergen
+    Permission.ALLERGEN_VIEW
   ],
 };
 
