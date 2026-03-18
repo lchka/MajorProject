@@ -25,7 +25,7 @@ router.get(
   preferenceController.getPreferenceById.bind(preferenceController),
 );
 
-router.put(
+router.patch(
   "/:id",
   authMiddleware,
   validate(updatePreferenceSchema),
