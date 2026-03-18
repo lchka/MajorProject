@@ -16,6 +16,10 @@ export const permissionSchema = z.enum([
   "allergen:create",
   "allergen:update",
   "allergen:delete",
+  "condition:view",
+  "condition:create",
+  "condition:update",
+  "condition:delete",
   "admin:panel-access",
   "role:manage",
   "system:settings",
@@ -29,14 +33,24 @@ export const Permission = {
   USER_UPDATE_OWN: "user:update-own",
   USER_DELETE_ANY: "user:delete-any",
   USER_DELETE_OWN: "user:delete-own",
+  //preference permissions
   PREFERENCE_VIEW: "preference:view",
   PREFERENCE_CREATE: "preference:create",
   PREFERENCE_UPDATE: "preference:update",
   PREFERENCE_DELETE: "preference:delete",
+  //allergen permissions
   ALLERGEN_VIEW: "allergen:view",
   ALLERGEN_CREATE: "allergen:create",
   ALLERGEN_UPDATE: "allergen:update",
   ALLERGEN_DELETE: "allergen:delete",
+  //condition permissinos
+  CONDITION_VIEW:"condition:view",
+  CONDITION_CREATE:"condition:create",
+  CONDITION_UPDATE:"condition:update",
+  CONDITION_DELETE:"condition:delete",
+
+
+  //admin access
   ADMIN_PANEL_ACCESS: "admin:panel-access",
   ROLE_MANAGE: "role:manage",
   SYSTEM_SETTINGS: "system:settings",
@@ -70,6 +84,11 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.ALLERGEN_UPDATE,
     Permission.ALLERGEN_VIEW,
     Permission.ALLERGEN_DELETE,
+    //permissions to crud conditions
+    Permission.CONDITION_CREATE,
+    Permission.CONDITION_UPDATE,
+    Permission.CONDITION_VIEW,
+    Permission.CONDITION_DELETE,
     //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
     Permission.ROLE_MANAGE,
@@ -85,7 +104,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PREFERENCE_UPDATE,
     //Read, Update only for Allergen
     Permission.ALLERGEN_UPDATE,
-    Permission.ALLERGEN_VIEW
+    Permission.ALLERGEN_VIEW,
+    //Read, Update only for Condition
+    Permission.CONDITION_UPDATE,
+    Permission.CONDITION_VIEW,
   ],
   user: [
     Permission.USER_VIEW_OWN,
@@ -94,7 +116,9 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     //Read only for Preference
     Permission.PREFERENCE_VIEW,
     //Read only for Allergen
-    Permission.ALLERGEN_VIEW
+    Permission.ALLERGEN_VIEW,
+    //Read only for Condition
+    Permission.CONDITION_VIEW
   ],
 };
 
