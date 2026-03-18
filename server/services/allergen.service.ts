@@ -54,4 +54,15 @@ export class AllergenService {
     });
     return updatedAllergen;
   }
+
+  async deleteAllergen (id:string):Promise<{message:string}>{
+    const existingAllergen  =await prisma.allergen.findUnique({where:{id}})
+
+    if(!existingAllergen){
+        throw new HttpError (404,"Allergen not found")
+    }
+    await prisma.allergen.delete({where:{id}})
+    return {message:"Allergen deleted successfully"}
+  }
 }
+export default new AllergenService();
