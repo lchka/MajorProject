@@ -10,7 +10,7 @@ import {
 
 export class PreferenceService {
     
-    //create p
+    //create preference
   async createPreference(data: CreatePreferenceDto): Promise<PreferenceResponseDto> {
     const preference = await prisma.preference.create({
       data: {
