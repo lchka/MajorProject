@@ -1,7 +1,12 @@
 // routes/user.routes.ts
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { can, canModifyUser, canViewUser, canDeleteUser } from "../middleware/permission.middleware.js";
+import {
+  can,
+  canModifyUser,
+  canViewUser,
+  canDeleteUser,
+} from "../middleware/permission.middleware.js";
 import { Permission } from "../types/permissions.dto.js";
 import userController from "../controllers/user.controller.js";
 import { validate } from "../middleware/validateRequest.js";
@@ -17,16 +22,11 @@ router.get(
   "/",
   authMiddleware,
   can(Permission.USER_VIEW_ALL),
-  userController.getAllUsers
+  userController.getAllUsers,
 );
 
 // View specific user - admin/moderator can view all, users can view themselves
-router.get(
-  "/:id",
-  authMiddleware,
-  canViewUser,
-  userController.getUserById
-);
+router.get("/:id", authMiddleware, canViewUser, userController.getUserById);
 
 // Update user - admin can update anyone, users can update themselves
 router.put(
@@ -34,7 +34,7 @@ router.put(
   authMiddleware,
   canModifyUser,
   validate(updateUserSchema),
-  userController.updateUser
+  userController.updateUser,
 );
 
 // Soft delete - admin can delete anyone, moderators/users can delete themselves
@@ -42,7 +42,7 @@ router.delete(
   "/:id",
   authMiddleware,
   canDeleteUser,
-  userController.softDeleteUser
+  userController.softDeleteUser,
 );
 
 // Force delete - admin only
@@ -50,7 +50,7 @@ router.delete(
   "/:id/force",
   authMiddleware,
   can(Permission.USER_DELETE_ANY),
-  userController.forceDeleteUser
+  userController.forceDeleteUser,
 );
 
 // Restore user - admin only
@@ -58,7 +58,7 @@ router.post(
   "/:id/restore",
   authMiddleware,
   can(Permission.USER_DELETE_ANY),
-  userController.restoreUser
+  userController.restoreUser,
 );
 
 export default router;

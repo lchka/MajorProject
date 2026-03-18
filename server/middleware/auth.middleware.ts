@@ -5,7 +5,7 @@ import { HttpError } from "../utils/HttpError.js";
 export const authMiddleware = async (
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
@@ -17,7 +17,7 @@ export const authMiddleware = async (
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
     const decoded = authService.verifyToken(token);
-    
+
     req.userId = decoded.userId;
 
     next();

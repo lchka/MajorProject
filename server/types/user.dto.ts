@@ -13,22 +13,36 @@ export const userResponseSchema = z.object({
   role: roleSummarySchema,
 });
 
-export const registerRequestSchema = z.object({
-  first_name: z.string().trim().min(2, "First name must be at least 2 characters").max(25, "First name must be at most 25 characters"),
-  last_name: z.string().trim().min(2, "Last name must be at least 2 characters").max(25, "Last name must be at most 25 characters"),
-  email: z.string().trim().toLowerCase().email("Must be a valid email address"),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters long")
-    .regex(
-      /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
-      "Password must contain uppercase, lowercase, number and special character"
-    ),
-  c_password: z.string().min(1, "Confirm password is required"),
-}).refine((data) => data.password === data.c_password, {
-  message: "Passwords do not match",
-  path: ["c_password"],
-});
+export const registerRequestSchema = z
+  .object({
+    first_name: z
+      .string()
+      .trim()
+      .min(2, "First name must be at least 2 characters")
+      .max(25, "First name must be at most 25 characters"),
+    last_name: z
+      .string()
+      .trim()
+      .min(2, "Last name must be at least 2 characters")
+      .max(25, "Last name must be at most 25 characters"),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Must be a valid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters long")
+      .regex(
+        /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
+        "Password must contain uppercase, lowercase, number and special character",
+      ),
+    c_password: z.string().min(1, "Confirm password is required"),
+  })
+  .refine((data) => data.password === data.c_password, {
+    message: "Passwords do not match",
+    path: ["c_password"],
+  });
 
 export const loginRequestSchema = z.object({
   email: z.string().trim().toLowerCase().email("Must be a valid email address"),
@@ -48,26 +62,49 @@ export const createUserSchema = z.object({
     .min(8, "Password must be at least 8 characters long")
     .regex(
       /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
-      "Password must contain uppercase, lowercase, number and special character"
+      "Password must contain uppercase, lowercase, number and special character",
     ),
-  first_name: z.string().trim().min(2, "First name must be at least 2 characters").max(25, "First name must be at most 25 characters"),
-  last_name: z.string().trim().min(2, "Last name must be at least 2 characters").max(25, "Last name must be at most 25 characters"),
+  first_name: z
+    .string()
+    .trim()
+    .min(2, "First name must be at least 2 characters")
+    .max(25, "First name must be at most 25 characters"),
+  last_name: z
+    .string()
+    .trim()
+    .min(2, "Last name must be at least 2 characters")
+    .max(25, "Last name must be at most 25 characters"),
   roleId: z.string().uuid("Role id must be a valid UUID"),
 });
 
 export const updateUserSchema = z
   .object({
-    email: z.string().trim().toLowerCase().email("Must be a valid email address").optional(),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Must be a valid email address")
+      .optional(),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters long")
       .regex(
         /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
-        "Password must contain uppercase, lowercase, number and special character"
+        "Password must contain uppercase, lowercase, number and special character",
       )
       .optional(),
-    first_name: z.string().trim().min(2, "First name must be at least 2 characters").max(25, "First name must be at most 25 characters").optional(),
-    last_name: z.string().trim().min(2, "Last name must be at least 2 characters").max(25, "Last name must be at most 25 characters").optional(),
+    first_name: z
+      .string()
+      .trim()
+      .min(2, "First name must be at least 2 characters")
+      .max(25, "First name must be at most 25 characters")
+      .optional(),
+    last_name: z
+      .string()
+      .trim()
+      .min(2, "Last name must be at least 2 characters")
+      .max(25, "Last name must be at most 25 characters")
+      .optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for update",
@@ -75,10 +112,29 @@ export const updateUserSchema = z
 
 export const updateProfileSchema = z
   .object({
-    first_name: z.string().trim().min(2, "First name must be at least 2 characters").max(25, "First name must be at most 25 characters").optional(),
-    last_name: z.string().trim().min(2, "Last name must be at least 2 characters").max(25, "Last name must be at most 25 characters").optional(),
-    nickname: z.string().trim().max(25, "Nickname must be at most 25 characters").optional(),
-    age: z.number().int("Age must be a whole number").min(1, "Age must be at least 1").max(150, "Age must be at most 150").optional(),
+    first_name: z
+      .string()
+      .trim()
+      .min(2, "First name must be at least 2 characters")
+      .max(25, "First name must be at most 25 characters")
+      .optional(),
+    last_name: z
+      .string()
+      .trim()
+      .min(2, "Last name must be at least 2 characters")
+      .max(25, "Last name must be at most 25 characters")
+      .optional(),
+    nickname: z
+      .string()
+      .trim()
+      .max(25, "Nickname must be at most 25 characters")
+      .optional(),
+    age: z
+      .number()
+      .int("Age must be a whole number")
+      .min(1, "Age must be at least 1")
+      .max(150, "Age must be at most 150")
+      .optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided for profile update",

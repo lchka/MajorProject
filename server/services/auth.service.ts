@@ -2,7 +2,11 @@ import jwt from "jsonwebtoken";
 import userService from "./user.service.js";
 import roleRepository from "../repositories/role.repository.js";
 import { HttpError } from "../utils/HttpError.js";
-import { RegisterRequestDto, LoginRequestDto, AuthResponseDto } from "../types/user.dto.js";
+import {
+  RegisterRequestDto,
+  LoginRequestDto,
+  AuthResponseDto,
+} from "../types/user.dto.js";
 
 export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET as string;
@@ -11,9 +15,12 @@ export class AuthService {
   async register(data: RegisterRequestDto): Promise<AuthResponseDto> {
     // Get the default 'user' role
     const userRole = await roleRepository.findByName("user");
-    
+
     if (!userRole) {
-      throw new HttpError(500, "Default user role not found. Please run role seeder.");
+      throw new HttpError(
+        500,
+        "Default user role not found. Please run role seeder.",
+      );
     }
 
     // Create user through user service
@@ -50,11 +57,9 @@ export class AuthService {
   }
 
   private generateToken(userId: string): string {
-    return jwt.sign(
-      { userId },
-      this.JWT_SECRET,
-      { expiresIn: this.JWT_EXPIRES_IN }
-    );
+    return jwt.sign({ userId }, this.JWT_SECRET, {
+      expiresIn: this.JWT_EXPIRES_IN,
+    });
   }
 
   verifyToken(token: string): { userId: string } {

@@ -3,13 +3,17 @@ import roleRepository from "../repositories/role.repository.js";
 import UserSecurity from "../utils/UserSecurity.js";
 import { HttpError } from "../utils/HttpError.js";
 import { Prisma } from "@prisma/client";
-import { CreateUserDto, UserResponseDto, UpdateUserDto } from "../types/user.dto.js";
+import {
+  CreateUserDto,
+  UserResponseDto,
+  UpdateUserDto,
+} from "../types/user.dto.js";
 
 export class UserService {
   async registerUser(data: CreateUserDto): Promise<UserResponseDto> {
     // Check if user already exists
     const existingUser = await userRepository.findByEmail(data.email);
-    
+
     if (existingUser) {
       throw new HttpError(400, "User already exists");
     }
@@ -19,9 +23,12 @@ export class UserService {
 
     // Get the role
     const role = await roleRepository.findById(data.roleId);
-    
+
     if (!role) {
-      throw new HttpError(500, "Default user role not found. Please run role seeder.");
+      throw new HttpError(
+        500,
+        "Default user role not found. Please run role seeder.",
+      );
     }
 
     // Create the user
@@ -36,7 +43,10 @@ export class UserService {
     return this.mapToUserResponse(user);
   }
 
-  async authenticateUser(email: string, password: string): Promise<UserResponseDto> {
+  async authenticateUser(
+    email: string,
+    password: string,
+  ): Promise<UserResponseDto> {
     // Find user by email
     const user = await userRepository.findByEmail(email);
 
@@ -47,7 +57,7 @@ export class UserService {
     // Verify password
     const isPasswordValid = await UserSecurity.comparePassword(
       password,
-      user.password
+      user.password,
     );
 
     if (!isPasswordValid) {
@@ -69,7 +79,7 @@ export class UserService {
 
   async getAllUsers(): Promise<UserResponseDto[]> {
     const users = await userRepository.findAll();
-    return users.map(user => this.mapToUserResponse(user));
+    return users.map((user) => this.mapToUserResponse(user));
   }
 
   async updateUser(id: string, data: UpdateUserDto): Promise<UserResponseDto> {

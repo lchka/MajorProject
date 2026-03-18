@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -6,22 +6,22 @@ async function getRoles() {
   try {
     const roles = await prisma.role.findMany();
 
-    console.log('\n📋 Available Roles:\n');
+    console.log("\n📋 Available Roles:\n");
     roles.forEach((role) => {
       console.log(`  Name: ${role.name}`);
       console.log(`  ID: ${role.id}`);
-      console.log(`  Description: ${role.description || 'N/A'}`);
-      console.log('  ---');
+      console.log(`  Description: ${role.description || "N/A"}`);
+      console.log("  ---");
     });
 
     // Find the user role specifically
-    const userRole = roles.find(r => r.name === 'user');
+    const userRole = roles.find((r) => r.name === "user");
     if (userRole) {
-      console.log('\n✅ User Role ID (use this in RegisterScreen):');
+      console.log("\n✅ User Role ID (use this in RegisterScreen):");
       console.log(`  ${userRole.id}\n`);
     }
   } catch (error) {
-    console.error('Error fetching roles:', error);
+    console.error("Error fetching roles:", error);
   } finally {
     await prisma.$disconnect();
   }

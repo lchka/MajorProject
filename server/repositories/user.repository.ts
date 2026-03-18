@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 export class UserRepository {
   async findByEmail(email: string) {
     return await prisma.user.findFirst({
-      where: { 
+      where: {
         email,
         deletedAt: null,
       },
@@ -17,7 +17,7 @@ export class UserRepository {
 
   async findById(id: string) {
     return await prisma.user.findFirst({
-      where: { 
+      where: {
         id,
         deletedAt: null,
       },

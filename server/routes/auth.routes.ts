@@ -1,7 +1,10 @@
 import express, { Router } from "express";
 import authController from "../controllers/auth.controller.js";
 import { validate } from "../middleware/validateRequest.js";
-import { registerSchema, loginSchema } from "../utils/validators/authValidator.js";
+import {
+  registerSchema,
+  loginSchema,
+} from "../utils/validators/authValidator.js";
 
 const router: Router = express.Router();
 
@@ -13,7 +16,7 @@ const router: Router = express.Router();
 router.post(
   "/register",
   validate(registerSchema),
-  authController.register.bind(authController)
+  authController.register.bind(authController),
 );
 
 /**
@@ -24,7 +27,7 @@ router.post(
 router.post(
   "/login",
   validate(loginSchema),
-  authController.login.bind(authController)
+  authController.login.bind(authController),
 );
 
 /**
@@ -32,9 +35,6 @@ router.post(
  * @desc    Logout user
  * @access  Public
  */
-router.post(
-  "/logout",
-  authController.logout.bind(authController)
-);
+router.post("/logout", authController.logout.bind(authController));
 
 export default router;

@@ -2,7 +2,11 @@ import { Request, Response, NextFunction, RequestHandler } from "express";
 import { z, ZodError } from "zod";
 
 export const validate = <T extends z.ZodTypeAny>(schema: T): RequestHandler => {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       req.body = await schema.parseAsync(req.body);
       next();

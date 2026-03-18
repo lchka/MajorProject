@@ -30,7 +30,10 @@ export type Permission = z.infer<typeof permissionSchema>;
 export const roleNameSchema = z.enum(["admin", "moderator", "user"]);
 export type RoleName = z.infer<typeof roleNameSchema>;
 
-export const rolePermissionsSchema = z.record(roleNameSchema, z.array(permissionSchema));
+export const rolePermissionsSchema = z.record(
+  roleNameSchema,
+  z.array(permissionSchema),
+);
 
 // Map roles to their permissions
 export const rolePermissions: Record<RoleName, Permission[]> = {
@@ -59,7 +62,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
 rolePermissionsSchema.parse(rolePermissions);
 
 // Helper to check if role has permission
-export const hasPermission = (roleName: string, permission: Permission): boolean => {
+export const hasPermission = (
+  roleName: string,
+  permission: Permission,
+): boolean => {
   const parsedRole = roleNameSchema.safeParse(roleName);
 
   if (!parsedRole.success) {

@@ -12,12 +12,15 @@ export const can = (...requiredPermissions: Permission[]) => {
 
     const userRole = req.user.role.name;
 
-    const hasAllPermissions = requiredPermissions.every(permission =>
-      hasPermission(userRole, permission)
+    const hasAllPermissions = requiredPermissions.every((permission) =>
+      hasPermission(userRole, permission),
     );
 
     if (!hasAllPermissions) {
-      throw new HttpError(403, "Forbidden - You don't have permission to perform this action");
+      throw new HttpError(
+        403,
+        "Forbidden - You don't have permission to perform this action",
+      );
     }
 
     next();
@@ -25,7 +28,11 @@ export const can = (...requiredPermissions: Permission[]) => {
 };
 
 // Check if user can modify specific resource (ownership-based)
-export const canModifyUser = (req: Request, res: Response, next: NextFunction) => {
+export const canModifyUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
     throw new HttpError(401, "Unauthorized");
   }
@@ -40,7 +47,10 @@ export const canModifyUser = (req: Request, res: Response, next: NextFunction) =
   }
 
   // User can modify themselves if they have permission
-  if (targetUserId === currentUserId && hasPermission(userRole, Permission.USER_UPDATE_OWN)) {
+  if (
+    targetUserId === currentUserId &&
+    hasPermission(userRole, Permission.USER_UPDATE_OWN)
+  ) {
     return next();
   }
 
@@ -48,7 +58,11 @@ export const canModifyUser = (req: Request, res: Response, next: NextFunction) =
 };
 
 // Check if user can view specific resource
-export const canViewUser = (req: Request, res: Response, next: NextFunction) => {
+export const canViewUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
     throw new HttpError(401, "Unauthorized");
   }
@@ -63,15 +77,25 @@ export const canViewUser = (req: Request, res: Response, next: NextFunction) => 
   }
 
   // Can view own profile
-  if (targetUserId === currentUserId && hasPermission(userRole, Permission.USER_VIEW_OWN)) {
+  if (
+    targetUserId === currentUserId &&
+    hasPermission(userRole, Permission.USER_VIEW_OWN)
+  ) {
     return next();
   }
 
-  throw new HttpError(403, "Forbidden - You don't have permission to view this user");
+  throw new HttpError(
+    403,
+    "Forbidden - You don't have permission to view this user",
+  );
 };
 
 // Check if user can delete specific resource
-export const canDeleteUser = (req: Request, res: Response, next: NextFunction) => {
+export const canDeleteUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   if (!req.user) {
     throw new HttpError(401, "Unauthorized");
   }
@@ -86,9 +110,15 @@ export const canDeleteUser = (req: Request, res: Response, next: NextFunction) =
   }
 
   // User can delete themselves if they have permission
-  if (targetUserId === currentUserId && hasPermission(userRole, Permission.USER_DELETE_OWN)) {
+  if (
+    targetUserId === currentUserId &&
+    hasPermission(userRole, Permission.USER_DELETE_OWN)
+  ) {
     return next();
   }
 
-  throw new HttpError(403, "Forbidden - You don't have permission to delete this user");
+  throw new HttpError(
+    403,
+    "Forbidden - You don't have permission to delete this user",
+  );
 };
