@@ -43,3 +43,4 @@ router.delete(
     can(Permission.ALLERGEN_DELETE),
     allergenController.deleteAllergen.bind(allergenController)
 )
+export default router;

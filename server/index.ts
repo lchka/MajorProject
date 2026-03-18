@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import preferenceRoutes from "./routes/preference.routes.js";
+import allegernRoutes from "./routes/allergen.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/preferences", preferenceRoutes);
+app.use("/api/allergens", allegernRoutes )
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

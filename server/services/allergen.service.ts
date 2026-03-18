@@ -41,7 +41,7 @@ export class AllergenService {
     id: string,
     data: UpdateAllergenDto,
   ): Promise<AllergenResponseDto> {
-    const existingAllergen = await prisma.condition.findUnique({
+    const existingAllergen = await prisma.allergen.findUnique({
       where: { id },
     });
 
