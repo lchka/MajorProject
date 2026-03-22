@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ProfileService } from "../services/profile.service.js";
 import { CreateProfileDTO, UpdateProfileDTO } from "../types/profile.dto.js";
 import { CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/HttpError.js";
+import { uploadProfileImageToS3 } from "../lib/s3.js";
 
 const profileService = new ProfileService();
 
@@ -18,7 +19,17 @@ export class ProfileController {
                 throw new HttpError(UNAUTHORISED, "User is not authenticated");
             }
 
-            const profile = await profileService.createProfile(userId, req.body);
+            let profileImageUrl = req.body.profile_image;
+            if (req.file) {
+                profileImageUrl = await uploadProfileImageToS3(userId, req.file);
+            }
+
+            const profilePayload: CreateProfileDTO = {
+                ...req.body,
+                profile_image: profileImageUrl,
+            };
+
+            const profile = await profileService.createProfile(userId, profilePayload);
             res.status(CREATED_SUCCESS).json(profile);
         } catch (error) {
             next(error);
@@ -91,7 +102,19 @@ export class ProfileController {
     ): Promise<void> {
         try {
             // patch profile fields + relation ids
-            const profile = await profileService.updateProfile(req.params.id, req.body);
+            let profileImageUrl = req.body.profile_image;
+
+            if (req.file) {
+                const currentProfile = await profileService.getProfileById(req.params.id);
+                profileImageUrl = await uploadProfileImageToS3(currentProfile.userId, req.file);
+            }
+
+            const payload: UpdateProfileDTO = {
+                ...req.body,
+                profile_image: profileImageUrl,
+            };
+
+            const profile = await profileService.updateProfile(req.params.id, payload);
             res.status(SUCCESS_RES).json(profile);
         } catch (error) {
             next(error);

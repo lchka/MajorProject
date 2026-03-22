@@ -12,5 +12,6 @@ declare namespace Express {
         name: string;
       };
     };
+    file?: Express.Multer.File;
   }
 }
