@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// shared shape for linked items on a profile
 const relationItemSchema = z.object({
   id: z.string().uuid("Relation id must be a valid UUID"),
   name: z.string().min(1, "Relation name is required"),
@@ -14,6 +15,7 @@ export const imageValid = z
     message: "Image URL must end with .jpg, .jpeg, .png, .webp, .gif, or .svg",
   });
 
+// response shape when sending profile + linked lists
 export const profileResponseSchema = z.object({
   id: z.string().uuid("Profile id must be a valid UUID"),
   userId: z.string().uuid("User id must be a valid UUID"),
@@ -28,6 +30,7 @@ export const profileResponseSchema = z.object({
   preferences: z.array(relationItemSchema),
 });
 
+// create payload for profile + optional linked ids
 export const createProfileSchema = z.object({
   first_name: z
     .string()
@@ -41,6 +44,7 @@ export const createProfileSchema = z.object({
     .max(100, "Last Name must not exceed 100 characters"),
   age: z.string().trim().optional(),
   profile_image: imageValid.optional(),
+  // ids to link on create (optional)
   conditionIds: z
     .array(z.string().uuid("Condition id must be a valid UUID"))
     .optional(),
@@ -52,6 +56,7 @@ export const createProfileSchema = z.object({
     .optional(),
 });
 
+// update payload (partial)
 export const updateProfileSchema = z.object({
   first_name: z
     .string()
@@ -67,6 +72,7 @@ export const updateProfileSchema = z.object({
     .optional(),
   age: z.string().trim().optional(),
   profile_image: imageValid.optional().nullable(),
+  // if passed, these replace current links
   conditionIds: z
     .array(z.string().uuid("Condition id must be a valid UUID"))
     .optional(),

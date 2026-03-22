@@ -3,6 +3,7 @@ import { HttpError, NOT_FOUND } from "../utils/HttpError";
 
 import { CreateProfileDTO, ProfileResponseDTO, UpdateProfileDTO } from "../types/profile.dto";
 
+// relation fields we always load with a profile
 const profileInclude = {
     conditions: {
         select: { id: true, name: true, description: true }
@@ -17,6 +18,7 @@ const profileInclude = {
 
 export class ProfileService{
 
+// shape prisma output into our response dto
 private toProfileResponse(profile: {
     id: string;
     userId: string;
@@ -45,8 +47,9 @@ private toProfileResponse(profile: {
     };
 }
 
-//create profile
+// create profile
 async createProfile(userId: string, data: CreateProfileDTO):Promise<ProfileResponseDTO>{
+    // profile must belong to the logged-in user
     if (!userId) {
         throw new HttpError(401, "User is not authenticated");
     }
@@ -176,6 +179,7 @@ async updateProfile(id: string, data: UpdateProfileDTO): Promise<ProfileResponse
             age: data.age,
             profile_image: data.profile_image,
             main_profile: data.main_profile,
+            // if ids are sent, replace existing links
             conditions: data.conditionIds
                 ? { set: data.conditionIds.map((conditionId) => ({ id: conditionId })) }
                 : undefined,
