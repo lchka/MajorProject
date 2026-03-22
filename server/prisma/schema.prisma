@@ -43,6 +43,7 @@ model Profile {
   age           String?
   profile_image String?
   main_profile  Boolean   @default(true)
+  isComplete    Boolean   @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   conditions Condition[]

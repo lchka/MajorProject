@@ -182,6 +182,7 @@ export class UserService {
     id: string;
     email: string;
     profile: {
+      id: string;
       first_name: string;
       last_name: string;
     } | null;
@@ -190,6 +191,7 @@ export class UserService {
     return {
       id: user.id,
       email: user.email,
+      profile_id: user.profile?.id ?? null,
       first_name: user.profile?.first_name ?? "",
       last_name: user.profile?.last_name ?? "",
       role: user.role,

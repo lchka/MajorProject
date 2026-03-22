@@ -10,6 +10,11 @@ export const userResponseSchema = z.object({
   email: z.string().email("Must be a valid email address"),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
+  profile_id: z
+    .string()
+    .uuid("Profile id must be a valid UUID")
+    .nullable()
+    .optional(),
   role: roleSummarySchema,
 });
 
