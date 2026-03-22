@@ -16,6 +16,7 @@ export const imageValid = z
 
 export const profileResponseSchema = z.object({
   id: z.string().uuid("Profile id must be a valid UUID"),
+  userId: z.string().uuid("User id must be a valid UUID"),
   first_name: z.string().min(1, "First Name is required"),
   last_name: z.string().min(1, "Last Name is required"),
   age: z.string().trim().optional().nullable(),
