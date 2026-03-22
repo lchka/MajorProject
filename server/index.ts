@@ -6,6 +6,7 @@ import userRoutes from "./routes/user.routes.js";
 import preferenceRoutes from "./routes/preference.routes.js";
 import conditionRoutes from "./routes/condition.routes.js"
 import allegernRoutes from "./routes/allergen.routes.js"
+import profileRoutes from "./routes/profile.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 
 dotenv.config();
@@ -32,6 +33,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/preferences", preferenceRoutes);
 app.use("/api/allergens", allegernRoutes )
 app.use("/api/conditions", conditionRoutes)
+app.use("/api/profiles", profileRoutes)
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
