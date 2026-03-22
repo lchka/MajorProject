@@ -2,6 +2,7 @@ import prisma from "../lib/prisma.js";
 import { Prisma } from "@prisma/client";
 
 export class UserRepository {
+  // get active user by email
   async findByEmail(email: string) {
     return await prisma.user.findFirst({
       where: {
@@ -15,6 +16,7 @@ export class UserRepository {
     });
   }
 
+  // get active user by id
   async findById(id: string) {
     return await prisma.user.findFirst({
       where: {
@@ -28,6 +30,7 @@ export class UserRepository {
     });
   }
 
+  // create user + starter profile
   async create(data: {
     email: string;
     password: string;
@@ -54,6 +57,7 @@ export class UserRepository {
     });
   }
 
+  // update user fields by id
   async update(id: string, data: Prisma.UserUpdateInput) {
     return await prisma.user.update({
       where: { id },
@@ -65,12 +69,14 @@ export class UserRepository {
     });
   }
 
+  // hard delete user
   async delete(id: string) {
     return await prisma.user.delete({
       where: { id },
     });
   }
 
+  // list active users
   async findAll() {
     return await prisma.user.findMany({
       where: {
@@ -83,6 +89,7 @@ export class UserRepository {
     });
   }
 
+  // mark user as deleted
   async softDelete(id: string) {
     return await prisma.user.update({
       where: { id },
@@ -94,12 +101,14 @@ export class UserRepository {
     });
   }
 
+  // permanently remove user
   async forceDelete(id: string) {
     return await prisma.user.delete({
       where: { id },
     });
   }
 
+  // undo soft delete
   async restore(id: string) {
     return await prisma.user.update({
       where: { id },
