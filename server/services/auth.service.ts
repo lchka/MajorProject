@@ -9,11 +9,13 @@ import {
 } from "../types/user.dto.js";
 
 export class AuthService {
+  // jwt config
   private readonly JWT_SECRET = process.env.JWT_SECRET as string;
   private readonly JWT_EXPIRES_IN = "7d";
 
+  // register user + return token
   async register(data: RegisterRequestDto): Promise<AuthResponseDto> {
-    // Get the default 'user' role
+    // pull default role for new signups
     const userRole = await roleRepository.findByName("user");
 
     if (!userRole) {
@@ -23,7 +25,7 @@ export class AuthService {
       );
     }
 
-    // Create user through user service
+    // create user account
     const user = await userService.registerUser({
       email: data.email,
       password: data.password,
@@ -32,7 +34,7 @@ export class AuthService {
       roleId: userRole.id,
     });
 
-    // Generate JWT token
+    // issue auth token
     const token = this.generateToken(user.id);
 
     return {
@@ -42,11 +44,12 @@ export class AuthService {
     };
   }
 
+  // login user + return token
   async login(data: LoginRequestDto): Promise<AuthResponseDto> {
-    // Authenticate user
+    // validate email/password
     const user = await userService.authenticateUser(data.email, data.password);
 
-    // Generate JWT token
+    // issue auth token
     const token = this.generateToken(user.id);
 
     return {
@@ -56,12 +59,14 @@ export class AuthService {
     };
   }
 
+  // sign jwt with user id payload
   private generateToken(userId: string): string {
     return jwt.sign({ userId }, this.JWT_SECRET, {
       expiresIn: this.JWT_EXPIRES_IN,
     });
   }
 
+  // verify jwt and return payload
   verifyToken(token: string): { userId: string } {
     try {
       return jwt.verify(token, this.JWT_SECRET) as { userId: string };

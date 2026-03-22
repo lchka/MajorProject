@@ -20,6 +20,10 @@ export const permissionSchema = z.enum([
   "condition:create",
   "condition:update",
   "condition:delete",
+  "profile:view",
+  "profile:create",
+  "profile:update",
+  "profile:delete",
   "admin:panel-access",
   "role:manage",
   "system:settings",
@@ -43,12 +47,16 @@ export const Permission = {
   ALLERGEN_CREATE: "allergen:create",
   ALLERGEN_UPDATE: "allergen:update",
   ALLERGEN_DELETE: "allergen:delete",
-  //condition permissinos
+  //condition permissions
   CONDITION_VIEW:"condition:view",
   CONDITION_CREATE:"condition:create",
   CONDITION_UPDATE:"condition:update",
   CONDITION_DELETE:"condition:delete",
-
+ //profile permissions
+  PROFILE_VIEW:"profile:view",
+  PROFILE_CREATE:"profile:create",
+  PROFILE_UPDATE:"profile:update",
+  PROFILE_DELETE:"profile:delete",
 
   //admin access
   ADMIN_PANEL_ACCESS: "admin:panel-access",
@@ -89,6 +97,11 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.CONDITION_UPDATE,
     Permission.CONDITION_VIEW,
     Permission.CONDITION_DELETE,
+    //permissions to crud profile
+    Permission.PROFILE_CREATE,
+    Permission.PROFILE_UPDATE,
+    Permission.PROFILE_VIEW,
+    Permission.PROFILE_DELETE,
     //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
     Permission.ROLE_MANAGE,
@@ -118,7 +131,12 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     //Read only for Allergen
     Permission.ALLERGEN_VIEW,
     //Read only for Condition
-    Permission.CONDITION_VIEW
+    Permission.CONDITION_VIEW,
+    //permissions to crud profile
+    Permission.PROFILE_CREATE,
+    Permission.PROFILE_UPDATE,
+    Permission.PROFILE_VIEW,
+    Permission.PROFILE_DELETE,
   ],
 };
 

@@ -90,6 +90,39 @@ export const canViewUser = (
   );
 };
 
+// Check if user can view specific profile
+export const canViewProfile = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user) {
+    throw new HttpError(401, "Unauthorized");
+  }
+
+  const targetUserId = (req.params.userId || req.params.id) as string;
+  const currentUserId = req.user.id;
+  const userRole = req.user.role.name;
+
+  // Admin/moderator can view any profile
+  if (hasPermission(userRole, Permission.USER_VIEW_ALL)) {
+    return next();
+  }
+
+  // User can only view own profile
+  if (
+    targetUserId === currentUserId &&
+    hasPermission(userRole, Permission.PROFILE_VIEW)
+  ) {
+    return next();
+  }
+
+  throw new HttpError(
+    403,
+    "Forbidden - You don't have permission to view this profile",
+  );
+};
+
 // Check if user can delete specific resource
 export const canDeleteUser = (
   req: Request,

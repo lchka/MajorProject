@@ -7,6 +7,7 @@ import {
 } from "../types/condition.dto.js";
 
 export class ConditionService {
+  // create a new condition
   async createCondition(
     data: CreateConditionDto,
   ): Promise<ConditionResponseDto> {
@@ -21,6 +22,7 @@ export class ConditionService {
   }
 
   async getConditionById(id: string): Promise<ConditionResponseDto> {
+    // get one condition by id
     const condition = await prisma.condition.findUnique({ where: { id } });
 
     if (!condition) {
@@ -31,6 +33,7 @@ export class ConditionService {
   }
 
   async getAllConditions(): Promise<ConditionResponseDto[]> {
+    // list conditions newest first
     return prisma.condition.findMany({
       orderBy: {
         createdAt: "desc",
@@ -42,6 +45,7 @@ export class ConditionService {
     id: string,
     data: UpdateConditionDto,
   ): Promise<ConditionResponseDto> {
+    // make sure condition exists first
     const existingCondition = await prisma.condition.findUnique({
       where: { id },
     });
@@ -50,6 +54,7 @@ export class ConditionService {
       throw new HttpError(404, "Condition not found");
     }
 
+    // patch condition fields
     const updatedCondition = await prisma.condition.update({
       where: { id },
       data,
@@ -59,6 +64,7 @@ export class ConditionService {
   }
 
   async deleteCondition(id: string): Promise<{ message: string }> {
+    // make sure condition exists first
     const existingCondition = await prisma.condition.findUnique({
       where: { id },
     });
@@ -67,6 +73,7 @@ export class ConditionService {
       throw new HttpError(404, "Condition not found");
     }
 
+    // hard delete condition
     await prisma.condition.delete({ where: { id } });
 
     return { message: "Condition deleted successfully" };

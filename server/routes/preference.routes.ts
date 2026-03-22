@@ -8,6 +8,7 @@ import { createPreferenceSchema, updatePreferenceSchema } from "../types/prefere
 
 const router: Router = express.Router();
 
+// create preference
 router.post(
   "/",
   authMiddleware,
@@ -16,6 +17,7 @@ router.post(
   preferenceController.createPreference.bind(preferenceController),
 );
 
+// list preferences
 router.get(
   "/",
   authMiddleware,
@@ -23,6 +25,7 @@ router.get(
   preferenceController.getAllPreferences.bind(preferenceController),
 );
 
+// get one preference
 router.get(
   "/:id",
   authMiddleware,
@@ -30,6 +33,7 @@ router.get(
   preferenceController.getPreferenceById.bind(preferenceController),
 );
 
+// update preference
 router.patch(
   "/:id",
   authMiddleware,
@@ -38,6 +42,7 @@ router.patch(
   preferenceController.updatePreference.bind(preferenceController),
 );
 
+// delete preference
 router.delete(
   "/:id",
   authMiddleware,
