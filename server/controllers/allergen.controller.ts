@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import allergenService from "../services/allergen.service.js";
 import { CreateAllergenDto, UpdateAllergenDto } from "../types/allergen.dto.js";
+import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 export class AllergenController {
+    // create a new allergen
     async createAllergen(
         req: Request<Record<string, never>, Record<string, never>, CreateAllergenDto>,
         res: Response,
@@ -10,7 +12,7 @@ export class AllergenController {
     ): Promise<void> {
         try {
             const allergen = await allergenService.createAllergen(req.body);
-            res.status(201).json(allergen);
+            res.status(CREATED_SUCCESS).json(allergen);
         } catch (error) {
             next(error);
         }
@@ -22,8 +24,9 @@ export class AllergenController {
         next: NextFunction
     ): Promise<void> {
         try {
+            // fetch full allergen list
             const allergens = await allergenService.getAllAllergens();
-            res.status(200).json(allergens);
+            res.status(SUCCESS_RES).json(allergens);
         } catch (error) {
             next(error);
         }
@@ -35,8 +38,9 @@ export class AllergenController {
         next: NextFunction
     ): Promise<void> {
         try {
+            // get one allergen by id
             const allergen = await allergenService.getAllergenById(req.params.id);
-            res.status(200).json(allergen);
+            res.status(SUCCESS_RES).json(allergen);
         } catch (error) {
             next(error);
         }
@@ -48,8 +52,9 @@ export class AllergenController {
         next: NextFunction
     ): Promise<void> {
         try {
+            // patch allergen fields
             const allergen = await allergenService.updateAllergen(req.params.id, req.body);
-            res.status(200).json(allergen);
+            res.status(SUCCESS_RES).json(allergen);
         } catch (error) {
             next(error);
         }
@@ -61,8 +66,9 @@ export class AllergenController {
         next: NextFunction
     ): Promise<void> {
         try {
+            // remove allergen by id
             const result = await allergenService.deleteAllergen(req.params.id);
-            res.status(200).json(result);
+            res.status(SUCCESS_RES).json(result);
         } catch (error) {
             next(error);
         }

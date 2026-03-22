@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { PreferenceService } from "../services/preference.service.js";
 import { CreatePreferenceDto, UpdatePreferenceDto } from "../types/preference.dto.js";
+import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 const preferenceService = new PreferenceService();
 
 export class PreferenceController {
+	// create a new preference
 	async createPreference(
 		req: Request<Record<string, never>, Record<string, never>, CreatePreferenceDto>,
 		res: Response,
@@ -12,7 +14,7 @@ export class PreferenceController {
 	): Promise<void> {
 		try {
 			const preference = await preferenceService.createPreference(req.body);
-			res.status(201).json(preference);
+			res.status(CREATED_SUCCESS).json(preference);
 		} catch (error) {
 			next(error);
 		}
@@ -24,8 +26,9 @@ export class PreferenceController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// fetch full preference list
 			const preferences = await preferenceService.getAllPreferences();
-			res.status(200).json(preferences);
+			res.status(SUCCESS_RES).json(preferences);
 		} catch (error) {
 			next(error);
 		}
@@ -37,8 +40,9 @@ export class PreferenceController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// get one preference by id
 			const preference = await preferenceService.getPreferenceById(req.params.id);
-			res.status(200).json(preference);
+			res.status(SUCCESS_RES).json(preference);
 		} catch (error) {
 			next(error);
 		}
@@ -50,8 +54,9 @@ export class PreferenceController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// patch preference fields
 			const preference = await preferenceService.updatePreference(req.params.id, req.body);
-			res.status(200).json(preference);
+			res.status(SUCCESS_RES).json(preference);
 		} catch (error) {
 			next(error);
 		}
@@ -63,8 +68,9 @@ export class PreferenceController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// remove preference by id
 			const result = await preferenceService.deletePreference(req.params.id);
-			res.status(200).json(result);
+			res.status(SUCCESS_RES).json(result);
 		} catch (error) {
 			next(error);
 		}

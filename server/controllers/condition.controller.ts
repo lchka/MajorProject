@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import conditionService from "../services/condition.service.js";
 import { CreateConditionDto, UpdateConditionDto } from "../types/condition.dto.js";
+import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 export class ConditionController {
+	// create a new condition
 	async createCondition(
 		req: Request<Record<string, never>, Record<string, never>, CreateConditionDto>,
 		res: Response,
@@ -10,7 +12,7 @@ export class ConditionController {
 	): Promise<void> {
 		try {
 			const condition = await conditionService.createCondition(req.body);
-			res.status(201).json(condition);
+			res.status(CREATED_SUCCESS).json(condition);
 		} catch (error) {
 			next(error);
 		}
@@ -22,8 +24,9 @@ export class ConditionController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// fetch full condition list
 			const conditions = await conditionService.getAllConditions();
-			res.status(200).json(conditions);
+			res.status(SUCCESS_RES).json(conditions);
 		} catch (error) {
 			next(error);
 		}
@@ -35,8 +38,9 @@ export class ConditionController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// get one condition by id
 			const condition = await conditionService.getConditionById(req.params.id);
-			res.status(200).json(condition);
+			res.status(SUCCESS_RES).json(condition);
 		} catch (error) {
 			next(error);
 		}
@@ -48,8 +52,9 @@ export class ConditionController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// patch condition fields
 			const condition = await conditionService.updateCondition(req.params.id, req.body);
-			res.status(200).json(condition);
+			res.status(SUCCESS_RES).json(condition);
 		} catch (error) {
 			next(error);
 		}
@@ -61,8 +66,9 @@ export class ConditionController {
 		next: NextFunction
 	): Promise<void> {
 		try {
+			// remove condition by id
 			const result = await conditionService.deleteCondition(req.params.id);
-			res.status(200).json(result);
+			res.status(SUCCESS_RES).json(result);
 		} catch (error) {
 			next(error);
 		}

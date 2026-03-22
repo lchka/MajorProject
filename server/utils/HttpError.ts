@@ -9,6 +9,7 @@ export class HttpError extends Error {
 }
 
 export const CREATED_SUCCESS = 201;
+export const SUCCESS_RES=200;
 export const INTERNAL_SERVER_ERROR = 500;
 export const BAD_REQUEST = 400;
 export const UNAUTHORISED = 401;
