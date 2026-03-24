@@ -134,7 +134,10 @@ export const canAccessProfileByProfileId = ({ paramKey = "profileId" }: ProfileP
       throw new HttpError(401, "Unauthorized");
     }
 
-    const profileId = req.params[paramKey];
+    const profileIdParam = req.params[paramKey];
+    const profileId = Array.isArray(profileIdParam)
+      ? profileIdParam[0]
+      : profileIdParam;
 
     if (!profileId) {
       throw new HttpError(400, "Profile id is required");
