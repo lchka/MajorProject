@@ -75,6 +75,19 @@ export class PreferenceController {
 			next(error);
 		}
 	}
+
+	async getProfilePreferences(
+		req: Request<{ profileId: string }>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const preferences = await preferenceService.getProfilePreferences(req.params.profileId);
+			res.status(SUCCESS_RES).json(preferences);
+		} catch (error) {
+			next(error);
+		}
+	}
 }
 
 export default new PreferenceController();

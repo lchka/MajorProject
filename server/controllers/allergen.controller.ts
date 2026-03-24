@@ -73,6 +73,19 @@ export class AllergenController {
             next(error);
         }
     }
+
+    async getProfileAllergens(
+        req: Request<{ profileId: string }>,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> {
+        try {
+            const allergens = await allergenService.getProfileAllergens(req.params.profileId);
+            res.status(SUCCESS_RES).json(allergens);
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default new AllergenController();

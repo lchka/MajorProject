@@ -66,4 +66,21 @@ export class PreferenceService {
     await prisma.preference.delete({where:{id}})
     return {message:"Preference deleted successfully"}
   }
+
+  async getProfilePreferences(profileId: string): Promise<PreferenceResponseDto[]> {
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: {
+        preferences: {
+          orderBy: { name: "asc" }
+        }
+      }
+    });
+
+    if (!profile) {
+      throw new HttpError(404, "Profile not found");
+    }
+
+    return profile.preferences;
+  }
 }

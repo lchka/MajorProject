@@ -3,6 +3,7 @@ import profileController from "../controllers/profile.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { can, canViewProfile } from "../middleware/permission.middleware.js";
 import { profileImageUpload } from "../middleware/upload.middleware.js";
+import { normalizeFormDataArrays } from "../middleware/normalizeFormData.middleware.js";
 import { validate } from "../middleware/validateRequest.js";
 import { Permission } from "../types/permissions.dto.js";
 import { createProfileSchema, updateProfileSchema } from "../types/profile.dto.js";
@@ -15,6 +16,7 @@ router.post(
 	authMiddleware,
 	can(Permission.PROFILE_CREATE),
 	profileImageUpload,
+	normalizeFormDataArrays,
 	validate(createProfileSchema),
 	profileController.createProfile.bind(profileController),
 );
@@ -57,6 +59,7 @@ router.patch(
 	authMiddleware,
 	can(Permission.PROFILE_UPDATE),
 	profileImageUpload,
+	normalizeFormDataArrays,
 	validate(updateProfileSchema),
 	profileController.updateProfile.bind(profileController),
 );

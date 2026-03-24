@@ -73,6 +73,19 @@ export class ConditionController {
 			next(error);
 		}
 	}
+
+	async getProfileConditions(
+		req: Request<{ profileId: string }>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const conditions = await conditionService.getProfileConditions(req.params.profileId);
+			res.status(SUCCESS_RES).json(conditions);
+		} catch (error) {
+			next(error);
+		}
+	}
 }
 
 export default new ConditionController();

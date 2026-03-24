@@ -19,6 +19,13 @@ router.get(
     allergenController.getAllAllergens.bind(allergenController)
 )
 
+router.get(
+    "/profile/:profileId",
+    authMiddleware,
+    can(Permission.ALLERGEN_VIEW),
+    allergenController.getProfileAllergens.bind(allergenController),
+)
+
 //get single allergen route
 router.get(
     "/:id",

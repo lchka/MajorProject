@@ -78,6 +78,23 @@ export class ConditionService {
 
     return { message: "Condition deleted successfully" };
   }
+
+  async getProfileConditions(profileId: string): Promise<ConditionResponseDto[]> {
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: {
+        conditions: {
+          orderBy: { name: "asc" },
+        },
+      },
+    });
+
+    if (!profile) {
+      throw new HttpError(404, "Profile not found");
+    }
+
+    return profile.conditions;
+  }
 }
 
 export default new ConditionService();

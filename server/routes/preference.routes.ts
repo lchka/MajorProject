@@ -25,6 +25,13 @@ router.get(
   preferenceController.getAllPreferences.bind(preferenceController),
 );
 
+router.get(
+  "/profile/:profileId",
+  authMiddleware,
+  can(Permission.PREFERENCE_VIEW),
+  preferenceController.getProfilePreferences.bind(preferenceController),
+);
+
 // get one preference
 router.get(
   "/:id",

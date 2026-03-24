@@ -64,5 +64,22 @@ export class AllergenService {
     await prisma.allergen.delete({where:{id}})
     return {message:"Allergen deleted successfully"}
   }
+
+  async getProfileAllergens(profileId: string): Promise<AllergenResponseDto[]> {
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: {
+        allergens: {
+          orderBy: { name: "asc" },
+        },
+      },
+    });
+
+    if (!profile) {
+      throw new HttpError(404, "Profile not found");
+    }
+
+    return profile.allergens;
+  }
 }
 export default new AllergenService();

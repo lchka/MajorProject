@@ -25,6 +25,13 @@ router.get(
     conditionController.getAllConditions.bind(conditionController)
 )
 
+router.get(
+    "/profile/:profileId",
+    authMiddleware,
+    can(Permission.CONDITION_VIEW),
+    conditionController.getProfileConditions.bind(conditionController)
+)
+
 //get single condition route
 router.get(
     "/:id",
