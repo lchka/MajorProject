@@ -38,6 +38,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -177,7 +178,7 @@ export default function LoginScreen() {
                 <Pressable
                   onPress={() => navigation.navigate("RegisterScreen")}
                 >
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="$blue600">
+                  <Text style={{ fontFamily: "RobotoMedium" }} color="$textLight700">
                     Sign up
                   </Text>
                 </Pressable>
@@ -207,17 +208,35 @@ export default function LoginScreen() {
               <VStack space="xs">
                 <Text style={{ fontFamily: "RobotoMedium" }}>Password</Text>
 
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="Enter password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoComplete="password"
-                    editable={!loading}
-                  />
-                </Input>
+                <Box position="relative">
+                  <Input size="lg" borderRadius="$lg">
+                    <InputField
+                      placeholder="Enter password"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoComplete="password"
+                      editable={!loading}
+                      style={{ paddingRight: 44 }}
+                    />
+                  </Input>
+
+                  <Pressable
+                    position="absolute"
+                    right="$3"
+                    top="50%"
+                    mt={-9}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    disabled={loading}
+                  >
+                    <Feather
+                      name={showPassword ? "eye-off" : "eye"}
+                      size={18}
+                      color="#6B7280"
+                    />
+                  </Pressable>
+                </Box>
               </VStack>
 
               {/* Remember + forgot */}
@@ -246,7 +265,7 @@ export default function LoginScreen() {
                 </Pressable>
 
                 <Pressable disabled={loading}>
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="$blue600">
+                  <Text style={{ fontFamily: "RobotoMedium" }} color="$textLight700">
                     Forgot Password?
                   </Text>
                 </Pressable>

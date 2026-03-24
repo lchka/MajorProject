@@ -19,7 +19,7 @@ export default function SocialAuth({
       <HStack py="$5" alignItems="center" space="md">
         <Divider flex={1} />
 
-        <Text size="xs" color="$textLight500">
+        <Text size="md" color="$textLight500">
           OR CONTINUE WITH
         </Text>
 
@@ -38,7 +38,7 @@ export default function SocialAuth({
           alignItems="center"
           onPress={onGooglePress}
         >
-          <FontAwesome name="google" size={20} />
+          <FontAwesome name="google" size={28} />
         </Pressable>
 
         {/* Apple */}
@@ -51,11 +51,11 @@ export default function SocialAuth({
           alignItems="center"
           onPress={onApplePress}
         >
-          <FontAwesome name="apple" size={20} />
+          <FontAwesome name="apple" size={28} />
         </Pressable>
 
         {/* GitHub */}
-        <Pressable
+        {/* <Pressable
           flex={1}
           borderWidth={1}
           borderColor="$borderLight300"
@@ -64,8 +64,8 @@ export default function SocialAuth({
           alignItems="center"
           onPress={onGithubPress}
         >
-          <FontAwesome name="github" size={20} />
-        </Pressable>
+          <FontAwesome name="github" size={28} />
+        </Pressable> */}
       </HStack>
     </>
   );

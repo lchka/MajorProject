@@ -22,19 +22,42 @@ import {
   VStack,
 } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import Feather from "@expo/vector-icons/Feather";
 import { authService } from "../services";
 import { registerSchema } from "../models/auth.schema";
 import { AuthStackParamList } from "../types/navigation";
+import SocialAuth from "../components/actions/SocialAuth";
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 
+  const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const handleNext = () => {
+    if (step === 1 && (!firstName.trim() || !lastName.trim())) {
+      Alert.alert("Missing info", "Please enter first and last name.");
+      return;
+    }
+
+    if (step === 2 && !email.trim()) {
+      Alert.alert("Missing info", "Please enter your email.");
+      return;
+    }
+
+    setStep((prev) => Math.min(prev + 1, 3));
+  };
+
+  const handleBack = () => {
+    setStep((prev) => Math.max(prev - 1, 0));
+  };
 
   const handleRegister = async () => {
     const result = registerSchema.safeParse({
@@ -111,15 +134,23 @@ export default function RegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Box w="$full" px="$5" py="$8" bg="$backgroundLight0">
-          <VStack space="lg">
+          <VStack space="xl">
             {/* Header */}
             <VStack space="xs">
               <HStack justifyContent="space-between" alignItems="center">
-                <Text p="$1" size="6xl" style={{ fontFamily: "DancingScript" }}>
+                <Text pl="$2" size="6xl" style={{ fontFamily: "DancingScript" }}>
                   Lumière
                 </Text>
 
-                <AntDesign name="info-circle" size={24} color="gray" />
+                <Box
+                  w="$8"
+                  h="$8"
+                  alignItems="center"
+                  justifyContent="center"
+                  mt="$4"
+                >
+                  <AntDesign name="info-circle" size={28} color="gray" />
+                </Box>
               </HStack>
               <Divider mt={-8} />
             </VStack>
@@ -127,7 +158,13 @@ export default function RegisterScreen() {
             {/* Title */}
             <VStack>
               <Text size="3xl" style={{ fontFamily: "Roboto" }}>
-                Register your account
+                {step === 0
+                  ? "Welcome to Lumière"
+                  : step === 1
+                  ? "Tell us your name"
+                  : step === 2
+                  ? "Add your email"
+                  : "Set your password"}
               </Text>
 
               <HStack space="xs">
@@ -136,120 +173,191 @@ export default function RegisterScreen() {
                 </Text>
 
                 <Pressable onPress={() => navigation.navigate("LoginScreen")}>
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="$blue600">
+                  <Text style={{ fontFamily: "RobotoMedium" }} color="$textLight700">
                     Sign in
                   </Text>
                 </Pressable>
               </HStack>
             </VStack>
 
-            {/* Form */}
-            <VStack space="xl">
-              {/* First Name */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>First Name</Text>
-
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="Enter first name"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    autoCapitalize="words"
-                    autoComplete="name-given"
-                    editable={!loading}
-                  />
-                </Input>
-              </VStack>
-
-              {/* Last Name */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>Last Name</Text>
-
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="Enter last name"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    autoCapitalize="words"
-                    autoComplete="name-family"
-                    editable={!loading}
-                  />
-                </Input>
-              </VStack>
-
-              {/* Email */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>Email</Text>
-
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="abc@gmail.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    autoComplete="email"
-                    editable={!loading}
-                  />
-                </Input>
-              </VStack>
-
-              {/* Password */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>Password</Text>
-
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="Enter password"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    autoComplete="password-new"
-                    editable={!loading}
-                  />
-                </Input>
-
-                <Text size="xs">
-                  Min 8 characters with uppercase, lowercase, number and special
-                  character
-                </Text>
-              </VStack>
-
-              {/* Confirm Password */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>
-                  Confirm Password
+            {step === 0 ? (
+              <VStack space="xl">
+                <Text size="sm" color="$textLight500">
+                  Create your account in a few quick steps.
                 </Text>
 
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="Re-enter password"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    editable={!loading}
-                  />
-                </Input>
-              </VStack>
-            </VStack>
+                <Button
+                  size="lg"
+                  onPress={handleNext}
+                  bg="$black"
+                  borderRadius="$lg"
+                  w="$full"
+                >
+                  <ButtonText color="$white">Continue with Email</ButtonText>
+                </Button>
 
-            {/* Button */}
-            <Button
-              size="lg"
-              onPress={handleRegister}
-              isDisabled={loading}
-              bg="$black"
-              borderRadius="$lg"
-              w="$full"
-            >
-              {loading ? (
-                <Spinner color="$white" />
-              ) : (
-                <ButtonText color="$white">Create Account</ButtonText>
-              )}
-            </Button>
+                <SocialAuth />
+              </VStack>
+            ) : (
+              <VStack space="xl">
+                {step === 1 ? (
+                  <>
+                    <VStack space="xs">
+                      <Text style={{ fontFamily: "RobotoMedium" }}>First Name</Text>
+                      <Input size="lg" borderRadius="$lg">
+                        <InputField
+                          placeholder="Enter first name"
+                          value={firstName}
+                          onChangeText={setFirstName}
+                          autoCapitalize="words"
+                          autoComplete="name-given"
+                          editable={!loading}
+                        />
+                      </Input>
+                    </VStack>
+
+                    <VStack space="xs">
+                      <Text style={{ fontFamily: "RobotoMedium" }}>Last Name</Text>
+                      <Input size="lg" borderRadius="$lg">
+                        <InputField
+                          placeholder="Enter last name"
+                          value={lastName}
+                          onChangeText={setLastName}
+                          autoCapitalize="words"
+                          autoComplete="name-family"
+                          editable={!loading}
+                        />
+                      </Input>
+                    </VStack>
+                  </>
+                ) : null}
+
+                {step === 2 ? (
+                  <VStack space="xs">
+                    <Text style={{ fontFamily: "RobotoMedium" }}>Email</Text>
+                    <Input size="lg" borderRadius="$lg">
+                      <InputField
+                        placeholder="abc@gmail.com"
+                        value={email}
+                        onChangeText={setEmail}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        autoComplete="email"
+                        editable={!loading}
+                      />
+                    </Input>
+                  </VStack>
+                ) : null}
+
+                {step === 3 ? (
+                  <>
+                    <VStack space="xs">
+                      <Text style={{ fontFamily: "RobotoMedium" }}>Password</Text>
+                      <Box position="relative">
+                        <Input size="lg" borderRadius="$lg">
+                          <InputField
+                            placeholder="Enter password"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry={!showPassword}
+                            autoCapitalize="none"
+                            autoComplete="password-new"
+                            editable={!loading}
+                            style={{ paddingRight: 44 }}
+                          />
+                        </Input>
+
+                        <Pressable
+                          position="absolute"
+                          right="$3"
+                          top="50%"
+                          mt={-9}
+                          onPress={() => setShowPassword((prev) => !prev)}
+                          disabled={loading}
+                        >
+                          <Feather
+                            name={showPassword ? "eye-off" : "eye"}
+                            size={18}
+                            color="#6B7280"
+                          />
+                        </Pressable>
+                      </Box>
+
+                      <Text size="xs">
+                        Min 8 characters with uppercase, lowercase, number and special
+                        character
+                      </Text>
+                    </VStack>
+
+                    <VStack space="xs">
+                      <Text style={{ fontFamily: "RobotoMedium" }}>
+                        Confirm Password
+                      </Text>
+
+                      <Box position="relative">
+                        <Input size="lg" borderRadius="$lg">
+                          <InputField
+                            placeholder="Re-enter password"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            secureTextEntry={!showConfirmPassword}
+                            autoCapitalize="none"
+                            editable={!loading}
+                            style={{ paddingRight: 44 }}
+                          />
+                        </Input>
+
+                        <Pressable
+                          position="absolute"
+                          right="$3"
+                          top="50%"
+                          mt={-9}
+                          onPress={() => setShowConfirmPassword((prev) => !prev)}
+                          disabled={loading}
+                        >
+                          <Feather
+                            name={showConfirmPassword ? "eye-off" : "eye"}
+                            size={18}
+                            color="#6B7280"
+                          />
+                        </Pressable>
+                      </Box>
+                    </VStack>
+                  </>
+                ) : null}
+
+                <HStack space="md" mt="$2">
+                  {step > 0 ? (
+                    <Button
+                      flex={1}
+                      variant="outline"
+                      borderRadius="$lg"
+                      onPress={handleBack}
+                      isDisabled={loading}
+                    >
+                      <ButtonText>Back</ButtonText>
+                    </Button>
+                  ) : null}
+
+                  <Button
+                    flex={1}
+                    size="lg"
+                    onPress={step === 3 ? handleRegister : handleNext}
+                    isDisabled={loading}
+                    bg="$black"
+                    borderRadius="$lg"
+                  >
+                    {loading && step === 3 ? (
+                      <Spinner color="$white" />
+                    ) : (
+                      <ButtonText color="$white">
+                        {step === 3 ? "Sign Up" : "Next"}
+                      </ButtonText>
+                    )}
+                  </Button>
+                </HStack>
+              </VStack>
+            )}
           </VStack>
         </Box>
       </ScrollView>

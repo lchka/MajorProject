@@ -1,11 +1,34 @@
 import axios from 'axios';
 import { NativeModules, Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const DEFAULT_API_PORT = '3000';
 const DEFAULT_API_PATH = '/api';
 
 const getMetroHost = (): string | null => {
   const scriptURL = NativeModules?.SourceCode?.scriptURL as string | undefined;
+
+
+  const linkingUri = (Constants as any)?.linkingUri as string | undefined;
+  if (linkingUri) {
+    try {
+      const parsedUrl = new URL(linkingUri);
+      if (parsedUrl.hostname) {
+        return parsedUrl.hostname;
+      }
+    } catch {
+      // no-op
+    }
+  }
+
+  const hostUri =
+    (Constants as any)?.expoConfig?.hostUri ||
+    (Constants as any)?.manifest?.debuggerHost ||
+    (Constants as any)?.manifest2?.extra?.expoClient?.hostUri;
+
+  if (typeof hostUri === 'string' && hostUri.length > 0) {
+    return hostUri.split(':')[0] || null;
+  }
 
   if (!scriptURL) {
     return null;
