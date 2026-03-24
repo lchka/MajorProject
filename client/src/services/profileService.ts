@@ -57,6 +57,7 @@ export interface UpdateProfileInput {
   age?: string;
   profile_image?: string | ProfileImageUploadFile;
   main_profile?: boolean;
+  isComplete?: boolean;
   conditionIds?: string[];
   allergenIds?: string[];
   preferenceIds?: string[];

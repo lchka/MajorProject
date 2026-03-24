@@ -131,7 +131,32 @@ export default function ProfileScreen() {
 			return;
 		}
 
-		const savedProfile = await updateProfile(profileId, payload);
+		const completionPayload = {
+			first_name: payload.first_name,
+			last_name: payload.last_name,
+			age: payload.age,
+			conditionIds: payload.conditionIds,
+			allergenIds: payload.allergenIds,
+			preferenceIds: payload.preferenceIds,
+			isComplete: true,
+			main_profile: true,
+		};
+
+		const savedProfile = await updateProfile(profileId, completionPayload);
+
+		if (!savedProfile) {
+			return;
+		}
+
+		if (profileImage) {
+			const savedImage = await updateProfile(profileId, {
+				profile_image: profileImage,
+			});
+
+			if (!savedImage) {
+				return;
+			}
+		}
 
 		if (savedProfile) {
 			Alert.alert("Success", "Profile completed successfully.", [
