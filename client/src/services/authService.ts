@@ -18,7 +18,9 @@ export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    roleId: string;
+    first_name: string;
+    last_name: string;
+    profile_id?: string | null;
     role: {
       id: string;
       name: string;

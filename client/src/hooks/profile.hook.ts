@@ -47,7 +47,26 @@ export const useProfile = (): UseProfileReturn => {
 		try {
 			return await fn();
 		} catch (err: unknown) {
-			const message = err instanceof Error ? err.message : "Something went wrong";
+			let message = "Something went wrong";
+
+			if (typeof err === "object" && err !== null && "response" in err) {
+				const maybeAxiosError = err as {
+					response?: {
+						data?: { message?: string };
+						status?: number;
+					};
+					message?: string;
+				};
+
+				if (maybeAxiosError.response?.data?.message) {
+					message = maybeAxiosError.response.data.message;
+				} else if (typeof maybeAxiosError.message === "string") {
+					message = maybeAxiosError.message;
+				}
+			} else if (err instanceof Error) {
+				message = err.message;
+			}
+
 			setError(message);
 			throw err;
 		} finally {
@@ -139,13 +158,28 @@ export const useProfile = (): UseProfileReturn => {
 
 	const fetchProfileOptions = useCallback(async () => {
 		try {
-			const [conditionsResponse, allergensResponse, preferencesResponse] = await withLoading(() =>
-				Promise.all([
+			const [conditionsResult, allergensResult, preferencesResult] = await withLoading(() =>
+				Promise.allSettled([
 					profileService.getAllConditions(),
 					profileService.getAllAllergens(),
 					profileService.getAllPreferences(),
 				]),
 			);
+
+			const conditionsResponse =
+				conditionsResult.status === "fulfilled" ? conditionsResult.value : [];
+			const allergensResponse =
+				allergensResult.status === "fulfilled" ? allergensResult.value : [];
+			const preferencesResponse =
+				preferencesResult.status === "fulfilled" ? preferencesResult.value : [];
+
+			if (
+				conditionsResult.status === "rejected" &&
+				allergensResult.status === "rejected" &&
+				preferencesResult.status === "rejected"
+			) {
+				setError("Could not load profile options.");
+			}
 
 			setConditions(conditionsResponse);
 			setAllergens(allergensResponse);

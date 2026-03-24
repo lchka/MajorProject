@@ -1,6 +1,9 @@
 import axios from 'axios';
 import { NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const AUTH_TOKEN_KEY = 'authToken';
 
 const DEFAULT_API_PORT = '3000';
 const DEFAULT_API_PATH = '/api';
@@ -84,12 +87,12 @@ const api = axios.create({
 
 // Request interceptor - Add auth token to requests
 api.interceptors.request.use(
-  (config) => {
-    // You can add auth token here later
-    // const token = await AsyncStorage.getItem('authToken');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+  async (config) => {
+    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {

@@ -25,6 +25,7 @@ import {
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { authService } from "../services";
+import profileService from "../services/profileService";
 import { loginSchema } from "../models/auth.schema";
 import { AuthStackParamList } from "../types/navigation";
 import SocialAuth from "../components/actions/SocialAuth";
@@ -84,18 +85,28 @@ export default function LoginScreen() {
         password,
       });
 
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
+
       if (rememberMe) {
         await AsyncStorage.multiSet([
-          [AUTH_TOKEN_KEY, response.token],
           [REMEMBER_ME_KEY, "true"],
           [REMEMBERED_EMAIL_KEY, email.toLowerCase().trim()],
         ]);
       } else {
-        await AsyncStorage.multiRemove([
-          AUTH_TOKEN_KEY,
-          REMEMBER_ME_KEY,
-          REMEMBERED_EMAIL_KEY,
-        ]);
+        await AsyncStorage.multiRemove([REMEMBER_ME_KEY, REMEMBERED_EMAIL_KEY]);
+      }
+
+      let shouldGoToAnalyse = false;
+      let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
+
+      if (profileIdForEdit) {
+        try {
+          const profile = await profileService.getMyProfile();
+          shouldGoToAnalyse = Boolean(profile?.isComplete);
+          profileIdForEdit = profile?.id ?? profileIdForEdit;
+        } catch {
+          shouldGoToAnalyse = false;
+        }
       }
 
       console.log("Login successful:", response);
@@ -104,6 +115,17 @@ export default function LoginScreen() {
         {
           text: "OK",
           onPress: () => {
+            if (shouldGoToAnalyse) {
+              navigation.navigate("AnalyseScreen");
+            } else {
+              navigation.navigate("ProfileScreen", {
+                firstName: response.user.first_name,
+                lastName: response.user.last_name,
+                email: response.user.email,
+                profileId: profileIdForEdit,
+              });
+            }
+
             setEmail("");
             setPassword("");
           },

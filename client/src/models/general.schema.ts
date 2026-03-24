@@ -30,5 +30,18 @@ export const ImageFileSchema = z
     message: `File size must be less than ${MAX_IMAGE_SIZE / 1024 / 1024}MB`,
   });
 
+export const ImageUrlSchema = z
+  .string()
+  .trim()
+  .url("Profile image must be a valid URL");
+
+export const ReactNativeImageFileSchema = z.object({
+  uri: z.string().trim().min(1, "Image uri is required"),
+  name: z.string().trim().optional(),
+  type: z.string().trim().optional(),
+});
+
 // Optional image (for updates where image isn't required)
-export const OptionalImageFileSchema = ImageFileSchema.optional();
+export const OptionalImageFileSchema = z
+  .union([ImageFileSchema, ImageUrlSchema, ReactNativeImageFileSchema])
+  .optional();

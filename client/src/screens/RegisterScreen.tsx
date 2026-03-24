@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Box,
   Button,
@@ -27,6 +28,8 @@ import { authService } from "../services";
 import { registerSchema } from "../models/auth.schema";
 import { AuthStackParamList } from "../types/navigation";
 import SocialAuth from "../components/actions/SocialAuth";
+
+const AUTH_TOKEN_KEY = "authToken";
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -85,17 +88,30 @@ export default function RegisterScreen() {
         c_password: confirmPassword,
       });
 
+      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
+
       console.log("Registration successful:", response);
 
       Alert.alert("Success!", "Your account has been created successfully.", [
         {
           text: "OK",
           onPress: () => {
+            const prefillFirstName = firstName.trim();
+            const prefillLastName = lastName.trim();
+            const prefillEmail = email.toLowerCase().trim();
+
             setFirstName("");
             setLastName("");
             setEmail("");
             setPassword("");
             setConfirmPassword("");
+            setStep(0);
+            navigation.navigate("ProfileScreen", {
+              firstName: prefillFirstName,
+              lastName: prefillLastName,
+              email: prefillEmail,
+              profileId: response.user.profile_id ?? undefined,
+            });
           },
         },
       ]);

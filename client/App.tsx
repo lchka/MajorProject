@@ -1,6 +1,7 @@
 import "react-native-gesture-handler";
 import AnalyseScreen from "./src/screens/AnalyseScreen";
 import LoginScreen from "./src/screens/LoginScreen";
+import ProfileScreen from "./src/screens/ProfileScreen";
 import RegisterScreen from "./src/screens/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
@@ -47,6 +48,7 @@ export default function App() {
             >
               <Stack.Screen name="LoginScreen" component={LoginScreen} />
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
+              <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
               <Stack.Screen name="AnalyseScreen" component={AnalyseScreen} />
             </Stack.Navigator>
           </NavigationContainer>

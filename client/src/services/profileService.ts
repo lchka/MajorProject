@@ -1,10 +1,17 @@
 import api from '../config/api';
 
+export interface ProfileImageUploadFile {
+  uri: string;
+  name?: string;
+  type?: string;
+}
+
 export interface Profile {
   id: string;
   userId: string;
   first_name: string;
   last_name: string;
+  isComplete?: boolean;
   age?: string;
   profile_image?: string;
   main_profile: boolean;
@@ -37,7 +44,7 @@ export interface CreateProfileInput {
   first_name: string;
   last_name: string;
   age?: string;
-  profile_image?: string;
+  profile_image?: string | ProfileImageUploadFile;
   main_profile?: boolean;
   conditionIds?: string[];
   allergenIds?: string[];
@@ -48,12 +55,54 @@ export interface UpdateProfileInput {
   first_name?: string;
   last_name?: string;
   age?: string;
-  profile_image?: string;
+  profile_image?: string | ProfileImageUploadFile;
   main_profile?: boolean;
   conditionIds?: string[];
   allergenIds?: string[];
   preferenceIds?: string[];
 }
+
+const isProfileImageUploadFile = (
+  value: UpdateProfileInput['profile_image'] | CreateProfileInput['profile_image'],
+): value is ProfileImageUploadFile => {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'uri' in value &&
+      typeof (value as { uri?: unknown }).uri === 'string',
+  );
+};
+
+const toProfileFormData = (data: CreateProfileInput | UpdateProfileInput): FormData => {
+  const formData = new FormData();
+
+  if (data.first_name !== undefined) {
+    formData.append('first_name', data.first_name);
+  }
+  if (data.last_name !== undefined) {
+    formData.append('last_name', data.last_name);
+  }
+  if (data.age !== undefined) {
+    formData.append('age', data.age);
+  }
+
+  const profileImage = data.profile_image;
+  if (typeof profileImage === 'string' && profileImage.trim().length > 0) {
+    formData.append('profile_image', profileImage);
+  } else if (isProfileImageUploadFile(profileImage)) {
+    formData.append('profile_image', {
+      uri: profileImage.uri,
+      name: profileImage.name ?? `profile-${Date.now()}.jpg`,
+      type: profileImage.type ?? 'image/jpeg',
+    } as unknown as Blob);
+  }
+
+  data.conditionIds?.forEach((id) => formData.append('conditionIds[]', id));
+  data.allergenIds?.forEach((id) => formData.append('allergenIds[]', id));
+  data.preferenceIds?.forEach((id) => formData.append('preferenceIds[]', id));
+
+  return formData;
+};
 
 /**
  * Profile Service - Handles all profile-related API calls
@@ -68,10 +117,25 @@ export const profileService = {
   },
 
   /**
+   * Get current authenticated user's profile
+   */
+  getMyProfile: async (): Promise<Profile> => {
+    const response = await api.get('/profiles/me');
+    return response.data;
+  },
+
+  /**
    * Create profile
    */
   createProfile: async (data: CreateProfileInput): Promise<Profile> => {
-    const response = await api.post('/profiles', data);
+    const hasFile = isProfileImageUploadFile(data.profile_image);
+    const response = hasFile
+      ? await api.post('/profiles', toProfileFormData(data), {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+      : await api.post('/profiles', data);
     return response.data;
   },
 
@@ -79,7 +143,14 @@ export const profileService = {
    * Update profile
    */
   updateProfile: async (id: string, data: UpdateProfileInput): Promise<Profile> => {
-    const response = await api.put(`/profiles/${id}`, data);
+    const hasFile = isProfileImageUploadFile(data.profile_image);
+    const response = hasFile
+      ? await api.patch(`/profiles/${id}`, toProfileFormData(data), {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
+      : await api.patch(`/profiles/${id}`, data);
     return response.data;
   },
 
