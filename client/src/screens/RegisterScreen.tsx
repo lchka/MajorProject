@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+// React & Gluestack imports
+import React, { useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
-} from 'react-native';
+} from "react-native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import {
   Box,
   Button,
   ButtonText,
-  Center,
   Divider,
   HStack,
   Input,
@@ -19,105 +20,40 @@ import {
   Spinner,
   Text,
   VStack,
-} from '@gluestack-ui/themed';
-import { authService } from '../services';
+} from "@gluestack-ui/themed";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import { authService } from "../services";
+import { registerSchema } from "../models/auth.schema";
+import { AuthStackParamList } from "../types/navigation";
 
 export default function RegisterScreen() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const validateForm = (): boolean => {
-    // First name validation
-    if (!firstName.trim()) {
-      Alert.alert('Validation Error', 'Please enter your first name');
-      return false;
-    }
-
-    if (firstName.trim().length < 2) {
-      Alert.alert('Validation Error', 'First name must be at least 2 characters');
-      return false;
-    }
-
-    // Last name validation
-    if (!lastName.trim()) {
-      Alert.alert('Validation Error', 'Please enter your last name');
-      return false;
-    }
-
-    if (lastName.trim().length < 2) {
-      Alert.alert('Validation Error', 'Last name must be at least 2 characters');
-      return false;
-    }
-
-    // Email validation
-    if (!email) {
-      Alert.alert('Validation Error', 'Please enter your email');
-      return false;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
-      return false;
-    }
-
-    // Password validation (stronger requirements)
-    if (!password) {
-      Alert.alert('Validation Error', 'Please enter a password');
-      return false;
-    }
-
-    if (password.length < 8) {
-      Alert.alert('Validation Error', 'Password must be at least 8 characters long');
-      return false;
-    }
-
-    // Check for uppercase
-    if (!/[A-Z]/.test(password)) {
-      Alert.alert('Validation Error', 'Password must contain at least one uppercase letter');
-      return false;
-    }
-
-    // Check for lowercase
-    if (!/[a-z]/.test(password)) {
-      Alert.alert('Validation Error', 'Password must contain at least one lowercase letter');
-      return false;
-    }
-
-    // Check for number
-    if (!/[0-9]/.test(password)) {
-      Alert.alert('Validation Error', 'Password must contain at least one number');
-      return false;
-    }
-
-    // Check for special character
-    if (!/[#?!@$%^&*-]/.test(password)) {
-      Alert.alert('Validation Error', 'Password must contain at least one special character (#?!@$%^&*-)');
-      return false;
-    }
-
-    // Confirm password validation
-    if (password !== confirmPassword) {
-      Alert.alert('Validation Error', 'Passwords do not match');
-      return false;
-    }
-
-    return true;
-  };
-
   const handleRegister = async () => {
-    if (!validateForm()) {
+    const result = registerSchema.safeParse({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      password,
+      c_password: confirmPassword,
+    });
+
+    if (!result.success) {
+      const errors = result.error.issues.map((err) => err.message).join("\n");
+      Alert.alert("Validation Error", errors);
       return;
     }
 
     try {
       setLoading(true);
 
-      // Send data matching backend schema
       const response = await authService.register({
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -126,87 +62,94 @@ export default function RegisterScreen() {
         c_password: confirmPassword,
       });
 
-      console.log('Registration successful:', response);
+      console.log("Registration successful:", response);
 
-      Alert.alert(
-        'Success!',
-        'Your account has been created successfully.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Clear the form
-              setFirstName('');
-              setLastName('');
-              setEmail('');
-              setPassword('');
-              setConfirmPassword('');
-            },
+      Alert.alert("Success!", "Your account has been created successfully.", [
+        {
+          text: "OK",
+          onPress: () => {
+            setFirstName("");
+            setLastName("");
+            setEmail("");
+            setPassword("");
+            setConfirmPassword("");
           },
-        ]
-      );
-
-      // TODO: Save token to AsyncStorage
-      // await AsyncStorage.setItem('authToken', response.token);
-      // Navigate to home screen
+        },
+      ]);
     } catch (error: any) {
-      console.error('Registration failed:', error);
+      console.error("Registration failed:", error);
 
-      let errorMessage = 'Registration failed. Please try again.';
+      let errorMessage = "Registration failed. Please try again.";
 
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.details) {
-        // Handle validation errors from backend
-        errorMessage = error.response.data.details.join('\n');
+        errorMessage = error.response.data.details.join("\n");
       } else if (error.response?.status === 409) {
-        errorMessage = 'Email already exists. Please use a different email.';
-      } else if (typeof error.message === 'string' && error.message.includes('Network Error')) {
-        errorMessage = 'Cannot connect to server. Please check your connection.';
+        errorMessage = "Email already exists. Please use a different email.";
+      } else if (
+        typeof error.message === "string" &&
+        error.message.includes("Network Error")
+      ) {
+        errorMessage =
+          "Cannot connect to server. Please check your connection.";
       }
 
-      Alert.alert('Registration Failed', errorMessage);
+      Alert.alert("Registration Failed", errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         <Box w="$full" px="$5" py="$8" bg="$backgroundLight0">
           <VStack space="lg">
-            <HStack justifyContent="space-between" alignItems="center">
-              <Text size="4xl" fontStyle="italic" fontWeight="$light">
-                Lumière
-              </Text>
-              <Box borderWidth={1} borderColor="$borderLight400" borderRadius="$full" px="$3" py="$1">
-                <Text size="lg">i</Text>
-              </Box>
-            </HStack>
-
-            <Divider />
-
+            {/* Header */}
             <VStack space="xs">
-              <Text size="3xl" fontWeight="$bold">
+              <HStack justifyContent="space-between" alignItems="center">
+                <Text p="$1" size="6xl" style={{ fontFamily: "DancingScript" }}>
+                  Lumière
+                </Text>
+
+                <AntDesign name="info-circle" size={24} color="gray" />
+              </HStack>
+              <Divider mt={-8} />
+            </VStack>
+
+            {/* Title */}
+            <VStack>
+              <Text size="3xl" style={{ fontFamily: "Roboto" }}>
                 Register your account
               </Text>
+
               <HStack space="xs">
-                <Text size="md">Already have an account?</Text>
-                <Pressable disabled={loading}>
-                  <Text size="md" fontWeight="$semibold">
+                <Text style={{ fontFamily: "Roboto" }}>
+                  Already have an account?
+                </Text>
+
+                <Pressable onPress={() => navigation.navigate("LoginScreen")}>
+                  <Text style={{ fontFamily: "RobotoMedium" }} color="$blue600">
                     Sign in
                   </Text>
                 </Pressable>
               </HStack>
             </VStack>
 
-            <VStack space="md">
+            {/* Form */}
+            <VStack space="xl">
+              {/* First Name */}
               <VStack space="xs">
-                <Text size="md" fontWeight="$semibold">
-                  First Name
-                </Text>
-                <Input variant="outline" size="lg">
+                <Text style={{ fontFamily: "RobotoMedium" }}>First Name</Text>
+
+                <Input size="lg" borderRadius="$lg">
                   <InputField
                     placeholder="Enter first name"
                     value={firstName}
@@ -218,11 +161,11 @@ export default function RegisterScreen() {
                 </Input>
               </VStack>
 
+              {/* Last Name */}
               <VStack space="xs">
-                <Text size="md" fontWeight="$semibold">
-                  Last Name
-                </Text>
-                <Input variant="outline" size="lg">
+                <Text style={{ fontFamily: "RobotoMedium" }}>Last Name</Text>
+
+                <Input size="lg" borderRadius="$lg">
                   <InputField
                     placeholder="Enter last name"
                     value={lastName}
@@ -234,11 +177,11 @@ export default function RegisterScreen() {
                 </Input>
               </VStack>
 
+              {/* Email */}
               <VStack space="xs">
-                <Text size="md" fontWeight="$semibold">
-                  Email
-                </Text>
-                <Input variant="outline" size="lg">
+                <Text style={{ fontFamily: "RobotoMedium" }}>Email</Text>
+
+                <Input size="lg" borderRadius="$lg">
                   <InputField
                     placeholder="abc@gmail.com"
                     value={email}
@@ -251,11 +194,11 @@ export default function RegisterScreen() {
                 </Input>
               </VStack>
 
+              {/* Password */}
               <VStack space="xs">
-                <Text size="md" fontWeight="$semibold">
-                  Password
-                </Text>
-                <Input variant="outline" size="lg">
+                <Text style={{ fontFamily: "RobotoMedium" }}>Password</Text>
+
+                <Input size="lg" borderRadius="$lg">
                   <InputField
                     placeholder="Enter password"
                     value={password}
@@ -266,16 +209,20 @@ export default function RegisterScreen() {
                     editable={!loading}
                   />
                 </Input>
+
                 <Text size="xs">
-                  Min 8 characters with uppercase, lowercase, number and special character (#?!@$%^&*-)
+                  Min 8 characters with uppercase, lowercase, number and special
+                  character
                 </Text>
               </VStack>
 
+              {/* Confirm Password */}
               <VStack space="xs">
-                <Text size="md" fontWeight="$semibold">
+                <Text style={{ fontFamily: "RobotoMedium" }}>
                   Confirm Password
                 </Text>
-                <Input variant="outline" size="lg">
+
+                <Input size="lg" borderRadius="$lg">
                   <InputField
                     placeholder="Re-enter password"
                     value={confirmPassword}
@@ -288,8 +235,20 @@ export default function RegisterScreen() {
               </VStack>
             </VStack>
 
-            <Button size="lg" onPress={handleRegister} isDisabled={loading}>
-              {loading ? <Spinner color="$white" /> : <ButtonText>Create Account</ButtonText>}
+            {/* Button */}
+            <Button
+              size="lg"
+              onPress={handleRegister}
+              isDisabled={loading}
+              bg="$black"
+              borderRadius="$lg"
+              w="$full"
+            >
+              {loading ? (
+                <Spinner color="$white" />
+              ) : (
+                <ButtonText color="$white">Create Account</ButtonText>
+              )}
             </Button>
           </VStack>
         </Box>
@@ -301,10 +260,10 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
   scrollContent: {
     flexGrow: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
   },
 });

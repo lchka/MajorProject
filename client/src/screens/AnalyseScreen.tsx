@@ -13,7 +13,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export default function analyseScreen() {
+export default function AnalyseScreen() {
   const [image, setImage] = useState<string | null>(null);
   const [base64Data, setBase64Data] = useState<string | null>(null);
   const [response, setResponse] = useState<string>("");
@@ -38,7 +38,7 @@ export default function analyseScreen() {
 
     // Pick image
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
