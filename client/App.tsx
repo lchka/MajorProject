@@ -1,8 +1,10 @@
 import "react-native-gesture-handler";
 import AnalyseScreen from "./src/screens/AnalyseScreen";
-import LoginScreen from "./src/screens/LoginScreen";
-import ProfileScreen from "./src/screens/ProfileScreen";
-import RegisterScreen from "./src/screens/RegisterScreen";
+import LandingScreen from "./src/screens/LandingScreen";
+import WelcomeScreen from "./src/screens/WelcomeScreen";
+import LoginScreen from "./src/screens/auth/LoginScreen";
+import ProfileScreen from "./src/screens/auth/ProfileScreen";
+import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { StyleSheet } from "react-native";
@@ -42,10 +44,13 @@ export default function App() {
         <SafeAreaProvider>
           <NavigationContainer>
             <Stack.Navigator
+              initialRouteName="WelcomeScreen"
               screenOptions={{
                 headerShown: false,
               }}
             >
+              <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
+              <Stack.Screen name="LandingScreen" component={LandingScreen} />
               <Stack.Screen name="LoginScreen" component={LoginScreen} />
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
               <Stack.Screen name="ProfileScreen" component={ProfileScreen} />

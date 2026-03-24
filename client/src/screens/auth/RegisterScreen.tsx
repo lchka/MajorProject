@@ -24,10 +24,10 @@ import {
 } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import { authService } from "../services";
-import { registerSchema } from "../models/auth.schema";
-import { AuthStackParamList } from "../types/navigation";
-import SocialAuth from "../components/actions/SocialAuth";
+import { authService } from "../../services";
+import { registerSchema } from "../../models/auth.schema";
+import { AuthStackParamList } from "../../types/navigation";
+import SocialAuth from "../../components/actions/SocialAuth";
 
 const AUTH_TOKEN_KEY = "authToken";
 

@@ -28,11 +28,11 @@ import {
 	VStack,
 } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { createProfileSchema } from "../models/profile.schema";
-import { useProfile } from "../hooks/profile.hook";
-import { AuthStackParamList } from "../types/navigation";
-import SocialAuth from "../components/actions/SocialAuth";
-import { ProfileImageUploadFile } from "../services/profileService";
+import { createProfileSchema } from "../../models/profile.schema";
+import { useProfile } from "../../hooks/profile.hook";
+import { AuthStackParamList } from "../../types/navigation";
+import SocialAuth from "../../components/actions/SocialAuth";
+import { ProfileImageUploadFile } from "../../services/profileService";
 
 export default function ProfileScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -162,7 +162,7 @@ export default function ProfileScreen() {
 			Alert.alert("Success", "Profile completed successfully.", [
 				{
 					text: "Continue",
-					onPress: () => navigation.navigate("AnalyseScreen"),
+					onPress: () => navigation.navigate("LandingScreen"),
 				},
 			]);
 		}
