@@ -1,7 +1,7 @@
 import express, {Router} from"express";
 import conditionController from "../controllers/condition.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
-import { can } from "../middleware/permission.middleware";
+import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validateRequest";
 import { Permission } from "../types/permissions.dto";
 import { createConditionSchema, updateConditionSchema } from "../types/condition.dto";
@@ -29,6 +29,7 @@ router.get(
     "/profile/:profileId",
     authMiddleware,
     can(Permission.CONDITION_VIEW),
+    canAccessProfileByProfileId(),
     conditionController.getProfileConditions.bind(conditionController)
 )
 

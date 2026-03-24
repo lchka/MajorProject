@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import preferenceController from "../controllers/preference.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { can } from "../middleware/permission.middleware.js";
+import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware.js";
 import { validate } from "../middleware/validateRequest.js";
 import { Permission } from "../types/permissions.dto.js";
 import { createPreferenceSchema, updatePreferenceSchema } from "../types/preference.dto.js";
@@ -29,6 +29,7 @@ router.get(
   "/profile/:profileId",
   authMiddleware,
   can(Permission.PREFERENCE_VIEW),
+  canAccessProfileByProfileId(),
   preferenceController.getProfilePreferences.bind(preferenceController),
 );
 

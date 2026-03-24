@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import { HttpError } from "../utils/HttpError.js";
 import { Permission, hasPermission } from "../types/permissions.dto.js";
+import prisma from "../lib/prisma.js";
 
 // Check if user has specific permission(s)
 export const can = (...requiredPermissions: Permission[]) => {
@@ -121,6 +122,45 @@ export const canViewProfile = (
     403,
     "Forbidden - You don't have permission to view this profile",
   );
+};
+
+type ProfileParamOptions = {
+  paramKey?: string;
+};
+
+export const canAccessProfileByProfileId = ({ paramKey = "profileId" }: ProfileParamOptions = {}) => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      throw new HttpError(401, "Unauthorized");
+    }
+
+    const profileId = req.params[paramKey];
+
+    if (!profileId) {
+      throw new HttpError(400, "Profile id is required");
+    }
+
+    const userRole = req.user.role.name;
+
+    if (hasPermission(userRole, Permission.USER_VIEW_ALL)) {
+      return next();
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: { userId: true },
+    });
+
+    if (!profile) {
+      throw new HttpError(404, "Profile not found");
+    }
+
+    if (profile.userId === req.user.id && hasPermission(userRole, Permission.PROFILE_VIEW)) {
+      return next();
+    }
+
+    throw new HttpError(403, "Forbidden - You don't have permission to view this profile");
+  };
 };
 
 // Check if user can delete specific resource

@@ -1,7 +1,7 @@
 import express, {Router} from "express";
 import allergenController from "../controllers/allergen.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
-import { can } from "../middleware/permission.middleware";
+import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validateRequest";
 import { Permission } from "../types/permissions.dto";
 import { createAllergenSchema, updateAllergenSchema } from "../types/allergen.dto";
@@ -23,6 +23,7 @@ router.get(
     "/profile/:profileId",
     authMiddleware,
     can(Permission.ALLERGEN_VIEW),
+    canAccessProfileByProfileId(),
     allergenController.getProfileAllergens.bind(allergenController),
 )
 
