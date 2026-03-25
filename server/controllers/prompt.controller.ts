@@ -1,0 +1,74 @@
+import { Request, Response, NextFunction } from "express";
+import { PromptService } from "../services/prompt.service";
+import { CreatePromptDto, UpdatePromptDto } from "../types/prompt.dto";
+import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError";
+
+const promptService = new PromptService();
+
+export class PromptController {
+  async createPrompt(
+    req: Request<Record<string, never>, Record<string, never>, CreatePromptDto>,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const prompt = await promptService.createPrompt(req.body);
+      res.status(CREATED_SUCCESS).json(prompt);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAllPrompts(
+    _req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      const prompts = await promptService.getAllPrompts();
+      res.status(SUCCESS_RES).json(prompts);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPromptById(
+    req:Request<{id:number}>,
+    res:Response,
+    next:NextFunction
+  ):Promise<void>{
+    try{
+        const prompt = await promptService.getPromptById(req.params.id);
+        res.status(SUCCESS_RES).json(prompt);
+    }catch(error){
+        next(error)
+    }
+  }
+
+     async updatePrompt(
+        req: Request<{ id: number }, Record<string, never>, UpdatePromptDto>,
+        res: Response,
+        next: NextFunction
+    ): Promise<void> {
+        try {
+            // patch condition fields
+            const condition = await promptService.updatePrompt(req.params.id, req.body);
+            res.status(SUCCESS_RES).json(condition);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    async deletePrompt(
+        req:Request<{id:number}>,
+        res:Response, 
+        next:NextFunction
+    ):Promise<void>{
+        try{
+            const result = await promptService.deletePrompt(req.params.id);
+            res.status(SUCCESS_RES).json(result);
+        }catch(error){
+            next(error)
+        }
+    }
+}
