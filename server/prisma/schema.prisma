@@ -79,7 +79,8 @@ model Preference {
 }
 
 model Prompt {
-  id            String   @id @default(uuid())
+  id            Int @id @default(autoincrement())
+  prompt_text   String
   category      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
