@@ -32,3 +32,4 @@ export const updatePromptSchema = z.object({
 export type PromptResponseDto =z.infer<typeof promptResponseSchema>
 export type CreatePromptDto  = z.infer<typeof createPromptSchema>
 export type UpdatePromptDto = z.infer<typeof updatePromptSchema>
+export type Category = z.infer<typeof categoryEnum>;
