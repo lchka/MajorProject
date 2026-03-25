@@ -7,6 +7,7 @@ import preferenceRoutes from "./routes/preference.routes.js";
 import conditionRoutes from "./routes/condition.routes.js"
 import allegernRoutes from "./routes/allergen.routes.js"
 import profileRoutes from "./routes/profile.routes.js"
+import promptRoutes from "./routes/prompt.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use("/api/preferences", preferenceRoutes);
 app.use("/api/allergens", allegernRoutes )
 app.use("/api/conditions", conditionRoutes)
 app.use("/api/profiles", profileRoutes)
+app.use("/api/prompts", promptRoutes)
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
