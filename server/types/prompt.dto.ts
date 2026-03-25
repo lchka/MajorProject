@@ -13,7 +13,7 @@ export const categoryEnum = z.enum([
 ])
 
 export const promptResponseSchema= z.object({
-    id:z.number("Prompt must be a valid number"),
+      id: z.string().uuid("Prompt id must be a valid UUID"),
     prompt_text:z.string().min(1, "Prompt text is required"),
     category:categoryEnum,
     createdAt: z.date(),

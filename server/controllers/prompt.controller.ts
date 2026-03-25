@@ -5,7 +5,7 @@ import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError";
 
 const promptService = new PromptService();
 
-export class PromptController {
+export class promptController {
   async createPrompt(
     req: Request<Record<string, never>, Record<string, never>, CreatePromptDto>,
     res: Response,
@@ -33,7 +33,7 @@ export class PromptController {
   }
 
   async getPromptById(
-    req:Request<{id:number}>,
+    req: Request<{ id: string }>,
     res:Response,
     next:NextFunction
   ):Promise<void>{
@@ -46,7 +46,7 @@ export class PromptController {
   }
 
      async updatePrompt(
-        req: Request<{ id: number }, Record<string, never>, UpdatePromptDto>,
+        req: Request<{ id: string }, Record<string, never>, UpdatePromptDto>,
         res: Response,
         next: NextFunction
     ): Promise<void> {
@@ -60,7 +60,7 @@ export class PromptController {
     }
 
     async deletePrompt(
-        req:Request<{id:number}>,
+      req:Request<{id:string}>,
         res:Response, 
         next:NextFunction
     ):Promise<void>{
@@ -72,3 +72,6 @@ export class PromptController {
         }
     }
 }
+
+
+export default new promptController;

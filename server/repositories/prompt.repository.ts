@@ -9,7 +9,7 @@ export class promptRepository{
         })
     }
 
-    async findById(id:number){
+    async findById(id:string){
         return await prisma.prompt.findUnique({
             where:{id}
         })
@@ -21,14 +21,14 @@ export class promptRepository{
         })
     }
 
-    async update(data:Prisma.PromptCreateInput,id:number){
+    async update(data:Prisma.PromptCreateInput,id:string){
         return await prisma.prompt.update({
             data,
             where:{id}
         })
     }
 
-    async delete(id:number){
+    async delete(id:string){
         return await prisma.prompt.delete({
             where:{id}
         })

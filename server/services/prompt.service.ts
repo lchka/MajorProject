@@ -18,7 +18,7 @@ export class PromptService {
     return promptResponseSchema.parse(prompt);
   }
 
-  async getPromptById(id: number): Promise<PromptResponseDto> {
+  async getPromptById(id: string): Promise<PromptResponseDto> {
     const prompt = await prisma.prompt.findUnique({
       where: { id },
     });
@@ -38,7 +38,7 @@ export class PromptService {
   }
 
   async updatePrompt(
-    id: number,
+    id: string,
     data: UpdatePromptDto,
   ): Promise<PromptResponseDto> {
     const existingPrompt = await prisma.prompt.findUnique({
@@ -54,7 +54,7 @@ export class PromptService {
     return promptResponseSchema.parse(updatedPrompt);
   }
 
-  async deletePrompt(id: number): Promise<{ message: string }> {
+  async deletePrompt(id: string): Promise<{ message: string }> {
     const existingPrompt = await prisma.prompt.findUnique({
       where: { id },
     });

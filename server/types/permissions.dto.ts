@@ -26,6 +26,10 @@ export const permissionSchema = z.enum([
   "profile:create",
   "profile:update",
   "profile:delete",
+  "prompt:view",
+  "prompt:create",
+  "prompt:update",
+  "prompt:delete",
   "admin:panel-access",
   "role:manage",
   "system:settings",
@@ -61,6 +65,11 @@ export const Permission = {
   PROFILE_CREATE: "profile:create",
   PROFILE_UPDATE: "profile:update",
   PROFILE_DELETE: "profile:delete",
+  //prompt permissions
+  PROMPT_VIEW: "prompt:view",
+  PROMPT_CREATE: "prompt:create",
+  PROMPT_UPDATE: "prompt:update",
+  PROMPT_DELETE: "prompt:delete",
   //admin access
   ADMIN_PANEL_ACCESS: "admin:panel-access",
   ROLE_MANAGE: "role:manage",
@@ -106,6 +115,11 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PROFILE_CREATE,
     Permission.PROFILE_UPDATE,
     Permission.PROFILE_DELETE,
+    //permissions to crud prompt
+    Permission.PROMPT_VIEW,
+    Permission.PROMPT_UPDATE,
+    Permission.PROMPT_DELETE,
+    Permission.PROMPT_CREATE,
     //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
     Permission.ROLE_MANAGE,
