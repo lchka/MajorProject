@@ -119,13 +119,12 @@ export class UserService {
     }
 
     if (Object.keys(profileUpdateData).length > 0) {
-      updateData.profile = {
-        upsert: {
-          update: profileUpdateData,
-          create: {
-            first_name: profileUpdateData.first_name ?? "",
-            last_name: profileUpdateData.last_name ?? "",
+      updateData.profiles = {
+        updateMany: {
+          where: {
+            main_profile: true,
           },
+          data: profileUpdateData,
         },
       };
     }
@@ -181,20 +180,29 @@ export class UserService {
   private mapToUserResponse(user: {
     id: string;
     email: string;
-    profile: {
+    profiles?: {
       id: string;
       first_name: string;
       last_name: string;
-    } | null;
-    role: { id: string; name: string };
+      main_profile?: boolean;
+    }[];
+    role?: { id: string; name: string };
   }): UserResponseDto {
+    const selectedProfile =
+      user.profiles?.find((profile) => profile.main_profile) ??
+      user.profiles?.[0] ??
+      null;
+
     return {
       id: user.id,
       email: user.email,
-      profile_id: user.profile?.id ?? null,
-      first_name: user.profile?.first_name ?? "",
-      last_name: user.profile?.last_name ?? "",
-      role: user.role,
+      profile_id: selectedProfile?.id ?? null,
+      first_name: selectedProfile?.first_name ?? "",
+      last_name: selectedProfile?.last_name ?? "",
+      role: user.role ?? {
+        id: "00000000-0000-0000-0000-000000000000",
+        name: "user",
+      },
     };
   }
 }

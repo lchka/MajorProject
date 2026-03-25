@@ -68,7 +68,7 @@ async function seedUsers(): Promise<void> {
           email: userData.email,
           password: hashedPassword,
           roleId: role.id,
-          profile: {
+          profiles: {
             create: {
               first_name: userData.first_name,
               last_name: userData.last_name,
@@ -77,7 +77,7 @@ async function seedUsers(): Promise<void> {
         },
         include: {
           role: true,
-          profile: true,
+          profiles: true,
         },
       });
 

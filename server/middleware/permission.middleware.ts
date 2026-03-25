@@ -106,14 +106,14 @@ export const canViewProfile = (
   const userRole = req.user.role.name;
 
   // Admin/moderator can view any profile
-  if (hasPermission(userRole, Permission.USER_VIEW_ALL)) {
+  if (hasPermission(userRole, Permission.PROFILE_VIEW_ALL)) {
     return next();
   }
 
-  // User can only view own profile
+  // User can only view their own profile
   if (
     targetUserId === currentUserId &&
-    hasPermission(userRole, Permission.PROFILE_VIEW)
+    hasPermission(userRole, Permission.PROFILE_VIEW_OWN)
   ) {
     return next();
   }
@@ -145,7 +145,7 @@ export const canAccessProfileByProfileId = ({ paramKey = "profileId" }: ProfileP
 
     const userRole = req.user.role.name;
 
-    if (hasPermission(userRole, Permission.USER_VIEW_ALL)) {
+    if (hasPermission(userRole, Permission.PROFILE_VIEW_ALL)) {
       return next();
     }
 
@@ -158,11 +158,87 @@ export const canAccessProfileByProfileId = ({ paramKey = "profileId" }: ProfileP
       throw new HttpError(404, "Profile not found");
     }
 
-    if (profile.userId === req.user.id && hasPermission(userRole, Permission.PROFILE_VIEW)) {
+    if (profile.userId === req.user.id && hasPermission(userRole, Permission.PROFILE_VIEW_OWN)) {
       return next();
     }
 
     throw new HttpError(403, "Forbidden - You don't have permission to view this profile");
+  };
+};
+
+export const canDeleteProfileByProfileId = ({ paramKey = "profileId" }: ProfileParamOptions = {}) => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      throw new HttpError(401, "Unauthorized");
+    }
+
+    const profileIdParam = req.params[paramKey];
+    const profileId = Array.isArray(profileIdParam)
+      ? profileIdParam[0]
+      : profileIdParam;
+
+    if (!profileId) {
+      throw new HttpError(400, "Profile id is required");
+    }
+
+    const userRole = req.user.role.name;
+
+    if (hasPermission(userRole, Permission.PROFILE_VIEW_ALL)) {
+      return next();
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: { userId: true },
+    });
+
+    if (!profile) {
+      throw new HttpError(404, "Profile not found");
+    }
+
+    if (profile.userId === req.user.id && hasPermission(userRole, Permission.PROFILE_DELETE)) {
+      return next();
+    }
+
+    throw new HttpError(403, "Forbidden - You don't have permission to delete this profile");
+  };
+};
+
+export const canUpdateProfileByProfileId = ({ paramKey = "profileId" }: ProfileParamOptions = {}) => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      throw new HttpError(401, "Unauthorized");
+    }
+
+    const profileIdParam = req.params[paramKey];
+    const profileId = Array.isArray(profileIdParam)
+      ? profileIdParam[0]
+      : profileIdParam;
+
+    if (!profileId) {
+      throw new HttpError(400, "Profile id is required");
+    }
+
+    const userRole = req.user.role.name;
+
+    if (hasPermission(userRole, Permission.PROFILE_VIEW_ALL)) {
+      return next();
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { id: profileId },
+      select: { userId: true },
+    });
+
+    if (!profile) {
+      throw new HttpError(404, "Profile not found");
+    }
+
+    if (profile.userId === req.user.id && hasPermission(userRole, Permission.PROFILE_UPDATE)) {
+      return next();
+    }
+
+    throw new HttpError(403, "Forbidden - You don't have permission to update this profile");
   };
 };
 

@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import profileController from "../controllers/profile.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { can, canViewProfile } from "../middleware/permission.middleware.js";
+import { can, canAccessProfileByProfileId, canDeleteProfileByProfileId, canUpdateProfileByProfileId, canViewProfile } from "../middleware/permission.middleware.js";
 import { profileImageUpload } from "../middleware/upload.middleware.js";
 import { normalizeFormDataArrays } from "../middleware/normalizeFormData.middleware.js";
 import { validate } from "../middleware/validateRequest.js";
@@ -25,19 +25,19 @@ router.post(
 router.get(
 	"/",
 	authMiddleware,
-	can(Permission.USER_VIEW_ALL),
+	can(Permission.PROFILE_VIEW_ALL),
 	profileController.getAllProfiles.bind(profileController),
 );
 
-// get own profile
+// get own profiles
 router.get(
 	"/me",
 	authMiddleware,
-	can(Permission.PROFILE_VIEW),
+	can(Permission.PROFILE_VIEW_OWN_ALL),
 	profileController.getMyProfile.bind(profileController),
 );
 
-// get profile by owner user id (own-only unless admin/moderator)
+// get profiles by user id (own profiles or admin/moderator view)
 router.get(
 	"/user/:userId",
 	authMiddleware,
@@ -45,11 +45,11 @@ router.get(
 	profileController.getProfileByUserId.bind(profileController),
 );
 
-// get profile by profile id (admin/moderator)
+// get profile by profile id (own or admin/moderator)
 router.get(
 	"/:id",
 	authMiddleware,
-	can(Permission.USER_VIEW_ALL),
+	canAccessProfileByProfileId({ paramKey: "id" }),
 	profileController.getProfileById.bind(profileController),
 );
 
@@ -58,6 +58,7 @@ router.patch(
 	"/:id",
 	authMiddleware,
 	can(Permission.PROFILE_UPDATE),
+	canUpdateProfileByProfileId({ paramKey: "id" }),
 	profileImageUpload,
 	normalizeFormDataArrays,
 	validate(updateProfileSchema),
@@ -69,6 +70,7 @@ router.delete(
 	"/:id",
 	authMiddleware,
 	can(Permission.PROFILE_DELETE),
+	canDeleteProfileByProfileId({ paramKey: "id" }),
 	profileController.deleteProfile.bind(profileController),
 );
 

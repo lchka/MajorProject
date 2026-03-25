@@ -1,5 +1,5 @@
 import prisma from "../lib/prisma";
-import { HttpError, NOT_FOUND } from "../utils/HttpError";
+import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError";
 
 import { CreateProfileDTO, ProfileResponseDTO, UpdateProfileDTO } from "../types/profile.dto";
 
@@ -17,6 +17,35 @@ const profileInclude = {
 };
 
 export class ProfileService{
+
+private async assertExistingIds(
+    model: "condition" | "allergen" | "preference",
+    ids: string[] | undefined,
+    label: string,
+): Promise<void> {
+    if (!ids?.length) {
+        return;
+    }
+
+    const uniqueIds = [...new Set(ids)];
+
+    const records =
+        model === "condition"
+            ? await prisma.condition.findMany({ where: { id: { in: uniqueIds } }, select: { id: true } })
+            : model === "allergen"
+                ? await prisma.allergen.findMany({ where: { id: { in: uniqueIds } }, select: { id: true } })
+                : await prisma.preference.findMany({ where: { id: { in: uniqueIds } }, select: { id: true } });
+
+    const foundIds = new Set(records.map((record) => record.id));
+    const missingIds = uniqueIds.filter((id) => !foundIds.has(id));
+
+    if (missingIds.length) {
+        throw new HttpError(
+            BAD_REQUEST,
+            `${label} not found: ${missingIds.join(", ")}`,
+        );
+    }
+}
 
 // shape prisma output into our response dto
 private toProfileResponse(profile: {
@@ -54,11 +83,25 @@ async createProfile(userId: string, data: CreateProfileDTO):Promise<ProfileRespo
         throw new HttpError(401, "User is not authenticated");
     }
 
+    const user = await prisma.user.findFirst({
+        where: {
+            id: userId,
+            deletedAt: null,
+        },
+        select: { id: true },
+    });
+
+    if (!user) {
+        throw new HttpError(NOT_FOUND, "Authenticated user no longer exists");
+    }
+
+    await this.assertExistingIds("condition", data.conditionIds, "Condition ids");
+    await this.assertExistingIds("allergen", data.allergenIds, "Allergen ids");
+    await this.assertExistingIds("preference", data.preferenceIds, "Preference ids");
+
     const profile = await prisma.profile.create({
         data:{
-            user: {
-                connect: { id: userId }
-            },
+            userId,
             first_name:data.first_name,
             last_name:data.last_name,
             age:data.age,
@@ -116,17 +159,20 @@ async getProfileById (id:string):Promise<ProfileResponseDTO>{
     });
 }
 
-async getProfileByUserId(userId: string): Promise<ProfileResponseDTO> {
-    const profile = await prisma.profile.findUnique({
+async getProfileByUserId(userId: string): Promise<ProfileResponseDTO[]> {
+    const profiles = await prisma.profile.findMany({
         where: { userId },
-        include: profileInclude
+        include: profileInclude,
+        orderBy: {
+            createdAt: "desc"
+        }
     });
 
-    if (!profile) {
+    if (!profiles.length) {
         throw new HttpError(NOT_FOUND, "Profile not found");
     }
 
-    return this.toProfileResponse(profile as {
+    return profiles.map((profile) => this.toProfileResponse(profile as {
         id: string;
         userId: string;
         first_name: string;
@@ -138,7 +184,7 @@ async getProfileByUserId(userId: string): Promise<ProfileResponseDTO> {
         allergens: { id: string; name: string; description: string }[];
         preferences: { id: string; name: string; description: string }[];
         isComplete?: boolean;
-    });
+    }));
 }
 
 async getAllProfiles(): Promise<ProfileResponseDTO[]> {
@@ -213,6 +259,14 @@ async deleteProfile(id: string): Promise<{ message: string }> {
 
     if (!existingProfile) {
         throw new HttpError(NOT_FOUND, "Profile not found");
+    }
+
+    const profileCount = await prisma.profile.count({
+        where: { userId: existingProfile.userId },
+    });
+
+    if (profileCount <= 1) {
+        throw new HttpError(BAD_REQUEST, "You must keep at least one profile");
     }
 
     await prisma.profile.delete({ where: { id } });

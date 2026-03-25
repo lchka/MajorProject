@@ -27,11 +27,15 @@ export const authMiddleware = async (
       throw new HttpError(401, "Unauthorized");
     }
 
+    const selectedProfile =
+      user.profiles?.find((profile) => profile.main_profile) ??
+      user.profiles?.[0];
+
     req.user = {
       id: user.id,
       email: user.email,
-      first_name: user.profile?.first_name || "",
-      last_name: user.profile?.last_name || "",
+      first_name: selectedProfile?.first_name || "",
+      last_name: selectedProfile?.last_name || "",
       role: {
         id: user.role.id,
         name: user.role.name,

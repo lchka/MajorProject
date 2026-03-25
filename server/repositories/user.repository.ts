@@ -11,7 +11,7 @@ export class UserRepository {
       },
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }
@@ -25,7 +25,7 @@ export class UserRepository {
       },
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }
@@ -43,7 +43,7 @@ export class UserRepository {
         email: data.email,
         password: data.password,
         roleId: data.roleId,
-        profile: {
+        profiles: {
           create: {
             first_name: data.first_name,
             last_name: data.last_name,
@@ -52,7 +52,7 @@ export class UserRepository {
       },
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }
@@ -64,7 +64,7 @@ export class UserRepository {
       data,
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }
@@ -84,7 +84,7 @@ export class UserRepository {
       },
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }
@@ -96,7 +96,7 @@ export class UserRepository {
       data: { deletedAt: new Date() },
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }

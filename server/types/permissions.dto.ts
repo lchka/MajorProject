@@ -20,7 +20,9 @@ export const permissionSchema = z.enum([
   "condition:create",
   "condition:update",
   "condition:delete",
-  "profile:view",
+  "profile:view-all",
+  "profile:view-own",
+  "profile:view-own-all",
   "profile:create",
   "profile:update",
   "profile:delete",
@@ -48,16 +50,17 @@ export const Permission = {
   ALLERGEN_UPDATE: "allergen:update",
   ALLERGEN_DELETE: "allergen:delete",
   //condition permissions
-  CONDITION_VIEW:"condition:view",
-  CONDITION_CREATE:"condition:create",
-  CONDITION_UPDATE:"condition:update",
-  CONDITION_DELETE:"condition:delete",
- //profile permissions
-  PROFILE_VIEW:"profile:view",
-  PROFILE_CREATE:"profile:create",
-  PROFILE_UPDATE:"profile:update",
-  PROFILE_DELETE:"profile:delete",
-
+  CONDITION_VIEW: "condition:view",
+  CONDITION_CREATE: "condition:create",
+  CONDITION_UPDATE: "condition:update",
+  CONDITION_DELETE: "condition:delete",
+  //profile permissions
+  PROFILE_VIEW_ALL: "profile:view-all",
+  PROFILE_VIEW_OWN: "profile:view-own",
+  PROFILE_VIEW_OWN_ALL: "profile:view-own-all",
+  PROFILE_CREATE: "profile:create",
+  PROFILE_UPDATE: "profile:update",
+  PROFILE_DELETE: "profile:delete",
   //admin access
   ADMIN_PANEL_ACCESS: "admin:panel-access",
   ROLE_MANAGE: "role:manage",
@@ -98,9 +101,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.CONDITION_VIEW,
     Permission.CONDITION_DELETE,
     //permissions to crud profile
+    Permission.PROFILE_VIEW_ALL,
+    Permission.PROFILE_VIEW_OWN_ALL,
     Permission.PROFILE_CREATE,
     Permission.PROFILE_UPDATE,
-    Permission.PROFILE_VIEW,
     Permission.PROFILE_DELETE,
     //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
@@ -121,6 +125,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     //Read, Update only for Condition
     Permission.CONDITION_UPDATE,
     Permission.CONDITION_VIEW,
+    //Read, Update only for Profile
+    Permission.PROFILE_VIEW_ALL,
+    Permission.PROFILE_VIEW_OWN_ALL,
+    Permission.PROFILE_UPDATE,
   ],
   user: [
     Permission.USER_VIEW_OWN,
@@ -132,10 +140,11 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.ALLERGEN_VIEW,
     //Read only for Condition
     Permission.CONDITION_VIEW,
-    //permissions to crud profile
+    //permissions to crud own profile
+    Permission.PROFILE_VIEW_OWN,
+    Permission.PROFILE_VIEW_OWN_ALL,
     Permission.PROFILE_CREATE,
     Permission.PROFILE_UPDATE,
-    Permission.PROFILE_VIEW,
     Permission.PROFILE_DELETE,
   ],
 };

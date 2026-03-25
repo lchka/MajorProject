@@ -24,7 +24,7 @@ model User {
   password  String
   roleId    String
   role      Role      @relation(fields: [roleId], references: [id])
-  profile   Profile?
+  profiles  Profile[]
   isDeleted Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -36,7 +36,7 @@ model User {
 
 model Profile {
   id            String   @id @default(uuid())
-  userId        String   @unique
+  userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   first_name    String
   last_name     String
