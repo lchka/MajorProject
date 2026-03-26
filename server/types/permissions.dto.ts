@@ -143,6 +143,8 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PROFILE_VIEW_ALL,
     Permission.PROFILE_VIEW_OWN_ALL,
     Permission.PROFILE_UPDATE,
+    //permissions to crud prompt
+    Permission.PROMPT_VIEW,
   ],
   user: [
     Permission.USER_VIEW_OWN,
