@@ -49,6 +49,7 @@ model Profile {
   conditions    Condition[]
   allergens     Allergen[]
   preferences   Preference[]
+  evaluations   EvaluationContext[]
   @@index([userId])
 }
 
@@ -85,6 +86,7 @@ model Prompt {
   category      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  evaluations   EvaluationContext[]
 }
 
 model Product {
@@ -96,4 +98,22 @@ model Product {
   category      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  evaluations   EvaluationContext[]
+}
+
+model EvaluationContext {
+  id            String   @id @default(uuid())
+  profileId     String
+  productId     String
+  promptId      String?
+  resultJson    Json
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  prompt        Prompt?  @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([productId])
+  @@index([promptId])
 }
