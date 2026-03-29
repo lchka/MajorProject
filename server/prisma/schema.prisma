@@ -46,9 +46,9 @@ model Profile {
   isComplete    Boolean   @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  conditions Condition[]
-  allergens Allergen[]
-  preferences Preference[]
+  conditions    Condition[]
+  allergens     Allergen[]
+  preferences   Preference[]
   @@index([userId])
 }
 
@@ -69,6 +69,7 @@ model Allergen {
   updatedAt     DateTime @updatedAt
   profiles      Profile[]
 }
+
 model Preference {
   id            String   @id @default(uuid())
   name          String
@@ -81,6 +82,17 @@ model Preference {
 model Prompt {
   id            String   @id @default(uuid())
   prompt_text   String
+  category      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  product_image String
+  brand         String
+  ingredients   Json
   category      String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
