@@ -30,6 +30,10 @@ export const permissionSchema = z.enum([
   "prompt:create",
   "prompt:update",
   "prompt:delete",
+  "product:view",
+  "product:create",
+  "product:update",
+  "product:delete",
   "admin:panel-access",
   "role:manage",
   "system:settings",
@@ -70,6 +74,11 @@ export const Permission = {
   PROMPT_CREATE: "prompt:create",
   PROMPT_UPDATE: "prompt:update",
   PROMPT_DELETE: "prompt:delete",
+  //product permissions
+  PRODUCT_VIEW: "product:view",
+  PRODUCT_CREATE: "product:create",
+  PRODUCT_UPDATE: "product:update",
+  PRODUCT_DELETE: "product:delete",
   //admin access
   ADMIN_PANEL_ACCESS: "admin:panel-access",
   ROLE_MANAGE: "role:manage",
@@ -120,6 +129,11 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PROMPT_UPDATE,
     Permission.PROMPT_DELETE,
     Permission.PROMPT_CREATE,
+    //permissions to crud product
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
+    Permission.PRODUCT_UPDATE,
+    Permission.PRODUCT_DELETE,
     //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
     Permission.ROLE_MANAGE,
@@ -145,6 +159,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PROFILE_UPDATE,
     //permissions to crud prompt
     Permission.PROMPT_VIEW,
+    //permissions to read/create/update product
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
+    Permission.PRODUCT_UPDATE,
   ],
   user: [
     Permission.USER_VIEW_OWN,
@@ -162,6 +180,9 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PROFILE_CREATE,
     Permission.PROFILE_UPDATE,
     Permission.PROFILE_DELETE,
+    //permissions to read/update product
+    Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_UPDATE,
   ],
 };
 

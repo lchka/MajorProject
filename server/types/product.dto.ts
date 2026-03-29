@@ -37,5 +37,5 @@ export const updateProductSchema  =z.object({
 })
 
 export type ProductResponseDto = z.infer<typeof productResponseSchema>
-export type CreateAllergenDto = z.infer <typeof createProductSchema>
-export type UpdateAllergenDto  = z.infer<typeof updateProductSchema>
+export type CreateProductDto = z.infer<typeof createProductSchema>
+export type UpdateProductDto = z.infer<typeof updateProductSchema>
