@@ -34,6 +34,10 @@ export const permissionSchema = z.enum([
   "product:create",
   "product:update",
   "product:delete",
+  "evaluation-context:view",
+  "evaluation-context:create",
+  "evaluation-context:update",
+  "evaluation-context:delete",
   "admin:panel-access",
   "role:manage",
   "system:settings",
@@ -79,6 +83,11 @@ export const Permission = {
   PRODUCT_CREATE: "product:create",
   PRODUCT_UPDATE: "product:update",
   PRODUCT_DELETE: "product:delete",
+  //evaluation context permissions
+  EVALUATION_CONTEXT_VIEW: "evaluation-context:view",
+  EVALUATION_CONTEXT_CREATE: "evaluation-context:create",
+  EVALUATION_CONTEXT_UPDATE: "evaluation-context:update",
+  EVALUATION_CONTEXT_DELETE: "evaluation-context:delete",
   //admin access
   ADMIN_PANEL_ACCESS: "admin:panel-access",
   ROLE_MANAGE: "role:manage",
@@ -134,6 +143,11 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PRODUCT_CREATE,
     Permission.PRODUCT_UPDATE,
     Permission.PRODUCT_DELETE,
+    //permissions to crud evaluation context
+    Permission.EVALUATION_CONTEXT_VIEW,
+    Permission.EVALUATION_CONTEXT_CREATE,
+    Permission.EVALUATION_CONTEXT_UPDATE,
+    Permission.EVALUATION_CONTEXT_DELETE,
     //Admin stuff
     Permission.ADMIN_PANEL_ACCESS,
     Permission.ROLE_MANAGE,
@@ -163,6 +177,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PRODUCT_VIEW,
     Permission.PRODUCT_CREATE,
     Permission.PRODUCT_UPDATE,
+    //permissions to read/create/update evaluation context
+    Permission.EVALUATION_CONTEXT_VIEW,
+    Permission.EVALUATION_CONTEXT_CREATE,
+    Permission.EVALUATION_CONTEXT_UPDATE,
   ],
   user: [
     Permission.USER_VIEW_OWN,
@@ -184,6 +202,10 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PRODUCT_VIEW,
     Permission.PRODUCT_CREATE,
     Permission.PRODUCT_UPDATE,
+    //permissions to read/create/update evaluation context
+    Permission.EVALUATION_CONTEXT_VIEW,
+    Permission.EVALUATION_CONTEXT_CREATE,
+    Permission.EVALUATION_CONTEXT_UPDATE,
   ],
 };
 

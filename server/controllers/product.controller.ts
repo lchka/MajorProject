@@ -39,7 +39,12 @@ export class ProductController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const product = await productService.createProduct(req.body);
+			const userId = req.userId ?? req.user?.id;
+			if (!userId) {
+				throw new HttpError(UNAUTHORISED, "User is not authenticated");
+			}
+
+			const product = await productService.createProduct(userId, req.body);
 			res.status(CREATED_SUCCESS).json(product);
 		} catch (error) {
 			next(error);
@@ -69,7 +74,7 @@ export class ProductController {
 			}
 			const parsed = await geminiService.extractProductFromImage(req.file);
 
-			const product = await productService.createProductFromScan({
+			const product = await productService.createProductFromScan(userId, {
 				name: parsed.name,
 				brand: parsed.brand,
 				ingredients: parsed.ingredients,
@@ -84,12 +89,20 @@ export class ProductController {
 	}
 
 	async getAllProducts(
-		_req: Request,
+		req: Request,
 		res: Response,
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const products = await productService.getAllProducts();
+			const userId = req.userId ?? req.user?.id;
+			if (!userId || !req.user) {
+				throw new HttpError(UNAUTHORISED, "User is not authenticated");
+			}
+
+			const products =
+				req.user.role.name === "user"
+					? await productService.getAllProductsByUserId(userId)
+					: await productService.getAllProducts();
 			res.status(SUCCESS_RES).json(products);
 		} catch (error) {
 			next(error);
@@ -102,6 +115,15 @@ export class ProductController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
+			const userId = req.userId ?? req.user?.id;
+			if (!userId || !req.user) {
+				throw new HttpError(UNAUTHORISED, "User is not authenticated");
+			}
+
+			if (req.user.role.name === "user") {
+				await productService.assertUserOwnsProduct(req.params.id, userId);
+			}
+
 			const product = await productService.getProductById(req.params.id);
 			res.status(SUCCESS_RES).json(product);
 		} catch (error) {
@@ -115,6 +137,15 @@ export class ProductController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
+			const userId = req.userId ?? req.user?.id;
+			if (!userId || !req.user) {
+				throw new HttpError(UNAUTHORISED, "User is not authenticated");
+			}
+
+			if (req.user.role.name === "user") {
+				await productService.assertUserOwnsProduct(req.params.id, userId);
+			}
+
 			const product = await productService.updateProduct(req.params.id, req.body);
 			res.status(SUCCESS_RES).json(product);
 		} catch (error) {

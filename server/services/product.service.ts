@@ -62,9 +62,44 @@ export class ProductService {
 		}
 	}
 
-	async createProduct(data: CreateProductDto): Promise<ProductResponseDto> {
-		const product = await prisma.product.create({
+	private get productRuntime() {
+		return (prisma as unknown as {
+			product: {
+				create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
+				findMany: (args?: Record<string, unknown>) => Promise<unknown[]>;
+				findUnique: (args: { where: { id: string }; select?: Record<string, boolean> }) => Promise<unknown | null>;
+			};
+		}).product;
+	}
+
+	async getAllProductsByUserId(userId: string): Promise<ProductResponseDto[]> {
+		const products = await this.productRuntime.findMany({
+			where: { userId },
+			orderBy: { createdAt: "desc" },
+		});
+
+		return productResponseSchema.array().parse(products);
+	}
+
+	async assertUserOwnsProduct(id: string, userId: string): Promise<void> {
+		const product = (await this.productRuntime.findUnique({
+			where: { id },
+			select: { userId: true },
+		})) as { userId?: string } | null;
+
+		if (!product) {
+			throw new HttpError(NOT_FOUND, `Product with id '${id}' not found`);
+		}
+
+		if (product.userId !== userId) {
+			throw new HttpError(403, "Forbidden - You can only access your own products");
+		}
+	}
+
+	async createProduct(userId: string, data: CreateProductDto): Promise<ProductResponseDto> {
+		const product = await this.productRuntime.create({
 			data: {
+				userId,
 				name: data.name,
 				product_image: data.product_image,
 				brand: data.brand,
@@ -76,7 +111,7 @@ export class ProductService {
 		return productResponseSchema.parse(product);
 	}
 
-	async createProductFromScan(input: ProductScanInput): Promise<ProductResponseDto> {
+	async createProductFromScan(userId: string, input: ProductScanInput): Promise<ProductResponseDto> {
 		const candidate: CreateProductDto = {
 			name: typeof input.name === "string" ? input.name.trim() : "",
 			product_image: input.product_image,
@@ -87,7 +122,7 @@ export class ProductService {
 
 		try {
 			const validated = createProductSchema.parse(candidate);
-			return this.createProduct(validated);
+			return this.createProduct(userId, validated);
 		} catch (error) {
 			if (error instanceof ZodError) {
 				throw new HttpError(BAD_REQUEST, this.zodErrorToMessage(error));

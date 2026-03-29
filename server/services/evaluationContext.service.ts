@@ -8,6 +8,7 @@ import {
 	evaluationContextResponseSchema,
 	UpdateEvaluationContextDto,
 } from "../types/evaluationContext.dto";
+import geminiEvaluationService from "./geminiEvaluation.service";
 import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError";
 
 type NamedEntity = { name: string };
@@ -22,7 +23,14 @@ type ProfileWithRelations = {
 type ProductWithIngredients = {
 	id: string;
 	name: string;
+	brand?: string;
+	category?: string;
 	ingredients: unknown;
+};
+
+type PromptRecord = {
+	id: string;
+	prompt_text: string;
 };
 
 type PrismaRuntime = {
@@ -78,6 +86,54 @@ export class EvaluationContextService {
 		}
 
 		return [...new Set(matches)];
+	}
+
+	private buildRuleBasedResult(
+		ingredientTerms: string[],
+		profile: ProfileWithRelations,
+	): EvaluationResultJsonDto {
+		const matchedAllergens = this.findMatches(ingredientTerms, profile.allergens);
+		const matchedConditions = this.findMatches(ingredientTerms, profile.conditions);
+		const matchedPreferences = this.findMatches(ingredientTerms, profile.preferences);
+
+		let status: "safe" | "caution" | "avoid" = "safe";
+		let score = 90;
+		const reasons: string[] = [];
+
+		if (matchedAllergens.length > 0) {
+			status = "avoid";
+			score = 10;
+			reasons.push(`Matched allergens: ${matchedAllergens.join(", ")}`);
+		}
+
+		if (status !== "avoid" && matchedConditions.length > 0) {
+			status = "caution";
+			score = 45;
+			reasons.push(`Potential condition triggers: ${matchedConditions.join(", ")}`);
+		}
+
+		if (matchedPreferences.length > 0) {
+			reasons.push(`Preference overlaps found: ${matchedPreferences.join(", ")}`);
+		}
+
+		if (!reasons.length) {
+			reasons.push("No direct ingredient conflicts found based on your profile data");
+		}
+
+		return {
+			status,
+			score,
+			summary:
+				status === "avoid"
+					? "This product is likely not suitable for this profile"
+					: status === "caution"
+						? "Use caution for this profile"
+						: "This product appears suitable for this profile",
+			reasons,
+			matched_allergens: matchedAllergens,
+			matched_conditions: matchedConditions,
+			matched_preferences: matchedPreferences,
+		};
 	}
 
 	private async assertProfileExists(id: string): Promise<void> {
@@ -241,15 +297,25 @@ export class EvaluationContextService {
 
 		const product = (await prismaRuntime.product.findUnique({
 			where: { id: data.productId },
-			select: { id: true, name: true, ingredients: true },
+			select: { id: true, name: true, brand: true, category: true, ingredients: true },
 		})) as ProductWithIngredients | null;
 
 		if (!product) {
 			throw new HttpError(NOT_FOUND, `Product with id '${data.productId}' not found`);
 		}
 
+		let promptText: string | undefined;
 		if (data.promptId) {
-			await this.assertPromptExists(data.promptId);
+			const prompt = (await prismaRuntime.prompt.findUnique({
+				where: { id: data.promptId },
+				select: { id: true, prompt_text: true },
+			})) as PromptRecord | null;
+
+			if (!prompt) {
+				throw new HttpError(NOT_FOUND, `Prompt with id '${data.promptId}' not found`);
+			}
+
+			promptText = prompt.prompt_text;
 		}
 
 		const ingredientTerms = this.normalizeIngredients(product.ingredients);
@@ -257,48 +323,21 @@ export class EvaluationContextService {
 			throw new HttpError(BAD_REQUEST, "Product has no valid ingredients to evaluate");
 		}
 
-		const matchedAllergens = this.findMatches(ingredientTerms, profile.allergens);
-		const matchedConditions = this.findMatches(ingredientTerms, profile.conditions);
-		const matchedPreferences = this.findMatches(ingredientTerms, profile.preferences);
-
-		let status: "safe" | "caution" | "avoid" = "safe";
-		let score = 90;
-		const reasons: string[] = [];
-
-		if (matchedAllergens.length > 0) {
-			status = "avoid";
-			score = 10;
-			reasons.push(`Matched allergens: ${matchedAllergens.join(", ")}`);
+		let resultJson: EvaluationResultJsonDto;
+		try {
+			resultJson = await geminiEvaluationService.evaluate({
+				productName: product.name,
+				productBrand: product.brand,
+				productCategory: product.category,
+				ingredients: ingredientTerms,
+				allergens: profile.allergens.map((item) => item.name),
+				conditions: profile.conditions.map((item) => item.name),
+				preferences: profile.preferences.map((item) => item.name),
+				promptText,
+			});
+		} catch {
+			resultJson = this.buildRuleBasedResult(ingredientTerms, profile);
 		}
-
-		if (status !== "avoid" && matchedConditions.length > 0) {
-			status = "caution";
-			score = 45;
-			reasons.push(`Potential condition triggers: ${matchedConditions.join(", ")}`);
-		}
-
-		if (matchedPreferences.length > 0) {
-			reasons.push(`Preference overlaps found: ${matchedPreferences.join(", ")}`);
-		}
-
-		if (!reasons.length) {
-			reasons.push("No direct ingredient conflicts found based on your profile data");
-		}
-
-		const resultJson: EvaluationResultJsonDto = {
-			status,
-			score,
-			summary:
-				status === "avoid"
-					? "This product is likely not suitable for this profile"
-					: status === "caution"
-						? "Use caution for this profile"
-						: "This product appears suitable for this profile",
-			reasons,
-			matched_allergens: matchedAllergens,
-			matched_conditions: matchedConditions,
-			matched_preferences: matchedPreferences,
-		};
 
 		return this.createEvaluationContext({
 			profileId: profile.id,
