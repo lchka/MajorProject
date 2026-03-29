@@ -7,6 +7,28 @@ const toStringArray = (value: unknown): string[] => {
         return [];
     }
 
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+
+        // Support JSON-array payloads commonly sent as form-data strings.
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                return toStringArray(parsed);
+            } catch {
+                // Fall through to regular string handling.
+            }
+        }
+
+        // Support comma-separated ids in a single form-data field.
+        if (trimmed.includes(",")) {
+            return trimmed
+                .split(",")
+                .map((item) => item.trim())
+                .filter((item) => item.length > 0);
+        }
+    }
+
     const rawValues = Array.isArray(value) ? value : [value];
 
     return rawValues

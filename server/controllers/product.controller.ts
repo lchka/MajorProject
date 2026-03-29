@@ -159,6 +159,15 @@ export class ProductController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
+			const userId = req.userId ?? req.user?.id;
+			if (!userId || !req.user) {
+				throw new HttpError(UNAUTHORISED, "User is not authenticated");
+			}
+
+			if (req.user.role.name === "user") {
+				await productService.assertUserOwnsProduct(req.params.id, userId);
+			}
+
 			const result = await productService.deleteProduct(req.params.id);
 			res.status(SUCCESS_RES).json(result);
 		} catch (error) {

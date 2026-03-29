@@ -217,6 +217,8 @@ async updateProfile(id: string, data: UpdateProfileDTO): Promise<ProfileResponse
         throw new HttpError(NOT_FOUND, "Profile not found");
     }
 
+    const nextIsComplete = existingProfile.isComplete ? data.isComplete : true;
+
     const updatedProfile = await prisma.profile.update({
         where: { id },
         data: {
@@ -225,6 +227,7 @@ async updateProfile(id: string, data: UpdateProfileDTO): Promise<ProfileResponse
             age: data.age,
             profile_image: data.profile_image,
             main_profile: data.main_profile,
+            isComplete: nextIsComplete,
             // if ids are sent, replace existing links
             conditions: data.conditionIds
                 ? { set: data.conditionIds.map((conditionId) => ({ id: conditionId })) }
