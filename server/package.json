@@ -8,12 +8,13 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec tsx index.ts",
     "start": "tsx index.ts",
-    "seed": "tsx utils/seeders/roleseeder.ts && tsx utils/seeders/userseeder.ts && tsx utils/seeders/preferenceseeder.ts && tsx utils/seeders/conditionseeder.ts && tsx utils/seeders/allergenseeder.ts",
+    "seed": "tsx utils/seeders/roleseeder.ts && tsx utils/seeders/userseeder.ts && tsx utils/seeders/preferenceseeder.ts && tsx utils/seeders/conditionseeder.ts && tsx utils/seeders/allergenseeder.ts && tsx utils/seeders/promptSeeder.ts",
     "seed:roles": "tsx utils/seeders/roleseeder.ts",
     "seed:users": "tsx utils/seeders/userseeder.ts",
     "seed:preferences": "tsx utils/seeders/preferenceseeder.ts",
     "seed:conditions": "tsx utils/seeders/conditionseeder.ts",
-    "seed:allergens": "tsx utils/seeders/allergenseeder.ts"
+    "seed:allergens": "tsx utils/seeders/allergenseeder.ts",
+    "seed:prompts": "tsx utils/seeders/promptSeeder.ts"
   },
   "keywords": [],
   "author": "",
