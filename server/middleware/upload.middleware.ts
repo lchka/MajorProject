@@ -31,6 +31,15 @@ const profileImageUploader = multer({
     { name: "profileImage", maxCount: 1 },
 ]);
 
+const productImageUploader = multer({
+    storage,
+    limits: { fileSize: MAX_FILE_SIZE_BYTES },
+    fileFilter: imageFileFilter,
+}).fields([
+    { name: "product_image", maxCount: 1 },
+    { name: "productImage", maxCount: 1 },
+]);
+
 export const profileImageUpload = (
     req: Express.Request,
     res: Express.Response,
@@ -68,6 +77,47 @@ export const profileImageUpload = (
             | undefined;
 
         req.file = files?.profile_image?.[0] ?? files?.profileImage?.[0];
+        next();
+    });
+};
+
+export const productImageUpload = (
+    req: Express.Request,
+    res: Express.Response,
+    next: Express.NextFunction,
+): void => {
+    productImageUploader(req, res, (error) => {
+        if (error) {
+            if (error instanceof multer.MulterError) {
+                if (error.code === "LIMIT_FILE_SIZE") {
+                    next(new HttpError(BAD_REQUEST, "Image must be smaller than 5MB"));
+                    return;
+                }
+
+                next(new HttpError(BAD_REQUEST, error.message));
+                return;
+            }
+
+            const message = error instanceof Error ? error.message : "Invalid multipart form data";
+            if (message.toLowerCase().includes("field name missing")) {
+                next(
+                    new HttpError(
+                        BAD_REQUEST,
+                        "Invalid form-data: one field has an empty key name. Remove any checked empty row in Postman and retry.",
+                    ),
+                );
+                return;
+            }
+
+            next(new HttpError(BAD_REQUEST, message));
+            return;
+        }
+
+        const files = req.files as
+            | Record<string, Express.Multer.File[]>
+            | undefined;
+
+        req.file = files?.product_image?.[0] ?? files?.productImage?.[0];
         next();
     });
 };

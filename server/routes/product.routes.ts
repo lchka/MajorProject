@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import productController from "../controllers/product.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { productImageUpload } from "../middleware/upload.middleware";
 import { can } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validateRequest";
 import { createProductSchema, updateProductSchema } from "../types/product.dto";
@@ -22,6 +23,7 @@ router.post(
 	"/scan",
 	authMiddleware,
 	can(Permission.PRODUCT_CREATE),
+	productImageUpload,
 	productController.createProductFromScan.bind(productController),
 );
 
@@ -32,6 +34,13 @@ router.get(
 	can(Permission.PRODUCT_VIEW),
 	productController.getAllProducts.bind(productController),
 );
+
+// guide callers to the correct scan method
+router.get("/scan", authMiddleware, (_req, res) => {
+	res.status(405).json({
+		message: "Use POST /api/products/scan with multipart form-data and product_image",
+	});
+});
 
 // get single product
 router.get(

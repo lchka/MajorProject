@@ -182,6 +182,7 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PROFILE_DELETE,
     //permissions to read/update product
     Permission.PRODUCT_VIEW,
+    Permission.PRODUCT_CREATE,
     Permission.PRODUCT_UPDATE,
   ],
 };
