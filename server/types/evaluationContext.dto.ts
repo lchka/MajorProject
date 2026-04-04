@@ -25,6 +25,7 @@ export const evaluationResultJsonSchema = z
 		matched_allergens: z.array(z.string().min(1)).optional(),
 		matched_conditions: z.array(z.string().min(1)).optional(),
 		matched_preferences: z.array(z.string().min(1)).optional(),
+		citations: z.array(z.string().min(1)).optional(),
 	})
 	.passthrough();
 

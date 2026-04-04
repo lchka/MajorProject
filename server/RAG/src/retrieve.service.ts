@@ -5,6 +5,8 @@ export type RagChunkMatch = {
 	id: string;
 	score: number;
 	source: string;
+	title: string;
+	author: string;
 	chunkIndex: number;
 	totalChunks: number;
 	text: string;
@@ -15,6 +17,8 @@ type PineconeQueryMatch = {
 	score?: number;
 	metadata?: {
 		source?: string;
+		title?: string;
+		author?: string;
 		chunkIndex?: number;
 		totalChunks?: number;
 		text?: string;
@@ -96,6 +100,8 @@ export const retrieveRelevantChunks = async (params: {
 			id: match.id as string,
 			score: typeof match.score === "number" ? match.score : 0,
 			source: match.metadata?.source ?? "unknown",
+			title: match.metadata?.title ?? "Untitled source",
+			author: match.metadata?.author ?? "Unknown author",
 			chunkIndex: typeof match.metadata?.chunkIndex === "number" ? match.metadata.chunkIndex : -1,
 			totalChunks: typeof match.metadata?.totalChunks === "number" ? match.metadata.totalChunks : -1,
 			text: match.metadata?.text as string,
@@ -110,7 +116,7 @@ export const formatChunksForPrompt = (matches: RagChunkMatch[]): string => {
 	return matches
 		.map(
 			(match, index) =>
-				`[${index + 1}] source=${match.source}; chunk=${match.chunkIndex}/${match.totalChunks}; score=${match.score.toFixed(4)}\n${match.text}`,
+				`[${index + 1}] source=${match.source}; title=${match.title}; author=${match.author}; chunk=${match.chunkIndex}/${match.totalChunks}; score=${match.score.toFixed(4)}\n${match.text}`,
 		)
 		.join("\n\n");
 };

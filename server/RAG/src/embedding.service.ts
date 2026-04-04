@@ -13,7 +13,8 @@ type GeminiEmbedResponse = {
 const DEFAULT_EMBEDDING_MODEL = "gemini-embedding-001";
 const DEFAULT_OUTPUT_DIMENSION = 768;
 const DEFAULT_MIN_INTERVAL_MS = 700;
-const MAX_RATE_LIMIT_RETRIES = 5;
+const DEFAULT_MAX_RATE_LIMIT_RETRIES = 30;
+const DEFAULT_RATE_LIMIT_WAIT_MS = 60_000;
 
 const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => {
@@ -55,6 +56,8 @@ export class RagEmbeddingService {
 	private readonly modelCandidates: string[];
 	private readonly outputDimension: number;
 	private readonly minIntervalMs: number;
+	private readonly maxRateLimitRetries: number;
+	private readonly rateLimitWaitMs: number;
 
 	constructor(options?: { model?: string; outputDimension?: number }) {
 		const apiKey = process.env.GEMINI_API_KEY;
@@ -68,7 +71,8 @@ export class RagEmbeddingService {
 		this.apiKey = apiKey;
 		const preferredModel =
 			options?.model ?? process.env.GEMINI_EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODEL;
-		this.modelCandidates = [...new Set([preferredModel, "gemini-embedding-001", "text-embedding-004", "embedding-001"])]
+		// Keep candidate list focused on models that support embedContent in current Gemini API.
+		this.modelCandidates = [...new Set([preferredModel, "gemini-embedding-001"])]
 			.map((modelName) => modelName.trim())
 			.filter((modelName) => modelName.length > 0);
 
@@ -82,6 +86,12 @@ export class RagEmbeddingService {
 		this.minIntervalMs = Number(
 			process.env.GEMINI_EMBEDDING_MIN_INTERVAL_MS ?? DEFAULT_MIN_INTERVAL_MS,
 		);
+		this.maxRateLimitRetries = Number(
+			process.env.GEMINI_EMBEDDING_MAX_RETRIES ?? DEFAULT_MAX_RATE_LIMIT_RETRIES,
+		);
+		this.rateLimitWaitMs = Number(
+			process.env.GEMINI_EMBEDDING_RATE_LIMIT_WAIT_MS ?? DEFAULT_RATE_LIMIT_WAIT_MS,
+		);
 
 		if (!Number.isInteger(this.outputDimension) || this.outputDimension <= 0) {
 			throw new HttpError(BAD_REQUEST, "GEMINI_EMBEDDING_DIMENSION must be a positive integer.");
@@ -91,6 +101,20 @@ export class RagEmbeddingService {
 			throw new HttpError(
 				BAD_REQUEST,
 				"GEMINI_EMBEDDING_MIN_INTERVAL_MS must be a non-negative integer.",
+			);
+		}
+
+		if (!Number.isInteger(this.maxRateLimitRetries) || this.maxRateLimitRetries <= 0) {
+			throw new HttpError(
+				BAD_REQUEST,
+				"GEMINI_EMBEDDING_MAX_RETRIES must be a positive integer.",
+			);
+		}
+
+		if (!Number.isInteger(this.rateLimitWaitMs) || this.rateLimitWaitMs <= 0) {
+			throw new HttpError(
+				BAD_REQUEST,
+				"GEMINI_EMBEDDING_RATE_LIMIT_WAIT_MS must be a positive integer.",
 			);
 		}
 	}
@@ -109,9 +133,10 @@ export class RagEmbeddingService {
 		};
 
 		let lastErrorMessage = "Gemini embedding request failed.";
+		let sawCompatibilityError = false;
 
 		for (const modelName of this.modelCandidates) {
-			for (let attempt = 1; attempt <= MAX_RATE_LIMIT_RETRIES; attempt += 1) {
+			for (let attempt = 1; attempt <= this.maxRateLimitRetries; attempt += 1) {
 				const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:embedContent?key=${this.apiKey}`;
 				const response = await fetch(url, {
 					method: "POST",
@@ -137,18 +162,25 @@ export class RagEmbeddingService {
 				lastErrorMessage = `Gemini embedding request failed for model '${modelName}' (${response.status}): ${errorText || response.statusText}`;
 
 				if (response.status === 429) {
-					const retryMs = parseRetryDelayMs(errorText) ?? 45_000;
+					const retryMs = parseRetryDelayMs(errorText) ?? this.rateLimitWaitMs;
 					await sleep(retryMs);
+					lastErrorMessage = `Gemini embedding request hit rate limit for model '${modelName}'. Retried ${this.maxRateLimitRetries} times.`;
 					continue;
 				}
 
 				// Try the next candidate when model name or endpoint support differs.
 				if (response.status === 404 || response.status === 400) {
+					sawCompatibilityError = true;
 					break;
 				}
 
 				throw new HttpError(INTERNAL_SERVER_ERROR, lastErrorMessage);
 			}
+		}
+
+		if (sawCompatibilityError && lastErrorMessage === "Gemini embedding request failed.") {
+			lastErrorMessage =
+				"No configured Gemini embedding model supports embedContent. Set GEMINI_EMBEDDING_MODEL=gemini-embedding-001.";
 		}
 
 		throw new HttpError(INTERNAL_SERVER_ERROR, lastErrorMessage);

@@ -4,6 +4,11 @@ import {
 	type EvaluationResultJsonDto,
 } from "../types/evaluationContext.dto";
 import { HttpError, INTERNAL_SERVER_ERROR } from "../utils/HttpError";
+import {
+	formatChunksForPrompt,
+	retrieveRelevantChunks,
+	type RagChunkMatch,
+} from "../RAG/src/retrieve.service";
 
 export type GeminiEvaluationInput = {
 	productName: string;
@@ -27,15 +32,23 @@ Return ONLY valid JSON with this exact shape:
   "reasons": ["string"],
   "matched_allergens": ["string"],
   "matched_conditions": ["string"],
-  "matched_preferences": ["string"]
+	"matched_preferences": ["string"],
+	"citations": ["as mentioned 'title' by 'author'"]
 }
 
 Rules:
 - status must be one of: safe, caution, avoid.
 - score must be a number from 0 to 100.
 - If any allergen match is present, status should usually be avoid.
+- Include citations only when evidence from the provided research context supports your reasoning.
 - Do not include markdown or extra keys.
 `;
+
+const toCitationText = (match: Pick<RagChunkMatch, "title" | "author">): string => {
+	const title = match.title?.trim() || "Untitled source";
+	const author = match.author?.trim() || "Unknown author";
+	return `as mentioned '${title}' by '${author}'`;
+};
 
 export class GeminiEvaluationService {
 	private model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
@@ -80,6 +93,7 @@ export class GeminiEvaluationService {
 			matched_allergens: parsed.matched_allergens,
 			matched_conditions: parsed.matched_conditions,
 			matched_preferences: parsed.matched_preferences,
+			citations: parsed.citations,
 		};
 
 		const validated = evaluationResultJsonSchema.parse(candidate);
@@ -91,11 +105,37 @@ export class GeminiEvaluationService {
 			matched_allergens: validated.matched_allergens ?? [],
 			matched_conditions: validated.matched_conditions ?? [],
 			matched_preferences: validated.matched_preferences ?? [],
+			citations: validated.citations ?? [],
 		};
 	}
 
 	async evaluate(input: GeminiEvaluationInput): Promise<EvaluationResultJsonDto> {
 		const model = this.getModel();
+
+		const ragQuestion = [
+			`Product: ${input.productName}`,
+			input.productBrand ? `Brand: ${input.productBrand}` : "",
+			`Category: ${input.productCategory ?? "Other"}`,
+			`Ingredients: ${input.ingredients.join(", ")}`,
+			input.conditions.length > 0 ? `Skin conditions: ${input.conditions.join(", ")}` : "",
+			input.allergens.length > 0 ? `Allergens: ${input.allergens.join(", ")}` : "",
+			input.preferences.length > 0 ? `Preferences: ${input.preferences.join(", ")}` : "",
+			"Find relevant evidence from indexed skincare PDFs to support a safety evaluation.",
+		]
+			.filter(Boolean)
+			.join("\n");
+
+		let ragContext = "No supporting context was retrieved.";
+		let ragCitations: string[] = [];
+
+		try {
+			const matches = await retrieveRelevantChunks({ question: ragQuestion, topK: 6 });
+			ragContext = formatChunksForPrompt(matches);
+			ragCitations = [...new Set(matches.map((match) => toCitationText(match)))];
+		} catch {
+			// Continue without RAG context when vector retrieval fails.
+		}
+
 		const context = {
 			product: {
 				name: input.productName,
@@ -109,6 +149,8 @@ export class GeminiEvaluationService {
 				preferences: input.preferences,
 			},
 			prompt: input.promptText ?? "",
+			research_context: ragContext,
+			candidate_citations: ragCitations,
 		};
 
 		const prompt = `${evaluationPromptTemplate}\n\nInput JSON:\n${JSON.stringify(context)}`;
@@ -119,7 +161,13 @@ export class GeminiEvaluationService {
 		}
 
 		const parsed = this.extractJson(responseText);
-		return this.normalizeResult(parsed);
+		const normalized = this.normalizeResult(parsed);
+
+		if ((!normalized.citations || normalized.citations.length === 0) && ragCitations.length > 0) {
+			normalized.citations = ragCitations;
+		}
+
+		return normalized;
 	}
 }
 

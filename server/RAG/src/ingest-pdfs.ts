@@ -10,6 +10,8 @@ type PineconeVector = {
 	values: number[];
 	metadata: {
 		source: string;
+		title: string;
+		author: string;
 		chunkIndex: number;
 		totalChunks: number;
 		text: string;
@@ -65,6 +67,100 @@ const createChunkId = (fileName: string, chunkIndex: number): string => {
 	return `${stablePart}-chunk-${chunkIndex}`;
 };
 
+const normalizeMetadataField = (value: unknown): string | null => {
+	if (typeof value !== "string") {
+		return null;
+	}
+
+	const clean = value.trim();
+	return clean.length > 0 ? clean : null;
+};
+
+const titleFromFileName = (fileName: string): string =>
+	fileName
+		.replace(/\.pdf$/i, "")
+		.replace(/[_-]+/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+
+const isLikelyNoiseLine = (line: string): boolean => {
+	const lower = line.toLowerCase();
+	return (
+		lower.startsWith("doi") ||
+		lower.includes("journal") ||
+		lower.includes("copyright") ||
+		lower.includes("all rights reserved") ||
+		lower.includes("university") ||
+		lower.includes("department") ||
+		lower.includes("received") ||
+		lower.includes("accepted") ||
+		lower.includes("published") ||
+		lower.includes("www.") ||
+		lower.includes("http")
+	);
+};
+
+const inferFromFirstPageText = (firstPageText: string): { title: string | null; author: string | null } => {
+	const rawLines = firstPageText
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter((line) => line.length > 0)
+		.slice(0, 60);
+
+	const lines = rawLines.filter((line) => !isLikelyNoiseLine(line));
+	if (lines.length === 0) {
+		return { title: null, author: null };
+	}
+
+	const titleLines: string[] = [];
+	for (const line of lines) {
+		const lower = line.toLowerCase();
+		if (lower === "abstract" || lower.startsWith("abstract ")) {
+			break;
+		}
+
+		// Stop title capture when the line looks like author list.
+		if (/^[a-zA-Z][a-zA-Z\s.,-]{2,120}$/.test(line) && (line.includes(",") || line.includes(" and "))) {
+			break;
+		}
+
+		if (line.length >= 8 && line.length <= 180) {
+			titleLines.push(line);
+		}
+
+		if (titleLines.join(" ").length > 140) {
+			break;
+		}
+	}
+
+	const title = titleLines.length > 0 ? titleLines.join(" ").replace(/\s+/g, " ").trim() : null;
+
+	let author: string | null = null;
+	const afterTitleIndex = Math.max(titleLines.length, 1);
+	for (let i = afterTitleIndex; i < Math.min(lines.length, afterTitleIndex + 8); i += 1) {
+		const line = lines[i];
+		if (line.length < 3 || line.length > 140) {
+			continue;
+		}
+
+		const lower = line.toLowerCase();
+		if (lower === "abstract" || lower.startsWith("abstract ")) {
+			break;
+		}
+
+		if (/\d/.test(line)) {
+			continue;
+		}
+
+		if (/(^|\s)(dr\.?|prof\.?|md|phd)(\s|$)/i.test(line) || line.includes(",") || line.includes(" and ")) {
+			author = line.replace(/\s+/g, " ").trim();
+			break;
+		}
+	}
+
+	return { title, author };
+};
+
 const upsertVectors = async (params: {
 	host: string;
 	apiKey: string;
@@ -89,6 +185,48 @@ const upsertVectors = async (params: {
 	}
 };
 
+const fetchExistingVectorIds = async (params: {
+	host: string;
+	apiKey: string;
+	namespace: string;
+	ids: string[];
+}): Promise<Set<string>> => {
+	if (params.ids.length === 0) {
+		return new Set<string>();
+	}
+
+	const response = await fetch(`${params.host}/vectors/fetch`, {
+		method: "POST",
+		headers: {
+			"Api-Key": params.apiKey,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			ids: params.ids,
+			namespace: params.namespace,
+		}),
+	});
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(`Pinecone fetch failed (${response.status}): ${errorText || response.statusText}`);
+	}
+
+	const rawBody = await response.text();
+	if (!rawBody.trim()) {
+		return new Set<string>();
+	}
+
+	let data: { vectors?: Record<string, unknown> };
+	try {
+		data = JSON.parse(rawBody) as { vectors?: Record<string, unknown> };
+	} catch {
+		return new Set<string>();
+	}
+
+	return new Set(Object.keys(data.vectors ?? {}));
+};
+
 const ingestSinglePdf = async (params: {
 	pdfDir: string;
 	fileName: string;
@@ -99,39 +237,94 @@ const ingestSinglePdf = async (params: {
 	const filePath = path.join(params.pdfDir, params.fileName);
 	const buffer = await readFile(filePath);
 	const parser = new PDFParse({ data: buffer });
+	const infoResult = await parser.getInfo();
 	const textResult = await parser.getText();
 	await parser.destroy();
 	const chunks = chunkText(textResult.text);
+	const firstPageText = textResult.pages?.[0]?.text ?? "";
+	const inferred = inferFromFirstPageText(firstPageText);
+	const parsedTitle =
+		normalizeMetadataField(infoResult.info?.Title) ??
+		inferred.title ??
+		titleFromFileName(params.fileName);
+	const parsedAuthor = normalizeMetadataField(infoResult.info?.Author) ?? inferred.author ?? "Unknown author";
 
 	if (chunks.length === 0) {
 		console.warn(`Skipped ${params.fileName}: no text extracted.`);
 		return 0;
 	}
 
-	const embeddings = await ragEmbeddingService.embedTexts(chunks);
-	const vectors: PineconeVector[] = chunks.map((chunk, index) => ({
+	const chunkItems = chunks.map((chunk, index) => ({
 		id: createChunkId(params.fileName, index),
-		values: embeddings[index],
-		metadata: {
-			source: params.fileName,
-			chunkIndex: index,
-			totalChunks: chunks.length,
-			text: chunk,
-		},
+		chunk,
+		index,
 	}));
 
-	for (let i = 0; i < vectors.length; i += UPSERT_BATCH_SIZE) {
-		const batch = vectors.slice(i, i + UPSERT_BATCH_SIZE);
+	const existingIds = new Set<string>();
+	for (let i = 0; i < chunkItems.length; i += UPSERT_BATCH_SIZE) {
+		const idBatch = chunkItems.slice(i, i + UPSERT_BATCH_SIZE).map((item) => item.id);
+		const batchExisting = await fetchExistingVectorIds({
+			host: params.pineconeHost,
+			apiKey: params.pineconeApiKey,
+			namespace: params.namespace,
+			ids: idBatch,
+		});
+
+		for (const id of batchExisting) {
+			existingIds.add(id);
+		}
+	}
+
+	const missingItems = chunkItems.filter((item) => !existingIds.has(item.id));
+	if (missingItems.length === 0) {
+		console.log(`Skipped ${params.fileName}: all ${chunks.length} chunks already indexed.`);
+		return 0;
+	}
+
+	let indexedNow = 0;
+	let vectorBuffer: PineconeVector[] = [];
+
+	for (const item of missingItems) {
+		const embedding = await ragEmbeddingService.embedText(item.chunk);
+		vectorBuffer.push({
+			id: item.id,
+			values: embedding,
+			metadata: {
+				source: params.fileName,
+				title: parsedTitle,
+				author: parsedAuthor,
+				chunkIndex: item.index,
+				totalChunks: chunks.length,
+				text: item.chunk,
+			},
+		});
+
+		if (vectorBuffer.length >= UPSERT_BATCH_SIZE) {
+			await upsertVectors({
+				host: params.pineconeHost,
+				apiKey: params.pineconeApiKey,
+				vectors: vectorBuffer,
+				namespace: params.namespace,
+			});
+			indexedNow += vectorBuffer.length;
+			vectorBuffer = [];
+		}
+	}
+
+	if (vectorBuffer.length > 0) {
 		await upsertVectors({
 			host: params.pineconeHost,
 			apiKey: params.pineconeApiKey,
-			vectors: batch,
+			vectors: vectorBuffer,
 			namespace: params.namespace,
 		});
+		indexedNow += vectorBuffer.length;
 	}
 
-	console.log(`Indexed ${params.fileName}: ${chunks.length} chunks.`);
-	return chunks.length;
+	console.log(
+		`Indexed ${params.fileName}: ${indexedNow} new chunks (${chunks.length - indexedNow} already existed).`,
+	);
+	return indexedNow;
 };
 
 export const ingestPdfsToPinecone = async (options?: {
