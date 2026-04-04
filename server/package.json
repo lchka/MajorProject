@@ -8,6 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --exec tsx index.ts",
     "start": "tsx index.ts",
+    "rag:ingest": "tsx RAG/src/ingest-pdfs.ts",
+    "rag:ask": "tsx RAG/src/ask-rag.ts",
     "seed": "tsx utils/seeders/roleseeder.ts && tsx utils/seeders/userseeder.ts && tsx utils/seeders/preferenceseeder.ts && tsx utils/seeders/conditionseeder.ts && tsx utils/seeders/allergenseeder.ts && tsx utils/seeders/promptSeeder.ts",
     "seed:roles": "tsx utils/seeders/roleseeder.ts",
     "seed:users": "tsx utils/seeders/userseeder.ts",
@@ -31,7 +33,9 @@
     "express-validator": "^7.3.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.18.0",
+    "pinecone": "^0.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
