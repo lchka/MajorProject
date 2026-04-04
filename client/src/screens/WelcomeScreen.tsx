@@ -1,5 +1,6 @@
-import React from "react";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import React, { useEffect } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
 	Box,
 	Button,
@@ -14,7 +15,11 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { AuthStackParamList } from "../types/navigation";
 
 export default function WelcomeScreen() {
-	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+	const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+
+	useEffect(() => {
+		navigation.replace("LandingScreen");
+	}, [navigation]);
 
 	return (
 		<Center flex={1} bg="$backgroundLight0">
