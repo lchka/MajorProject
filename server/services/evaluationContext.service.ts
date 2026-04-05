@@ -36,7 +36,7 @@ type PromptRecord = {
 type PrismaRuntime = {
 	evaluationContext: {
 		create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
-		findUnique: (args: { where: { id: string } }) => Promise<unknown | null>;
+		findUnique: (args: { where: { id: string }; select?: Record<string, unknown> }) => Promise<unknown | null>;
 		findMany: (args?: Record<string, unknown>) => Promise<unknown[]>;
 		update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
 		delete: (args: { where: { id: string } }) => Promise<unknown>;
@@ -133,6 +133,9 @@ export class EvaluationContextService {
 			matched_allergens: matchedAllergens,
 			matched_conditions: matchedConditions,
 			matched_preferences: matchedPreferences,
+			profile_allergens: profile.allergens.map((item) => item.name),
+			profile_conditions: profile.conditions.map((item) => item.name),
+			profile_preferences: profile.preferences.map((item) => item.name),
 		};
 	}
 
@@ -224,6 +227,10 @@ export class EvaluationContextService {
 			throw new HttpError(BAD_REQUEST, "Product has no valid ingredients to evaluate");
 		}
 
+		const profileAllergens = profile.allergens.map((item) => item.name);
+		const profileConditions = profile.conditions.map((item) => item.name);
+		const profilePreferences = profile.preferences.map((item) => item.name);
+
 		let resultJson: EvaluationResultJsonDto;
 		try {
 			resultJson = await geminiEvaluationService.evaluate({
@@ -231,14 +238,21 @@ export class EvaluationContextService {
 				productBrand: product.brand,
 				productCategory: product.category,
 				ingredients: ingredientTerms,
-				allergens: profile.allergens.map((item) => item.name),
-				conditions: profile.conditions.map((item) => item.name),
-				preferences: profile.preferences.map((item) => item.name),
+				allergens: profileAllergens,
+				conditions: profileConditions,
+				preferences: profilePreferences,
 				promptText,
 			});
 		} catch {
 			resultJson = this.buildRuleBasedResult(ingredientTerms, profile);
 		}
+
+		resultJson = {
+			...resultJson,
+			profile_allergens: profileAllergens,
+			profile_conditions: profileConditions,
+			profile_preferences: profilePreferences,
+		};
 
 		return { resultJson };
 	}
@@ -297,6 +311,25 @@ export class EvaluationContextService {
 
 		const records = await prismaRuntime.evaluationContext.findMany({
 			where: { productId },
+			orderBy: { createdAt: "desc" },
+		});
+
+		return records.map((record) => this.toResponseDto(record));
+	}
+
+	async getEvaluationContextsByProductIdForUser(
+		userId: string,
+		productId: string,
+	): Promise<EvaluationContextResponseDto[]> {
+		await this.assertProductExists(productId);
+
+		const records = await prismaRuntime.evaluationContext.findMany({
+			where: {
+				productId,
+				profile: {
+					userId,
+				},
+			},
 			orderBy: { createdAt: "desc" },
 		});
 

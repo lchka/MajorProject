@@ -25,6 +25,9 @@ export const evaluationResultJsonSchema = z
 		matched_allergens: z.array(z.string().min(1)).optional(),
 		matched_conditions: z.array(z.string().min(1)).optional(),
 		matched_preferences: z.array(z.string().min(1)).optional(),
+		profile_allergens: z.array(z.string().min(1)).optional(),
+		profile_conditions: z.array(z.string().min(1)).optional(),
+		profile_preferences: z.array(z.string().min(1)).optional(),
 		all_ingredients: z.array(z.string().min(1)).optional(),
 		dangerous_ingredients: z
 			.array(

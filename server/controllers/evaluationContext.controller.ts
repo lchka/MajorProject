@@ -5,6 +5,7 @@ import {
 	EvaluateProductRequestDto,
 	UpdateEvaluationContextDto,
 } from "../types/evaluationContext.dto";
+import { Permission, hasPermission } from "../types/permissions.dto";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError";
 
 const evaluationContextService = new EvaluationContextService();
@@ -42,7 +43,17 @@ export class EvaluationContextController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const contexts = await evaluationContextService.getAllEvaluationContexts();
+			const userRole = _req.user?.role?.name;
+			const userId = _req.userId ?? _req.user?.id;
+			const canViewAll = userRole
+				? hasPermission(userRole, Permission.PROFILE_VIEW_ALL)
+				: false;
+
+			const contexts = canViewAll
+				? await evaluationContextService.getAllEvaluationContexts()
+				: userId
+					? await evaluationContextService.getEvaluationContextsForUser(userId)
+					: [];
 			res.status(SUCCESS_RES).json(contexts);
 		} catch (error) {
 			next(error);
@@ -83,9 +94,20 @@ export class EvaluationContextController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
-			const contexts = await evaluationContextService.getEvaluationContextsByProductId(
-				req.params.productId,
-			);
+			const userRole = req.user?.role?.name;
+			const userId = req.userId ?? req.user?.id;
+			const canViewAll = userRole
+				? hasPermission(userRole, Permission.PROFILE_VIEW_ALL)
+				: false;
+
+			const contexts = canViewAll
+				? await evaluationContextService.getEvaluationContextsByProductId(req.params.productId)
+				: userId
+					? await evaluationContextService.getEvaluationContextsByProductIdForUser(
+							userId,
+							req.params.productId,
+						)
+					: [];
 			res.status(SUCCESS_RES).json(contexts);
 		} catch (error) {
 			next(error);
