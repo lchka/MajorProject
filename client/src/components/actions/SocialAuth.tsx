@@ -55,7 +55,7 @@ export default function SocialAuth({
         </Pressable>
 
         {/* GitHub */}
-        {/* <Pressable
+        <Pressable
           flex={1}
           borderWidth={1}
           borderColor="$borderLight300"
@@ -65,7 +65,7 @@ export default function SocialAuth({
           onPress={onGithubPress}
         >
           <FontAwesome name="github" size={28} />
-        </Pressable> */}
+        </Pressable>
       </HStack>
     </>
   );

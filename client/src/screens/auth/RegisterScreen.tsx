@@ -1,11 +1,14 @@
 // React & Gluestack imports
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
 } from "react-native";
+import * as AuthSession from "expo-auth-session";
+import * as WebBrowser from "expo-web-browser";
+import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -33,6 +36,9 @@ import useGoogleAuth from "../../hooks/googleAuth.hook";
 import type { AuthResponse } from "../../services";
 
 const AUTH_TOKEN_KEY = "authToken";
+const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -83,6 +89,44 @@ export default function RegisterScreen() {
       Alert.alert("Google Login Failed", message);
     },
   });
+
+  const isWeb = Platform.OS === "web";
+  const isExpoGo = Constants.appOwnership === "expo";
+  const githubRedirectUri = isExpoGo
+    ? "https://auth.expo.io/@lchkas-organization/lumiere"
+    : AuthSession.makeRedirectUri({
+        preferLocalhost: isWeb,
+        scheme: "client",
+      });
+  console.log("REDIRECT URI:", githubRedirectUri);
+  const [githubRequest, githubResponse, promptGithubAuth] =
+    AuthSession.useAuthRequest(
+      {
+        clientId: GITHUB_CLIENT_ID || "",
+        scopes: ["read:user", "user:email"],
+        redirectUri: githubRedirectUri,
+      },
+      {
+        authorizationEndpoint: "https://github.com/login/oauth/authorize",
+      },
+    );
+
+  useEffect(() => {
+    console.log("[GitHubAuth] init", {
+      redirectUri: githubRedirectUri,
+      requestUrl: githubRequest?.url,
+      hasClientId: Boolean(GITHUB_CLIENT_ID),
+    });
+  }, [githubRedirectUri, githubRequest?.url]);
+
+  useEffect(() => {
+    if (githubResponse?.type !== "success") return;
+    const code = githubResponse.params?.code;
+
+    if (typeof code === "string") {
+      console.log("[GitHubAuth] code", code);
+    }
+  }, [githubResponse]);
 
   const handleNext = () => {
     if (step === 1 && (!firstName.trim() || !lastName.trim())) {
@@ -252,7 +296,20 @@ export default function RegisterScreen() {
                   <ButtonText color="$white">Continue with Email</ButtonText>
                 </Button>
 
-                <SocialAuth onGooglePress={promptGoogleAuth} />
+                <SocialAuth
+                  onGooglePress={promptGoogleAuth}
+                  onGithubPress={async () => {
+                    if (!GITHUB_CLIENT_ID) {
+                      Alert.alert("GitHub Login", "Missing GitHub client ID.");
+                      return;
+                    }
+                    if (!githubRequest) {
+                      Alert.alert("GitHub Login", "GitHub auth not ready.");
+                      return;
+                    }
+                    await promptGithubAuth();
+                  }}
+                />
               </VStack>
             ) : (
               <VStack space="xl">
