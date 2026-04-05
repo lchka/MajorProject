@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import evaluationContextController from "../controllers/evaluationContext.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
-import { can, canAccessEvaluationContextById } from "../middleware/permission.middleware";
+import { can, canAccessEvaluationContextById, canAccessProfileByProfileId } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validateRequest";
 import {
 	createEvaluationContextSchema,
@@ -51,6 +51,7 @@ router.get(
 	"/profile/:profileId",
 	authMiddleware,
 	can(Permission.EVALUATION_CONTEXT_VIEW),
+	canAccessProfileByProfileId({ paramKey: "profileId" }),
 	evaluationContextController.getEvaluationContextsByProfileId.bind(evaluationContextController),
 );
 
@@ -76,6 +77,7 @@ router.get(
 	"/:id",
 	authMiddleware,
 	can(Permission.EVALUATION_CONTEXT_VIEW),
+	canAccessEvaluationContextById({ paramKey: "id" }),
 	evaluationContextController.getEvaluationContextById.bind(evaluationContextController),
 );
 
@@ -94,6 +96,7 @@ router.delete(
 	"/:id",
 	authMiddleware,
 	can(Permission.EVALUATION_CONTEXT_DELETE),
+	canAccessEvaluationContextById({ paramKey: "id" }),
 	evaluationContextController.deleteEvaluationContext.bind(evaluationContextController),
 );
 

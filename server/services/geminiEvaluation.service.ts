@@ -28,6 +28,9 @@ Return ONLY valid JSON with this exact shape:
   "status": "safe | caution | avoid",
   "score": 0,
   "summary": "string",
+  "profile_conditions",
+  "profile_allergens",
+  "profile_preferences",
   "reasons": ["string"],
   "matched_allergens": ["string"],
   "matched_conditions": ["string"],
@@ -53,7 +56,7 @@ Return ONLY valid JSON with this exact shape:
 }
 Rules:
 - status must be one of: safe, caution, avoid.
-- score must be a number from 0 to 100.
+- score must be a number from 0 to 100, be reasonable.
 - If any allergen match is present, status should usually be avoid.
 - Do not include markdown or extra keys.
 - Summary should be objective and not mention the user.
