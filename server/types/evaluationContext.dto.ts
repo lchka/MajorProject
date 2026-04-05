@@ -25,7 +25,28 @@ export const evaluationResultJsonSchema = z
 		matched_allergens: z.array(z.string().min(1)).optional(),
 		matched_conditions: z.array(z.string().min(1)).optional(),
 		matched_preferences: z.array(z.string().min(1)).optional(),
+		all_ingredients: z.array(z.string().min(1)).optional(),
+		dangerous_ingredients: z
+			.array(
+				z.object({
+					ingredient: z.string().min(1),
+					danger_level: z.number().min(0).max(10),
+					reason: z.string().min(1).optional(),
+				}),
+			)
+			.optional(),
 		citations: z.array(z.string().min(1)).optional(),
+		citation_links: z.array(z.string().url()).optional(),
+		citation_sources: z
+			.array(
+				z.object({
+					title: z.string().min(1),
+					lead_author: z.string().min(1),
+					year: z.number().int().nullable(),
+					url: z.string().url(),
+				}),
+			)
+			.optional(),
 	})
 	.passthrough();
 
