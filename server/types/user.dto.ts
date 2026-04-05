@@ -54,6 +54,10 @@ export const loginRequestSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+export const googleLoginRequestSchema = z.object({
+  token: z.string().min(1, "Google token is required"),
+});
+
 export const authResponseSchema = z.object({
   message: z.string(),
   token: z.string().min(1, "Token is required"),
@@ -148,6 +152,7 @@ export const updateProfileSchema = z
 export type UserResponseDto = z.infer<typeof userResponseSchema>;
 export type RegisterRequestDto = z.infer<typeof registerRequestSchema>;
 export type LoginRequestDto = z.infer<typeof loginRequestSchema>;
+export type GoogleLoginRequestDto = z.infer<typeof googleLoginRequestSchema>;
 export type AuthResponseDto = z.infer<typeof authResponseSchema>;
 export type CreateUserDto = z.infer<typeof createUserSchema>;
 export type UpdateUserDto = z.infer<typeof updateUserSchema>;

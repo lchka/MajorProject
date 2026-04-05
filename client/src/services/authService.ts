@@ -13,6 +13,10 @@ export interface LoginInput {
   password: string;
 }
 
+export interface GoogleAuthInput {
+  token: string;
+}
+
 export interface AuthResponse {
   token: string;
   user: {
@@ -39,6 +43,11 @@ export const authService = {
 
   login: async (data: LoginInput): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', data);
+    return response.data;
+  },
+
+  googleLogin: async (data: GoogleAuthInput): Promise<AuthResponse> => {
+    const response = await api.post('/auth/google', data);
     return response.data;
   },
 

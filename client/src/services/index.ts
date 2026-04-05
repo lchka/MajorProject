@@ -6,7 +6,7 @@ export { userService } from './userService';
 export { profileService } from './profileService';
 
 // Re-export types
-export type { RegisterInput, LoginInput, AuthResponse } from './authService';
+export type { RegisterInput, LoginInput, GoogleAuthInput, AuthResponse } from './authService';
 export type { User } from './userService';
 export type {
   Profile,

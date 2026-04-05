@@ -33,6 +33,9 @@
         "projectId": "5dffb3b3-c6c4-46ca-acd8-409a77b275a2"
       }
     },
-    "owner": "lchkas-organization"
+    "owner": "lchkas-organization",
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

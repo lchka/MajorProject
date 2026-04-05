@@ -29,6 +29,8 @@ import profileService from "../../services/profileService";
 import { loginSchema } from "../../models/auth.schema";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
+import useGoogleAuth from "../../hooks/googleAuth.hook";
+import { AuthResponse } from "../../services";
 
 const AUTH_TOKEN_KEY = "authToken";
 const REMEMBER_ME_KEY = "rememberMe";
@@ -42,6 +44,43 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const completeLoginFlow = async (response: AuthResponse) => {
+    let shouldGoToAnalyse = false;
+    let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
+
+    if (profileIdForEdit) {
+      try {
+        const profile = await profileService.getMyProfile();
+        shouldGoToAnalyse = Boolean(profile?.isComplete);
+        profileIdForEdit = profile?.id ?? profileIdForEdit;
+      } catch {
+        shouldGoToAnalyse = false;
+      }
+    }
+
+    if (shouldGoToAnalyse) {
+      navigation.navigate("LandingScreen");
+      return;
+    }
+
+    navigation.navigate("ProfileScreen", {
+      firstName: response.user.first_name,
+      lastName: response.user.last_name,
+      email: response.user.email,
+      profileId: profileIdForEdit,
+    });
+  };
+
+  const { promptGoogleAuth, loading: googleLoading } = useGoogleAuth({
+    onLoginSuccess: async (response) => {
+      await completeLoginFlow(response);
+      Alert.alert("Success!", "Google sign-in successful.");
+    },
+    onLoginError: (message) => {
+      Alert.alert("Google Login Failed", message);
+    },
+  });
 
   useEffect(() => {
     const loadRememberedLogin = async () => {
@@ -96,36 +135,13 @@ export default function LoginScreen() {
         await AsyncStorage.multiRemove([REMEMBER_ME_KEY, REMEMBERED_EMAIL_KEY]);
       }
 
-      let shouldGoToAnalyse = false;
-      let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
-
-      if (profileIdForEdit) {
-        try {
-          const profile = await profileService.getMyProfile();
-          shouldGoToAnalyse = Boolean(profile?.isComplete);
-          profileIdForEdit = profile?.id ?? profileIdForEdit;
-        } catch {
-          shouldGoToAnalyse = false;
-        }
-      }
-
       console.log("Login successful:", response);
 
       Alert.alert("Success!", "You have been signed in successfully.", [
         {
           text: "OK",
-          onPress: () => {
-            if (shouldGoToAnalyse) {
-              navigation.navigate("LandingScreen");
-            } else {
-              navigation.navigate("ProfileScreen", {
-                firstName: response.user.first_name,
-                lastName: response.user.last_name,
-                email: response.user.email,
-                profileId: profileIdForEdit,
-              });
-            }
-
+          onPress: async () => {
+            await completeLoginFlow(response);
             setEmail("");
             setPassword("");
           },
@@ -304,14 +320,14 @@ export default function LoginScreen() {
               borderRadius="$lg"
               w="$full"
             >
-              {loading ? (
+              {loading || googleLoading ? (
                 <Spinner color="$white" />
               ) : (
                 <ButtonText color="$white">Login</ButtonText>
               )}
             </Button>
 
-            <SocialAuth />
+            <SocialAuth onGooglePress={() => void promptGoogleAuth()} />
           </VStack>
         </Box>
       </ScrollView>
