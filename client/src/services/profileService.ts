@@ -118,9 +118,9 @@ export const profileService = {
   },
 
   /**
-   * Get current authenticated user's profile
+   * Get current authenticated user's profiles
    */
-  getMyProfile: async (): Promise<Profile> => {
+  getMyProfile: async (): Promise<Profile[]> => {
     const response = await api.get('/profiles/me');
     return response.data;
   },

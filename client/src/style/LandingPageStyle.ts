@@ -123,6 +123,16 @@ export const styles = StyleSheet.create({
 		height: "90%",
 		opacity: 0.85,
 	},
+	analysisPlaceholder: {
+		backgroundColor: "#DADADA",
+		borderColor: "#CFCFCF",
+	},
+	analysisImagePlaceholder: {
+		width: "100%",
+		height: "90%",
+		borderRadius: 10,
+		backgroundColor: "#DADADA",
+	},
 	cardFooter: {
 		paddingHorizontal: 8,
 		paddingBottom: 5,

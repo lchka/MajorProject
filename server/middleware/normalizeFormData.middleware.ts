@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 
 const ARRAY_FIELDS = ["conditionIds", "allergenIds", "preferenceIds"] as const;
+const BOOLEAN_FIELDS = ["isComplete", "main_profile"] as const;
 
 const toStringArray = (value: unknown): string[] => {
     if (value === undefined || value === null) {
@@ -66,6 +67,19 @@ export const normalizeFormDataArrays = (req: Request, _res: Response, next: Next
 
         if (Object.prototype.hasOwnProperty.call(body, bracketKey)) {
             delete body[bracketKey];
+        }
+    }
+
+    for (const field of BOOLEAN_FIELDS) {
+        const rawValue = body[field];
+
+        if (typeof rawValue === "string") {
+            const trimmed = rawValue.trim().toLowerCase();
+            if (trimmed === "true") {
+                body[field] = true;
+            } else if (trimmed === "false") {
+                body[field] = false;
+            }
         }
     }
 

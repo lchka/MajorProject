@@ -57,9 +57,10 @@ export default function LoginScreen() {
 
     if (profileIdForEdit) {
       try {
-        const profile = await profileService.getMyProfile();
-        shouldGoToAnalyse = Boolean(profile?.isComplete);
-        profileIdForEdit = profile?.id ?? profileIdForEdit;
+        const profiles = await profileService.getMyProfile();
+        const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
+        shouldGoToAnalyse = Boolean(activeProfile?.isComplete);
+        profileIdForEdit = activeProfile?.id ?? profileIdForEdit;
       } catch {
         shouldGoToAnalyse = false;
       }

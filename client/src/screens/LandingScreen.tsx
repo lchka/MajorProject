@@ -7,59 +7,12 @@ import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import EditButton from "../components/Buttons/EditButton";
+import PastAnalysis from "../components/general/pastAnalysis";
+import profileService from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
 
 const AUTH_TOKEN_KEY = "authToken";
-
-// Temporary product cards used to shape the 3-column past analysis grid.
-const pastAnalysis = [
-	{
-		title: "Pantene Grow...",
-		image:
-			"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "CeraVe Blem...",
-		image:
-			"https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "Sanctuary Sp...",
-		image:
-			"https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "Olaplex N04...",
-		image:
-			"https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "Pantene Pro..",
-		image:
-			"https://images.unsplash.com/photo-1596755389378-c31d21fd1273?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "The Ordinary...",
-		image:
-			"https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "Pantene Grow...",
-		image:
-			"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "CeraVe Ble...",
-		image:
-			"https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=500&q=60",
-	},
-	{
-		title: "Sanctuary Spa...",
-		image:
-			"https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=500&q=60",
-	},
-];
 
 const conditionCards = [
 	{ title: "Dermatitis", level: "MODERATE" },
@@ -68,19 +21,30 @@ const conditionCards = [
 
 export default function LandingScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
-	const [analysisPage, setAnalysisPage] = React.useState(0);
-	const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
+	const [profileId, setProfileId] = React.useState<string | null>(null);
 
-	const analysisPages = React.useMemo(() => {
-		const pageSize = 9;
-		const pageCount = 3;
+	React.useEffect(() => {
+		let isMounted = true;
 
-		return Array.from({ length: pageCount }, (_, pageIndex) =>
-			Array.from({ length: pageSize }, (_, cardIndex) => {
-				const sourceIndex = (pageIndex * 3 + cardIndex) % pastAnalysis.length;
-				return pastAnalysis[sourceIndex];
-			})
-		);
+		const loadProfileId = async () => {
+			try {
+				const profiles = await profileService.getMyProfile();
+				const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
+				if (isMounted) {
+					setProfileId(activeProfile?.id ?? null);
+				}
+			} catch {
+				if (isMounted) {
+					setProfileId(null);
+				}
+			}
+		};
+
+		void loadProfileId();
+
+		return () => {
+			isMounted = false;
+		};
 	}, []);
 
 	// Clears local auth state and routes back to the login flow.
@@ -118,6 +82,7 @@ export default function LandingScreen() {
 								source={require("../../assets/icon.png")}
 								style={styles.avatar}
 								resizeMode="cover"
+								alt="User avatar"
 							/>
 						</Pressable>
 					</Box>
@@ -127,7 +92,11 @@ export default function LandingScreen() {
 
 				{/* Profile quick switch card */}
 				<Pressable my="$2" style={styles.switchProfileCard}>
-					<Image source={require("../../assets/icon.png")} style={styles.switchAvatar} />
+					<Image
+						source={require("../../assets/icon.png")}
+						style={styles.switchAvatar}
+						alt="Profile avatar"
+					/>
 					<Box style={styles.switchCopy}>
 						<Text fontSize={13} fontFamily="Roboto" color="#6D7073">HI, ICHKA!</Text>
 						<Text pt="$2"fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">Switch Profile</Text>
@@ -141,57 +110,7 @@ export default function LandingScreen() {
 					<EntypoDots  />
 				</Box>
 
-				{/* Product cards are rendered from fixture data until API wiring is ready. */}
-				<Box
-					onLayout={(event) => {
-						setAnalysisViewportWidth(event.nativeEvent.layout.width);
-					}}
-				>
-					<ScrollView
-						horizontal
-						pagingEnabled
-						showsHorizontalScrollIndicator={false}
-						onMomentumScrollEnd={(event) => {
-							if (!analysisViewportWidth) {
-								return;
-							}
-
-							const pageIndex = Math.round(event.nativeEvent.contentOffset.x / analysisViewportWidth);
-							setAnalysisPage(pageIndex);
-						}}
-					>
-						{analysisPages.map((pageItems, pageIndex) => (
-							<Box
-								key={`analysis-page-${pageIndex}`}
-								style={[
-									styles.analysisPage,
-									analysisViewportWidth ? { width: analysisViewportWidth } : null,
-								]}
-							>
-								<Box style={styles.grid}>
-									{pageItems.map((item, cardIndex) => (
-										<Pressable key={`${item.title}-${pageIndex}-${cardIndex}`} style={styles.analysisCard}>
-											<Box style={styles.analysisImageWrap}>
-												<Image
-													source={{ uri: item.image }}
-													style={styles.analysisImage}
-													resizeMode="cover"
-												/>
-											</Box>
-											<Box style={styles.cardFooter}>
-												<Text numberOfLines={1} style={styles.cardTitle} pt="$1" fontWeight={600} fontSize={14} lineHeight={12} fontFamily="Roboto" color="#121212">
-													{item.title}
-												</Text>
-												<AntDesign name="right" size={14} color="#111111" />
-											</Box>
-										</Pressable>
-									))}
-								</Box>
-							</Box>
-						))}
-					</ScrollView>
-					<PageDots total={analysisPages.length} activeIndex={analysisPage} />
-				</Box>
+				<PastAnalysis profileId={profileId} />
 
 				{/* Preferences summary with editable badges */}
 				<Box style={styles.sectionHeader}>
