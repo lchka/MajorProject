@@ -92,6 +92,25 @@ export class EvaluationContextController {
 		}
 	}
 
+	async getEvaluationContextsForUser(
+		req: Request,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const userId = req.userId ?? req.user?.id;
+			if (!userId) {
+				res.status(401).json({ message: "Unauthorized" });
+				return;
+			}
+
+			const contexts = await evaluationContextService.getEvaluationContextsForUser(userId);
+			res.status(SUCCESS_RES).json(contexts);
+		} catch (error) {
+			next(error);
+		}
+	}
+
 	async updateEvaluationContext(
 		req: Request<{ id: string }, Record<string, never>, UpdateEvaluationContextDto>,
 		res: Response,

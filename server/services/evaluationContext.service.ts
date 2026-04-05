@@ -239,6 +239,19 @@ export class EvaluationContextService {
 		return records.map((record) => this.toResponseDto(record));
 	}
 
+	async getEvaluationContextsForUser(userId: string): Promise<EvaluationContextResponseDto[]> {
+		const records = await prismaRuntime.evaluationContext.findMany({
+			where: {
+				profile: {
+					userId,
+				},
+			},
+			orderBy: { createdAt: "desc" },
+		});
+
+		return records.map((record) => this.toResponseDto(record));
+	}
+
 	async updateEvaluationContext(
 		id: string,
 		data: UpdateEvaluationContextDto,

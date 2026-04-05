@@ -202,7 +202,6 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.PRODUCT_VIEW,
     Permission.PRODUCT_CREATE,
     Permission.PRODUCT_UPDATE,
-    Permission.PRODUCT_DELETE,
     //permissions to read/create/update evaluation context
     Permission.EVALUATION_CONTEXT_VIEW,
     Permission.EVALUATION_CONTEXT_CREATE,

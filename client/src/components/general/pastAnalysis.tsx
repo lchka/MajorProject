@@ -48,7 +48,7 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
           return;
         }
 
-        const contexts = await evaluationContextService.getByProfileId(profileId);
+        const contexts = await evaluationContextService.getMyContexts();
         const productIds = Array.from(new Set(contexts.map((context) => context.productId)));
         const products = await Promise.all(
           productIds.map(async (productId) => {

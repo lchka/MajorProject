@@ -38,6 +38,14 @@ router.get(
 	evaluationContextController.getAllEvaluationContexts.bind(evaluationContextController),
 );
 
+// list current user's evaluation contexts
+router.get(
+	"/me",
+	authMiddleware,
+	can(Permission.EVALUATION_CONTEXT_VIEW),
+	evaluationContextController.getEvaluationContextsForUser.bind(evaluationContextController),
+);
+
 // list by profile
 router.get(
 	"/profile/:profileId",

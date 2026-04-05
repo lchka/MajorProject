@@ -11,6 +11,10 @@ export interface EvaluationContext {
 }
 
 export const evaluationContextService = {
+  getMyContexts: async (): Promise<EvaluationContext[]> => {
+    const response = await api.get(`/evaluation-contexts/me`);
+    return response.data;
+  },
   getByProfileId: async (profileId: string): Promise<EvaluationContext[]> => {
     const response = await api.get(`/evaluation-contexts/profile/${profileId}`);
     return response.data;
