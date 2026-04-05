@@ -179,6 +179,70 @@ export class EvaluationContextService {
 		}
 	}
 
+	private async buildEvaluationResult(
+		data: EvaluateProductRequestDto,
+	): Promise<{ resultJson: EvaluationResultJsonDto }> {
+		const profile = (await prismaRuntime.profile.findUnique({
+			where: { id: data.profileId },
+			select: {
+				id: true,
+				conditions: { select: { name: true } },
+				allergens: { select: { name: true } },
+				preferences: { select: { name: true } },
+			},
+		})) as ProfileWithRelations | null;
+
+		if (!profile) {
+			throw new HttpError(NOT_FOUND, `Profile with id '${data.profileId}' not found`);
+		}
+
+		const product = (await prismaRuntime.product.findUnique({
+			where: { id: data.productId },
+			select: { id: true, name: true, brand: true, category: true, ingredients: true },
+		})) as ProductWithIngredients | null;
+
+		if (!product) {
+			throw new HttpError(NOT_FOUND, `Product with id '${data.productId}' not found`);
+		}
+
+		let promptText: string | undefined;
+		if (data.promptId) {
+			const prompt = (await prismaRuntime.prompt.findUnique({
+				where: { id: data.promptId },
+				select: { id: true, prompt_text: true },
+			})) as PromptRecord | null;
+
+			if (!prompt) {
+				throw new HttpError(NOT_FOUND, `Prompt with id '${data.promptId}' not found`);
+			}
+
+			promptText = prompt.prompt_text;
+		}
+
+		const ingredientTerms = this.normalizeIngredients(product.ingredients);
+		if (!ingredientTerms.length) {
+			throw new HttpError(BAD_REQUEST, "Product has no valid ingredients to evaluate");
+		}
+
+		let resultJson: EvaluationResultJsonDto;
+		try {
+			resultJson = await geminiEvaluationService.evaluate({
+				productName: product.name,
+				productBrand: product.brand,
+				productCategory: product.category,
+				ingredients: ingredientTerms,
+				allergens: profile.allergens.map((item) => item.name),
+				conditions: profile.conditions.map((item) => item.name),
+				preferences: profile.preferences.map((item) => item.name),
+				promptText,
+			});
+		} catch {
+			resultJson = this.buildRuleBasedResult(ingredientTerms, profile);
+		}
+
+		return { resultJson };
+	}
+
 	async createEvaluationContext(data: CreateEvaluationContextDto): Promise<EvaluationContextResponseDto> {
 		await this.assertProfileExists(data.profileId);
 		await this.assertProductExists(data.productId);
@@ -294,70 +358,39 @@ export class EvaluationContextService {
 	}
 
 	async evaluateProduct(data: EvaluateProductRequestDto): Promise<EvaluationContextResponseDto> {
-		const profile = (await prismaRuntime.profile.findUnique({
-			where: { id: data.profileId },
-			select: {
-				id: true,
-				conditions: { select: { name: true } },
-				allergens: { select: { name: true } },
-				preferences: { select: { name: true } },
-			},
-		})) as ProfileWithRelations | null;
-
-		if (!profile) {
-			throw new HttpError(NOT_FOUND, `Profile with id '${data.profileId}' not found`);
-		}
-
-		const product = (await prismaRuntime.product.findUnique({
-			where: { id: data.productId },
-			select: { id: true, name: true, brand: true, category: true, ingredients: true },
-		})) as ProductWithIngredients | null;
-
-		if (!product) {
-			throw new HttpError(NOT_FOUND, `Product with id '${data.productId}' not found`);
-		}
-
-		let promptText: string | undefined;
-		if (data.promptId) {
-			const prompt = (await prismaRuntime.prompt.findUnique({
-				where: { id: data.promptId },
-				select: { id: true, prompt_text: true },
-			})) as PromptRecord | null;
-
-			if (!prompt) {
-				throw new HttpError(NOT_FOUND, `Prompt with id '${data.promptId}' not found`);
-			}
-
-			promptText = prompt.prompt_text;
-		}
-
-		const ingredientTerms = this.normalizeIngredients(product.ingredients);
-		if (!ingredientTerms.length) {
-			throw new HttpError(BAD_REQUEST, "Product has no valid ingredients to evaluate");
-		}
-
-		let resultJson: EvaluationResultJsonDto;
-		try {
-			resultJson = await geminiEvaluationService.evaluate({
-				productName: product.name,
-				productBrand: product.brand,
-				productCategory: product.category,
-				ingredients: ingredientTerms,
-				allergens: profile.allergens.map((item) => item.name),
-				conditions: profile.conditions.map((item) => item.name),
-				preferences: profile.preferences.map((item) => item.name),
-				promptText,
-			});
-		} catch {
-			resultJson = this.buildRuleBasedResult(ingredientTerms, profile);
-		}
-
+		const { resultJson } = await this.buildEvaluationResult(data);
 		return this.createEvaluationContext({
-			profileId: profile.id,
-			productId: product.id,
+			profileId: data.profileId,
+			productId: data.productId,
 			promptId: data.promptId,
 			resultJson,
 		});
+	}
+
+	async reevaluateEvaluationContext(id: string): Promise<EvaluationContextResponseDto> {
+		const existing = (await prismaRuntime.evaluationContext.findUnique({
+			where: { id },
+			select: { id: true, profileId: true, productId: true, promptId: true },
+		})) as { id: string; profileId: string; productId: string; promptId?: string | null } | null;
+
+		if (!existing) {
+			throw new HttpError(NOT_FOUND, `Evaluation context with id '${id}' not found`);
+		}
+
+		const { resultJson } = await this.buildEvaluationResult({
+			profileId: existing.profileId,
+			productId: existing.productId,
+			promptId: existing.promptId ?? undefined,
+		});
+
+		const updated = await prismaRuntime.evaluationContext.update({
+			where: { id },
+			data: {
+				resultJson: resultJson as Prisma.InputJsonValue,
+			},
+		});
+
+		return this.toResponseDto(updated);
 	}
 }
 

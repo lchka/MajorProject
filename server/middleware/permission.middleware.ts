@@ -242,6 +242,52 @@ export const canUpdateProfileByProfileId = ({ paramKey = "profileId" }: ProfileP
   };
 };
 
+type EvaluationContextParamOptions = {
+  paramKey?: string;
+};
+
+export const canAccessEvaluationContextById = ({ paramKey = "id" }: EvaluationContextParamOptions = {}) => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      throw new HttpError(401, "Unauthorized");
+    }
+
+    const contextIdParam = req.params[paramKey];
+    const contextId = Array.isArray(contextIdParam)
+      ? contextIdParam[0]
+      : contextIdParam;
+
+    if (!contextId) {
+      throw new HttpError(400, "Evaluation context id is required");
+    }
+
+    const userRole = req.user.role.name;
+
+    if (hasPermission(userRole, Permission.EVALUATION_CONTEXT_VIEW)) {
+      // Continue to ownership check below for non-admins.
+    }
+
+    if (hasPermission(userRole, Permission.PROFILE_VIEW_ALL)) {
+      return next();
+    }
+
+    const context = await prisma.evaluationContext.findUnique({
+      where: { id: contextId },
+      select: { profile: { select: { userId: true } } },
+    });
+
+    if (!context) {
+      throw new HttpError(404, "Evaluation context not found");
+    }
+
+    if (context.profile?.userId === req.user.id) {
+      return next();
+    }
+
+    throw new HttpError(403, "Forbidden - You don't have permission to access this evaluation context");
+  };
+};
+
 // Check if user can delete specific resource
 export const canDeleteUser = (
   req: Request,

@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import evaluationContextController from "../controllers/evaluationContext.controller";
 import { authMiddleware } from "../middleware/auth.middleware";
-import { can } from "../middleware/permission.middleware";
+import { can, canAccessEvaluationContextById } from "../middleware/permission.middleware";
 import { validate } from "../middleware/validateRequest";
 import {
 	createEvaluationContextSchema,
@@ -62,6 +62,15 @@ router.get(
 	evaluationContextController.getEvaluationContextsByProductId.bind(evaluationContextController),
 );
 
+// re-evaluate an existing context
+router.post(
+	"/:id/reevaluate",
+	authMiddleware,
+	can(Permission.EVALUATION_CONTEXT_UPDATE),
+	canAccessEvaluationContextById({ paramKey: "id" }),
+	evaluationContextController.reevaluateEvaluationContext.bind(evaluationContextController),
+);
+
 // get single evaluation context
 router.get(
 	"/:id",
@@ -75,6 +84,7 @@ router.patch(
 	"/:id",
 	authMiddleware,
 	can(Permission.EVALUATION_CONTEXT_UPDATE),
+	canAccessEvaluationContextById({ paramKey: "id" }),
 	validate(updateEvaluationContextSchema),
 	evaluationContextController.updateEvaluationContext.bind(evaluationContextController),
 );

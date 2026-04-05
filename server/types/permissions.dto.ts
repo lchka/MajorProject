@@ -206,6 +206,8 @@ export const rolePermissions: Record<RoleName, Permission[]> = {
     Permission.EVALUATION_CONTEXT_VIEW,
     Permission.EVALUATION_CONTEXT_CREATE,
     Permission.EVALUATION_CONTEXT_UPDATE,
+    Permission.EVALUATION_CONTEXT_DELETE,
+
   ],
 };
 

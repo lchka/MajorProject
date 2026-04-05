@@ -127,6 +127,19 @@ export class EvaluationContextController {
 		}
 	}
 
+	async reevaluateEvaluationContext(
+		req: Request<{ id: string }>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const updated = await evaluationContextService.reevaluateEvaluationContext(req.params.id);
+			res.status(SUCCESS_RES).json(updated);
+		} catch (error) {
+			next(error);
+		}
+	}
+
 	async deleteEvaluationContext(
 		req: Request<{ id: string }>,
 		res: Response,
