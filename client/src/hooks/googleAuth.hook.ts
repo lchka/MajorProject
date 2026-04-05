@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import Constants from 'expo-constants';
-import { authService } from '../services';
-import type { AuthResponse } from '../services';
+import { useCallback, useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import * as AuthSession from "expo-auth-session";
+import Constants from "expo-constants";
+import { authService } from "../services";
+import type { AuthResponse } from "../services";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const AUTH_TOKEN_KEY = 'authToken';
-const GOOGLE_AUTH_DEBUG_PREFIX = '[GoogleAuthDebug]';
+const AUTH_TOKEN_KEY = "authToken";
+const GOOGLE_AUTH_DEBUG_PREFIX = "[GoogleAuthDebug]";
 
 type UseGoogleAuthOptions = {
   onLoginSuccess?: (response: AuthResponse) => Promise<void> | void;
@@ -23,64 +24,44 @@ type UseGoogleAuthReturn = {
   error: string | null;
 };
 
-export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthReturn => {
+export const useGoogleAuth = (
+  options?: UseGoogleAuthOptions,
+): UseGoogleAuthReturn => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const redirectUri = 'https://auth.expo.io/@lchkas-organization/client';
-  const isExpoGo = Constants.appOwnership === 'expo';
 
-  const googleConfig: Parameters<typeof Google.useAuthRequest>[0] = {
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
+  const redirectUri = "https://auth.expo.io/@lchkas-organization/client";
+  const isExpoGo = Constants.appOwnership === "expo";
+
+  const config: Parameters<typeof Google.useAuthRequest>[0] = {
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     redirectUri,
-    scopes: ['openid', 'profile', 'email'],
-    responseType: 'id_token',
+    scopes: ["openid", "profile", "email"],
+    responseType: "id_token",
   };
 
-  if (!isExpoGo) {
-    googleConfig.iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  if (isExpoGo) {
+    config.clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  } else {
+    config.iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
   }
 
-  const [request, response, promptAsync] = Google.useAuthRequest(googleConfig);
+  const [request, response, promptAsync] = Google.useAuthRequest(config);
 
   useEffect(() => {
     console.log(
       `${GOOGLE_AUTH_DEBUG_PREFIX} hook initialized`,
       JSON.stringify({
-        isExpoGo,
         redirectUri,
-        hasClientId: Boolean(process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID),
-        hasIosClientId: Boolean(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID),
-        hasWebClientId: Boolean(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
+        requestRedirectUri: request?.redirectUri,
+        requestUrl: request?.url,
+        isExpoGo,
       }),
     );
-  }, [isExpoGo, redirectUri]);
-
-  useEffect(() => {
-    if (!request) {
-      console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} auth request not ready yet`);
-      return;
-    }
-
-    console.log(
-      `${GOOGLE_AUTH_DEBUG_PREFIX} auth request ready`,
-      JSON.stringify({
-        url: request.url,
-        redirectUri: request.redirectUri,
-      }),
-    );
-  }, [request]);
+  }, [redirectUri, request?.redirectUri, request?.url, isExpoGo]);
 
   const handleBackendLogin = useCallback(
     async (token: string) => {
-      console.log(
-        `${GOOGLE_AUTH_DEBUG_PREFIX} backend exchange start`,
-        JSON.stringify({
-          tokenLength: token.length,
-          tokenPrefix: token.slice(0, 12),
-        }),
-      );
-
       setLoading(true);
       setError(null);
 
@@ -88,35 +69,12 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
         const authResponse = await authService.googleLogin({ token });
         await AsyncStorage.setItem(AUTH_TOKEN_KEY, authResponse.token);
 
-        console.log(
-          `${GOOGLE_AUTH_DEBUG_PREFIX} backend exchange success`,
-          JSON.stringify({
-            userId: authResponse.user.id,
-            email: authResponse.user.email,
-          }),
-        );
-
         if (options?.onLoginSuccess) {
           await options.onLoginSuccess(authResponse);
         }
       } catch (err: unknown) {
         const message =
-          typeof err === 'object' &&
-          err !== null &&
-          'response' in err &&
-          typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message ===
-            'string'
-            ? (err as { response?: { data?: { message?: string } } }).response!.data!.message!
-            : err instanceof Error
-              ? err.message
-              : 'Google login failed';
-
-        console.log(
-          `${GOOGLE_AUTH_DEBUG_PREFIX} backend exchange failed`,
-          JSON.stringify({
-            message,
-          }),
-        );
+          err instanceof Error ? err.message : "Google login failed";
 
         setError(message);
         options?.onLoginError?.(message);
@@ -128,46 +86,24 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
   );
 
   useEffect(() => {
-    if (!response) {
-      console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} no auth response yet`);
-      return;
-    }
+    if (!response) return;
 
-    console.log(
-      `${GOOGLE_AUTH_DEBUG_PREFIX} auth response received`,
-      JSON.stringify({
-        type: response.type,
-        hasAuthentication: Boolean(response.authentication),
-        paramsKeys: Object.keys(response.params || {}),
-        errorCode: response.type === 'error' ? response.error?.code : undefined,
-        errorMessage: response.type === 'error' ? response.error?.message : undefined,
-      }),
-    );
-
-    if (response.type === 'error') {
-      const message = response.error?.message || 'Google sign-in failed';
+    if (response.type === "error") {
+      const message = response.error?.message || "Google sign-in failed";
       setError(message);
       options?.onLoginError?.(message);
       return;
     }
 
-    if (response.type === 'success') {
-      const idTokenFromAuth = response.authentication?.idToken;
-      const idTokenFromParams =
-        typeof response.params?.id_token === 'string' ? response.params.id_token : undefined;
-      const idToken = idTokenFromAuth || idTokenFromParams;
-
-      console.log(
-        `${GOOGLE_AUTH_DEBUG_PREFIX} token extraction`,
-        JSON.stringify({
-          hasIdTokenFromAuthentication: Boolean(idTokenFromAuth),
-          hasIdTokenFromParams: Boolean(idTokenFromParams),
-        }),
-      );
+    if (response.type === "success") {
+      const idToken =
+        response.authentication?.idToken ||
+        (typeof response.params?.id_token === "string"
+          ? response.params.id_token
+          : undefined);
 
       if (!idToken) {
-        const message =
-          'Google did not return an ID token. Check EXPO_PUBLIC_GOOGLE_*_CLIENT_ID values.';
+        const message = "No ID token returned from Google";
         setError(message);
         options?.onLoginError?.(message);
         return;
@@ -180,18 +116,16 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
   const promptGoogleAuth = useCallback(async () => {
     setError(null);
 
-    console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} prompt requested`);
-
     if (!request) {
-      const message =
-        'Google auth request is not ready. Check EXPO_PUBLIC_GOOGLE_*_CLIENT_ID environment variables.';
+      const message = "Google auth not ready";
       setError(message);
       options?.onLoginError?.(message);
       return;
     }
 
-    console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} opening auth prompt`);
-    await promptAsync();
+await promptAsync({
+  showInRecents: true,
+});
   }, [options, promptAsync, request]);
 
   return {
