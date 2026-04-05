@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import * as AuthSession from "expo-auth-session";
 import Constants from "expo-constants";
 import { authService } from "../services";
 import type { AuthResponse } from "../services";
@@ -30,7 +29,7 @@ export const useGoogleAuth = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectUri = "https://auth.expo.io/@lchkas-organization/client";
+  const redirectUri = "https://auth.expo.io/@lchkas-organization/lumiere";
   const isExpoGo = Constants.appOwnership === "expo";
 
   const config: Parameters<typeof Google.useAuthRequest>[0] = {
@@ -40,10 +39,14 @@ export const useGoogleAuth = (
     responseType: "id_token",
   };
 
-  if (isExpoGo) {
-    config.clientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-  } else {
+  if (process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID) {
     config.iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  }
+
+  if (isExpoGo) {
+    config.clientId =
+      process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ||
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
   }
 
   const [request, response, promptAsync] = Google.useAuthRequest(config);
@@ -123,9 +126,7 @@ export const useGoogleAuth = (
       return;
     }
 
-await promptAsync({
-  showInRecents: true,
-});
+    await promptAsync();
   }, [options, promptAsync, request]);
 
   return {

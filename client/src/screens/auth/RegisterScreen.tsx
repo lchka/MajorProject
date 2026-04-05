@@ -25,9 +25,12 @@ import {
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { authService } from "../../services";
+import profileService from "../../services/profileService";
 import { registerSchema } from "../../models/auth.schema";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
+import useGoogleAuth from "../../hooks/googleAuth.hook";
+import type { AuthResponse } from "../../services";
 
 const AUTH_TOKEN_KEY = "authToken";
 
@@ -43,6 +46,43 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const completeLoginFlow = async (response: AuthResponse) => {
+    let shouldGoToAnalyse = false;
+    let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
+
+    if (profileIdForEdit) {
+      try {
+        const profile = await profileService.getMyProfile();
+        shouldGoToAnalyse = Boolean(profile?.isComplete);
+        profileIdForEdit = profile?.id ?? profileIdForEdit;
+      } catch {
+        shouldGoToAnalyse = false;
+      }
+    }
+
+    if (shouldGoToAnalyse) {
+      navigation.navigate("LandingScreen");
+      return;
+    }
+
+    navigation.navigate("ProfileScreen", {
+      firstName: response.user.first_name,
+      lastName: response.user.last_name,
+      email: response.user.email,
+      profileId: profileIdForEdit,
+    });
+  };
+
+  const { promptGoogleAuth } = useGoogleAuth({
+    onLoginSuccess: async (response) => {
+      await completeLoginFlow(response);
+      Alert.alert("Success!", "Google sign-in successful.");
+    },
+    onLoginError: (message) => {
+      Alert.alert("Google Login Failed", message);
+    },
+  });
 
   const handleNext = () => {
     if (step === 1 && (!firstName.trim() || !lastName.trim())) {
@@ -212,7 +252,7 @@ export default function RegisterScreen() {
                   <ButtonText color="$white">Continue with Email</ButtonText>
                 </Button>
 
-                <SocialAuth />
+                <SocialAuth onGooglePress={promptGoogleAuth} />
               </VStack>
             ) : (
               <VStack space="xl">
