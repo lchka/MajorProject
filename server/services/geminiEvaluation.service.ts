@@ -33,15 +33,16 @@ Return ONLY valid JSON with this exact shape:
   "matched_allergens": ["string"],
   "matched_conditions": ["string"],
 	"matched_preferences": ["string"],
-	"citations": ["as mentioned 'title' by 'author'"]
+	"citations": ["'title' by 'author' from 'year of release'"]
 }
-
 Rules:
 - status must be one of: safe, caution, avoid.
 - score must be a number from 0 to 100.
 - If any allergen match is present, status should usually be avoid.
 - Include citations only when evidence from the provided research context supports your reasoning.
 - Do not include markdown or extra keys.
+-Citations simply mention title and author do NOT references lines from the papers
+-Summary should be objective 
 `;
 
 const toCitationText = (match: Pick<RagChunkMatch, "title" | "author">): string => {

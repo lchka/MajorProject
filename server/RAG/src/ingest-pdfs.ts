@@ -23,6 +23,34 @@ const DEFAULT_NAMESPACE = "research-pdfs";
 const DEFAULT_CHUNK_SIZE = 1200;
 const DEFAULT_CHUNK_OVERLAP = 200;
 const UPSERT_BATCH_SIZE = 50;
+const DEFAULT_HTTP_TIMEOUT_MS = 30_000;
+
+const fetchWithTimeout = async (
+	url: string,
+	init: RequestInit,
+	timeoutMs: number,
+	timeoutLabel: string,
+): Promise<Response> => {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => {
+		controller.abort();
+	}, timeoutMs);
+
+	try {
+		return await fetch(url, {
+			...init,
+			signal: controller.signal,
+		});
+	} catch (error) {
+		if (error instanceof Error && error.name === "AbortError") {
+			throw new Error(`${timeoutLabel} timed out after ${timeoutMs}ms.`);
+		}
+
+		throw error;
+	} finally {
+		clearTimeout(timeoutId);
+	}
+};
 
 const toPineconeHost = (host: string): string => {
 	const normalized = host.trim();
@@ -166,8 +194,11 @@ const upsertVectors = async (params: {
 	apiKey: string;
 	vectors: PineconeVector[];
 	namespace: string;
+	httpTimeoutMs: number;
 }): Promise<void> => {
-	const response = await fetch(`${params.host}/vectors/upsert`, {
+	const response = await fetchWithTimeout(
+		`${params.host}/vectors/upsert`,
+		{
 		method: "POST",
 		headers: {
 			"Api-Key": params.apiKey,
@@ -177,7 +208,10 @@ const upsertVectors = async (params: {
 			vectors: params.vectors,
 			namespace: params.namespace,
 		}),
-	});
+		},
+		params.httpTimeoutMs,
+		"Pinecone upsert request",
+	);
 
 	if (!response.ok) {
 		const errorText = await response.text();
@@ -190,12 +224,15 @@ const fetchExistingVectorIds = async (params: {
 	apiKey: string;
 	namespace: string;
 	ids: string[];
+	httpTimeoutMs: number;
 }): Promise<Set<string>> => {
 	if (params.ids.length === 0) {
 		return new Set<string>();
 	}
 
-	const response = await fetch(`${params.host}/vectors/fetch`, {
+	const response = await fetchWithTimeout(
+		`${params.host}/vectors/fetch`,
+		{
 		method: "POST",
 		headers: {
 			"Api-Key": params.apiKey,
@@ -205,7 +242,10 @@ const fetchExistingVectorIds = async (params: {
 			ids: params.ids,
 			namespace: params.namespace,
 		}),
-	});
+		},
+		params.httpTimeoutMs,
+		"Pinecone fetch request",
+	);
 
 	if (!response.ok) {
 		const errorText = await response.text();
@@ -233,9 +273,12 @@ const ingestSinglePdf = async (params: {
 	namespace: string;
 	pineconeHost: string;
 	pineconeApiKey: string;
+	httpTimeoutMs: number;
 }): Promise<number> => {
 	const filePath = path.join(params.pdfDir, params.fileName);
+	console.log(`Reading ${params.fileName}...`);
 	const buffer = await readFile(filePath);
+	console.log(`Parsing ${params.fileName}...`);
 	const parser = new PDFParse({ data: buffer });
 	const infoResult = await parser.getInfo();
 	const textResult = await parser.getText();
@@ -254,6 +297,8 @@ const ingestSinglePdf = async (params: {
 		return 0;
 	}
 
+	console.log(`${params.fileName}: extracted ${chunks.length} chunks.`);
+
 	const chunkItems = chunks.map((chunk, index) => ({
 		id: createChunkId(params.fileName, index),
 		chunk,
@@ -268,6 +313,7 @@ const ingestSinglePdf = async (params: {
 			apiKey: params.pineconeApiKey,
 			namespace: params.namespace,
 			ids: idBatch,
+			httpTimeoutMs: params.httpTimeoutMs,
 		});
 
 		for (const id of batchExisting) {
@@ -285,6 +331,16 @@ const ingestSinglePdf = async (params: {
 	let vectorBuffer: PineconeVector[] = [];
 
 	for (const item of missingItems) {
+		if (indexedNow === 0 && vectorBuffer.length === 0) {
+			console.log(`${params.fileName}: generating embeddings for ${missingItems.length} new chunks...`);
+		}
+		const preparedCount = indexedNow + vectorBuffer.length;
+		if (preparedCount % 5 === 0) {
+			console.log(
+				`${params.fileName}: preparing chunk ${preparedCount + 1}/${missingItems.length} for embedding...`,
+			);
+		}
+
 		const embedding = await ragEmbeddingService.embedText(item.chunk);
 		vectorBuffer.push({
 			id: item.id,
@@ -305,8 +361,10 @@ const ingestSinglePdf = async (params: {
 				apiKey: params.pineconeApiKey,
 				vectors: vectorBuffer,
 				namespace: params.namespace,
+				httpTimeoutMs: params.httpTimeoutMs,
 			});
 			indexedNow += vectorBuffer.length;
+			console.log(`${params.fileName}: upserted ${indexedNow}/${missingItems.length} new chunks.`);
 			vectorBuffer = [];
 		}
 	}
@@ -317,6 +375,7 @@ const ingestSinglePdf = async (params: {
 			apiKey: params.pineconeApiKey,
 			vectors: vectorBuffer,
 			namespace: params.namespace,
+			httpTimeoutMs: params.httpTimeoutMs,
 		});
 		indexedNow += vectorBuffer.length;
 	}
@@ -335,6 +394,7 @@ export const ingestPdfsToPinecone = async (options?: {
 	const pineconeHost = process.env.PINECONE_HOST;
 	const namespace = options?.namespace ?? process.env.PINECONE_NAMESPACE ?? DEFAULT_NAMESPACE;
 	const pdfDirectory = options?.pdfDirectory ?? DEFAULT_PDF_DIR;
+	const httpTimeoutMs = Number(process.env.RAG_HTTP_TIMEOUT_MS ?? DEFAULT_HTTP_TIMEOUT_MS);
 
 	if (!pineconeApiKey) {
 		throw new Error("PINECONE_API_KEY is missing in environment variables.");
@@ -342,6 +402,11 @@ export const ingestPdfsToPinecone = async (options?: {
 	if (!pineconeHost) {
 		throw new Error("PINECONE_HOST is missing in environment variables.");
 	}
+	if (!Number.isInteger(httpTimeoutMs) || httpTimeoutMs <= 0) {
+		throw new Error("RAG_HTTP_TIMEOUT_MS must be a positive integer.");
+	}
+
+	console.log(`Starting ingestion from '${pdfDirectory}' into namespace '${namespace}'...`);
 
 	const files = await readdir(pdfDirectory);
 	const pdfFiles = files.filter((file) => file.toLowerCase().endsWith(".pdf"));
@@ -350,15 +415,19 @@ export const ingestPdfsToPinecone = async (options?: {
 		console.warn(`No PDF files found in ${pdfDirectory}`);
 		return;
 	}
+	console.log(`Found ${pdfFiles.length} PDF file(s).`);
 
 	let totalChunks = 0;
-	for (const fileName of pdfFiles) {
+	for (let fileIndex = 0; fileIndex < pdfFiles.length; fileIndex += 1) {
+		const fileName = pdfFiles[fileIndex];
+		console.log(`[${fileIndex + 1}/${pdfFiles.length}] Processing ${fileName}`);
 		totalChunks += await ingestSinglePdf({
 			pdfDir: pdfDirectory,
 			fileName,
 			namespace,
 			pineconeHost: toPineconeHost(pineconeHost),
 			pineconeApiKey,
+			httpTimeoutMs,
 		});
 	}
 
