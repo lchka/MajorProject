@@ -2,12 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import Constants from 'expo-constants';
 import { authService } from '../services';
 import type { AuthResponse } from '../services';
 
 WebBrowser.maybeCompleteAuthSession();
 
 const AUTH_TOKEN_KEY = 'authToken';
+const GOOGLE_AUTH_DEBUG_PREFIX = '[GoogleAuthDebug]';
 
 type UseGoogleAuthOptions = {
   onLoginSuccess?: (response: AuthResponse) => Promise<void> | void;
@@ -25,23 +27,74 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const redirectUri = 'https://auth.expo.io/@lchkas-organization/client';
+  const isExpoGo = Constants.appOwnership === 'expo';
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
+  const googleConfig: Parameters<typeof Google.useAuthRequest>[0] = {
     clientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     redirectUri,
     scopes: ['openid', 'profile', 'email'],
-  });
+    responseType: 'id_token',
+  };
+
+  if (!isExpoGo) {
+    googleConfig.iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  }
+
+  const [request, response, promptAsync] = Google.useAuthRequest(googleConfig);
+
+  useEffect(() => {
+    console.log(
+      `${GOOGLE_AUTH_DEBUG_PREFIX} hook initialized`,
+      JSON.stringify({
+        isExpoGo,
+        redirectUri,
+        hasClientId: Boolean(process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID),
+        hasIosClientId: Boolean(process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID),
+        hasWebClientId: Boolean(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID),
+      }),
+    );
+  }, [isExpoGo, redirectUri]);
+
+  useEffect(() => {
+    if (!request) {
+      console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} auth request not ready yet`);
+      return;
+    }
+
+    console.log(
+      `${GOOGLE_AUTH_DEBUG_PREFIX} auth request ready`,
+      JSON.stringify({
+        url: request.url,
+        redirectUri: request.redirectUri,
+      }),
+    );
+  }, [request]);
 
   const handleBackendLogin = useCallback(
     async (token: string) => {
+      console.log(
+        `${GOOGLE_AUTH_DEBUG_PREFIX} backend exchange start`,
+        JSON.stringify({
+          tokenLength: token.length,
+          tokenPrefix: token.slice(0, 12),
+        }),
+      );
+
       setLoading(true);
       setError(null);
 
       try {
         const authResponse = await authService.googleLogin({ token });
         await AsyncStorage.setItem(AUTH_TOKEN_KEY, authResponse.token);
+
+        console.log(
+          `${GOOGLE_AUTH_DEBUG_PREFIX} backend exchange success`,
+          JSON.stringify({
+            userId: authResponse.user.id,
+            email: authResponse.user.email,
+          }),
+        );
 
         if (options?.onLoginSuccess) {
           await options.onLoginSuccess(authResponse);
@@ -58,6 +111,13 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
               ? err.message
               : 'Google login failed';
 
+        console.log(
+          `${GOOGLE_AUTH_DEBUG_PREFIX} backend exchange failed`,
+          JSON.stringify({
+            message,
+          }),
+        );
+
         setError(message);
         options?.onLoginError?.(message);
       } finally {
@@ -69,8 +129,20 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
 
   useEffect(() => {
     if (!response) {
+      console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} no auth response yet`);
       return;
     }
+
+    console.log(
+      `${GOOGLE_AUTH_DEBUG_PREFIX} auth response received`,
+      JSON.stringify({
+        type: response.type,
+        hasAuthentication: Boolean(response.authentication),
+        paramsKeys: Object.keys(response.params || {}),
+        errorCode: response.type === 'error' ? response.error?.code : undefined,
+        errorMessage: response.type === 'error' ? response.error?.message : undefined,
+      }),
+    );
 
     if (response.type === 'error') {
       const message = response.error?.message || 'Google sign-in failed';
@@ -84,6 +156,14 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
       const idTokenFromParams =
         typeof response.params?.id_token === 'string' ? response.params.id_token : undefined;
       const idToken = idTokenFromAuth || idTokenFromParams;
+
+      console.log(
+        `${GOOGLE_AUTH_DEBUG_PREFIX} token extraction`,
+        JSON.stringify({
+          hasIdTokenFromAuthentication: Boolean(idTokenFromAuth),
+          hasIdTokenFromParams: Boolean(idTokenFromParams),
+        }),
+      );
 
       if (!idToken) {
         const message =
@@ -100,6 +180,8 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
   const promptGoogleAuth = useCallback(async () => {
     setError(null);
 
+    console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} prompt requested`);
+
     if (!request) {
       const message =
         'Google auth request is not ready. Check EXPO_PUBLIC_GOOGLE_*_CLIENT_ID environment variables.';
@@ -108,6 +190,7 @@ export const useGoogleAuth = (options?: UseGoogleAuthOptions): UseGoogleAuthRetu
       return;
     }
 
+    console.log(`${GOOGLE_AUTH_DEBUG_PREFIX} opening auth prompt`);
     await promptAsync();
   }, [options, promptAsync, request]);
 
