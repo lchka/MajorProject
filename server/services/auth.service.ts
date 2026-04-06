@@ -90,7 +90,7 @@ export class AuthService {
       throw new HttpError(401, "Google account email is missing or not verified.");
     }
 
-    let user = await userRepository.findByEmail(email);
+    const user = await userRepository.findByEmail(email);
 
     if (!user) {
       const userRole = await roleRepository.findByName("user");

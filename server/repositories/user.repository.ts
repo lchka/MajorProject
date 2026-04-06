@@ -115,7 +115,7 @@ export class UserRepository {
       data: { deletedAt: null },
       include: {
         role: true,
-        profile: true,
+        profiles: true,
       },
     });
   }

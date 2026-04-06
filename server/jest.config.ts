@@ -9,11 +9,14 @@ const config: Config = {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
   },
-  globals: {
-    "ts-jest": {
-      useESM: true,
-      tsconfig: "<rootDir>/tsconfig.json",
-    },
+  transform: {
+    "^.+\\.(t|j)sx?$": [
+      "ts-jest",
+      {
+        useESM: true,
+        tsconfig: "<rootDir>/tsconfig.json",
+      },
+    ],
   },
   clearMocks: true,
 };

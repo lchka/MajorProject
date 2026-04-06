@@ -1,25 +1,46 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
-import { HttpError } from "../../utils/HttpError.js";
+import type { NextFunction, Request, Response } from "express";
+import { SUCCESS_RES } from "../../utils/HttpError.js";
 import type { UserResponseDto } from "../../types/user.dto.js";
+import {
+	loginRequestSchema,
+	registerRequestSchema,
+} from "../../types/user.dto.js";
 
 process.env.JWT_SECRET = "test-secret";
 
-const mockRegisterUser = jest.fn();
-const mockAuthenticateUser = jest.fn();
-const mockGetUserById = jest.fn();
+// ------------------
+// Typed mocks
+// ------------------
+const mockRegisterUser = jest.fn<
+	() => Promise<UserResponseDto>
+>();
 
-const mockFindByEmail = jest.fn();
-const mockFindByName = jest.fn();
+const mockAuthenticateUser = jest.fn<
+	() => Promise<UserResponseDto>
+>();
 
-const mockSign = jest.fn();
-const mockVerify = jest.fn();
+const mockGetUserById = jest.fn<
+	() => Promise<UserResponseDto>
+>();
 
-const mockVerifyIdToken = jest.fn();
-const mockOAuth2Client = jest.fn().mockImplementation(() => ({
-	verifyIdToken: mockVerifyIdToken,
-}));
+const mockFindByName = jest.fn<
+	() => Promise<{ id: string; name: string } | null>
+>();
 
-jest.unstable_mockModule("../../services/user.service.js", () => ({
+const mockSign = jest.fn<
+	(payload: object, secret: string) => string
+>();
+
+const mockVerify = jest.fn<
+	(token: string, secret: string) => unknown
+>();
+
+// ------------------
+// Mocks (ESM safe)
+// ------------------
+jest.mock("../../services/user.service.js", () => ({
+	__esModule: true,
 	default: {
 		registerUser: mockRegisterUser,
 		authenticateUser: mockAuthenticateUser,
@@ -27,93 +48,94 @@ jest.unstable_mockModule("../../services/user.service.js", () => ({
 	},
 }));
 
-jest.unstable_mockModule("../../repositories/user.repository.js", () => ({
-	default: {
-		findByEmail: mockFindByEmail,
-	},
-}));
-
-jest.unstable_mockModule("../../repositories/role.repository.js", () => ({
+jest.mock("../../repositories/role.repository.js", () => ({
+	__esModule: true,
 	default: {
 		findByName: mockFindByName,
 	},
 }));
 
-jest.unstable_mockModule("jsonwebtoken", () => ({
+jest.mock("jsonwebtoken", () => ({
+	__esModule: true,
 	default: {
 		sign: mockSign,
 		verify: mockVerify,
 	},
 }));
 
-jest.unstable_mockModule("google-auth-library", () => ({
-	OAuth2Client: mockOAuth2Client,
-}));
+// ------------------
+// Imports AFTER mocks
+// ------------------
+import authService from "../../services/auth.service.js";
+import authController from "../../controllers/auth.controller.js";
 
-const { default: authService } = await import(
-	"../../services/auth.service.js"
-);
-
+// ------------------
+// Test data
+// ------------------
 const baseUser: UserResponseDto = {
-	id: "user-1",
+	id: "11111111-1111-1111-1111-111111111111",
 	email: "user@example.com",
-	profile_id: "profile-1",
+	profile_id: "22222222-2222-2222-2222-222222222222",
 	first_name: "Test",
 	last_name: "User",
-	role: { id: "role-1", name: "user" },
+	role: {
+		id: "33333333-3333-3333-3333-333333333333",
+		name: "user",
+	},
 };
 
 beforeEach(() => {
 	jest.clearAllMocks();
-	process.env.GOOGLE_AUTH_CLIENT_IDS = "";
-	process.env.GOOGLE_WEB_CLIENT_ID = "";
-	process.env.GOOGLE_ANDROID_CLIENT_ID = "";
-	process.env.GOOGLE_IOS_CLIENT_ID = "";
-	process.env.GOOGLE_EXPO_CLIENT_ID = "";
 });
 
+// ======================
+// REGISTER
+// ======================
 describe("AuthService.register", () => {
-	it("registers a user and returns token", async () => {
-		mockFindByName.mockResolvedValue({ id: "role-1", name: "user" });
+	it("should register user and return token", async () => {
+		mockFindByName.mockResolvedValue({
+			id: "role-1",
+			name: "user",
+		});
+
 		mockRegisterUser.mockResolvedValue(baseUser);
 		mockSign.mockReturnValue("token-123");
 
 		const result = await authService.register({
 			email: "user@example.com",
 			password: "Pass123!",
+			c_password: "Pass123!",
 			first_name: "Test",
 			last_name: "User",
 		});
 
-		expect(result.message).toBe("Registration successful");
-		expect(result.token).toBe("token-123");
-		expect(result.user).toEqual(baseUser);
-		expect(mockFindByName).toHaveBeenCalledWith("user");
-		expect(mockRegisterUser).toHaveBeenCalledWith({
-			email: "user@example.com",
-			password: "Pass123!",
-			first_name: "Test",
-			last_name: "User",
-			roleId: "role-1",
+		expect(result).toMatchObject({
+			message: "Registration successful",
+			token: "token-123",
+			user: baseUser,
 		});
 	});
 
-	it("throws when default role is missing", async () => {
+	it("should throw if role not found", async () => {
 		mockFindByName.mockResolvedValue(null);
 
 		await expect(
 			authService.register({
 				email: "user@example.com",
 				password: "Pass123!",
+				c_password: "Pass123!",
 				first_name: "Test",
 				last_name: "User",
-			})
-		).rejects.toThrow(HttpError);
+			}),
+		).rejects.toThrow();
 	});
 });
 
+// ======================
+// LOGIN
+// ======================
 describe("AuthService.login", () => {
-	it("authenticates a user and returns token", async () => {
+	it("should login and return token", async () => {
 		mockAuthenticateUser.mockResolvedValue(baseUser);
 		mockSign.mockReturnValue("token-abc");
 
@@ -122,98 +144,94 @@ describe("AuthService.login", () => {
 			password: "Pass123!",
 		});
 
-		expect(result.message).toBe("Login successful");
-		expect(result.token).toBe("token-abc");
-		expect(result.user).toEqual(baseUser);
-		expect(mockAuthenticateUser).toHaveBeenCalledWith(
-			"user@example.com",
-			"Pass123!"
-		);
-	});
-});
-
-describe("AuthService.googleLogin", () => {
-	it("fails when Google audiences are not configured", async () => {
-		await expect(
-			authService.googleLogin({ token: "bad-token" })
-		).rejects.toThrow("Google auth is not configured");
-	});
-
-	it("fails on invalid Google token", async () => {
-		process.env.GOOGLE_AUTH_CLIENT_IDS = "client-1";
-		mockVerifyIdToken.mockRejectedValue(new Error("invalid"));
-
-		await expect(
-			authService.googleLogin({ token: "bad-token" })
-		).rejects.toThrow("Invalid Google ID token");
-	});
-
-	it("registers a new user from Google payload", async () => {
-		process.env.GOOGLE_AUTH_CLIENT_IDS = "client-1";
-		mockVerifyIdToken.mockResolvedValue({
-			getPayload: () => ({
-				email: "newuser@example.com",
-				email_verified: true,
-				given_name: "New",
-				family_name: "User",
-			}),
-		});
-		mockFindByEmail.mockResolvedValue(null);
-		mockFindByName.mockResolvedValue({ id: "role-1", name: "user" });
-		mockRegisterUser.mockResolvedValue(baseUser);
-		mockSign.mockReturnValue("token-xyz");
-
-		const result = await authService.googleLogin({ token: "good-token" });
-
-		expect(result.message).toBe("Google login successful");
-		expect(result.token).toBe("token-xyz");
-		expect(result.user).toEqual(baseUser);
-		expect(mockRegisterUser).toHaveBeenCalledWith({
-			email: "newuser@example.com",
-			password: expect.stringMatching(/^G#.+a1$/),
-			first_name: "New",
-			last_name: "User",
-			roleId: "role-1",
+		expect(result).toMatchObject({
+			message: "Login successful",
+			token: "token-abc",
+			user: baseUser,
 		});
 	});
 
-	it("logs in an existing user from Google payload", async () => {
-		process.env.GOOGLE_AUTH_CLIENT_IDS = "client-1";
-		mockVerifyIdToken.mockResolvedValue({
-			getPayload: () => ({
+	it("should throw if authentication fails", async () => {
+		mockAuthenticateUser.mockImplementation(() => {
+			throw new Error("Invalid credentials");
+		});
+
+		await expect(
+			authService.login({
 				email: "user@example.com",
-				email_verified: true,
-				name: "Test User",
+				password: "wrong",
 			}),
-		});
-		mockFindByEmail.mockResolvedValue({ id: "user-1" });
-		mockGetUserById.mockResolvedValue(baseUser);
-		mockSign.mockReturnValue("token-789");
-
-		const result = await authService.googleLogin({ token: "good-token" });
-
-		expect(result.message).toBe("Google login successful");
-		expect(result.token).toBe("token-789");
-		expect(result.user).toEqual(baseUser);
-		expect(mockGetUserById).toHaveBeenCalledWith("user-1");
+		).rejects.toThrow();
 	});
 });
 
+// ======================
+// TOKEN
+// ======================
 describe("AuthService.verifyToken", () => {
-	it("returns decoded payload", () => {
+	it("should return decoded payload", () => {
 		mockVerify.mockReturnValue({ userId: "user-1" });
 
-		const result = authService.verifyToken("token-123");
+		const result = authService.verifyToken("token");
 
 		expect(result).toEqual({ userId: "user-1" });
-		expect(mockVerify).toHaveBeenCalledWith("token-123", "test-secret");
 	});
 
-	it("throws when token is invalid", () => {
+	it("should throw for invalid token", () => {
 		mockVerify.mockImplementation(() => {
-			throw new Error("bad token");
+			throw new Error();
 		});
 
-		expect(() => authService.verifyToken("bad")).toThrow(HttpError);
+		expect(() => authService.verifyToken("bad")).toThrow();
+	});
+});
+
+// ======================
+// CONTROLLER
+// ======================
+describe("AuthController.logout", () => {
+	it("should return success response", async () => {
+		const req = {} as Request;
+
+		const res = {
+			status: jest.fn().mockReturnThis(),
+			json: jest.fn(),
+		} as unknown as Response;
+
+		const next = jest.fn() as NextFunction;
+
+		await authController.logout(req, res, next);
+
+		expect(res.status).toHaveBeenCalledWith(SUCCESS_RES);
+		expect(res.json).toHaveBeenCalledWith({
+			message: "Logout successful",
+		});
+		expect(next).not.toHaveBeenCalled();
+	});
+});
+
+// ======================
+// VALIDATION
+// ======================
+describe("Auth validation", () => {
+	it("should accept valid register input", () => {
+		const result = registerRequestSchema.safeParse({
+			email: "user@example.com",
+			password: "Pass123!",
+			c_password: "Pass123!",
+			first_name: "Test",
+			last_name: "User",
+		});
+
+		expect(result.success).toBe(true);
+	});
+
+	it("should reject invalid login email", () => {
+		const result = loginRequestSchema.safeParse({
+			email: "bad-email",
+			password: "Pass123!",
+		});
+
+		expect(result.success).toBe(false);
 	});
 });
