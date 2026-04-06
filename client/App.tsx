@@ -1,3 +1,4 @@
+import "react-native-reanimated";
 import "react-native-gesture-handler";
 import AnalyseScreen from "./src/screens/AnalyseScreen";
 import LandingScreen from "./src/screens/LandingScreen";

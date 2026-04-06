@@ -7,7 +7,9 @@ import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import EditButton from "../components/Buttons/EditButton";
+import SwitchProfile from "../components/overlays/SwitchProfile";
 import PastAnalysis from "../components/general/pastAnalysis";
+import PreferencesOverview from "../components/general/preferences";
 import profileService from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
@@ -22,19 +24,29 @@ const conditionCards = [
 export default function LandingScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const [profileId, setProfileId] = React.useState<string | null>(null);
+	const [profiles, setProfiles] = React.useState<Array<{ id: string; name: string; avatarUri?: string }>>([]);
+	const [isSwitchProfileOpen, setIsSwitchProfileOpen] = React.useState(false);
 
 	React.useEffect(() => {
 		let isMounted = true;
 
 		const loadProfileId = async () => {
 			try {
-				const profiles = await profileService.getMyProfile();
-				const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
+				const fetchedProfiles = await profileService.getMyProfile();
+				const activeProfile = fetchedProfiles.find((item) => item.main_profile) ?? fetchedProfiles[0];
 				if (isMounted) {
+					setProfiles(
+						fetchedProfiles.map((item) => ({
+							id: item.id,
+							name: `${item.first_name} ${item.last_name}`.trim(),
+							avatarUri: item.profile_image || undefined,
+						})),
+					);
 					setProfileId(activeProfile?.id ?? null);
 				}
 			} catch {
 				if (isMounted) {
+					setProfiles([]);
 					setProfileId(null);
 				}
 			}
@@ -91,7 +103,7 @@ export default function LandingScreen() {
 				<Box style={styles.divider} />
 
 				{/* Profile quick switch card */}
-				<Pressable my="$2" style={styles.switchProfileCard}>
+				<Pressable my="$2" style={styles.switchProfileCard} onPress={() => setIsSwitchProfileOpen(true)}>
 					<Image
 						source={require("../../assets/icon.png")}
 						style={styles.switchAvatar}
@@ -112,19 +124,7 @@ export default function LandingScreen() {
 
 				<PastAnalysis profileId={profileId} />
 
-				{/* Preferences summary with editable badges */}
-				<Box style={styles.sectionHeader}>
-					<Text fontSize={17} lineHeight={22} fontFamily="RobotoMedium" color="#151515">Preferences Overview</Text>
-					<EditButton width={100} textStyle={styles.editText} style={styles.editButton} />
-				</Box>
-
-				<Box style={styles.preferenceRow}>
-					<CircleTag text="VEGAN" icon="leaf" />
-					<CircleTag text="3% alc" icon="water" />
-					<CircleTag text="ORGANIC" icon="flower-tulip" />
-					<CircleTag text="PARABIN FREE" icon="rabbit" />
-					<CircleTag text="" icon="plus" />
-				</Box>
+				<PreferencesOverview />
 
 				{/* Conditions summary cards */}
 				<Box style={styles.sectionHeader}>
@@ -143,6 +143,25 @@ export default function LandingScreen() {
 					))}
 				</Box>
 			</ScrollView>
+
+			<SwitchProfile
+				isOpen={isSwitchProfileOpen}
+				onClose={() => setIsSwitchProfileOpen(false)}
+				profiles={profiles.map((profile) => ({
+					id: profile.id,
+					name: profile.name,
+					avatarSource: profile.avatarUri ? { uri: profile.avatarUri } : undefined,
+				}))}
+				activeProfileId={profileId ?? undefined}
+				onSelectProfile={(selectedProfileId) => {
+					setProfileId(selectedProfileId);
+					setIsSwitchProfileOpen(false);
+				}}
+				onAddProfile={() => {
+					setIsSwitchProfileOpen(false);
+					navigation.navigate("ProfileScreen");
+				}}
+			/>
 
 			{/* Sticky bottom navigation */}
 			<Box style={styles.bottomNav}>
@@ -174,22 +193,6 @@ function PageDots({ total, activeIndex }: { total: number; activeIndex: number }
 					style={[styles.pageDot, index === activeIndex ? styles.pageDotActive : null]}
 				/>
 			))}
-		</Box>
-	);
-}
-
-function CircleTag({
-	text,
-	icon,
-}: {
-	text: string;
-	icon: "leaf" | "water" | "flower-tulip" | "rabbit" | "plus";
-}) {
-	// Shared preference badge used in the preferences summary row.
-	return (
-		<Box style={styles.tagCircle}>
-			<MaterialCommunityIcons name={icon} size={28} color="#111111" />
-			{text ? <Text style={styles.tagText} fontSize={7} lineHeight={8} fontFamily="RobotoMedium">{text}</Text> : null}
 		</Box>
 	);
 }
