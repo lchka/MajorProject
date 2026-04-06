@@ -86,9 +86,12 @@ export const updateEvaluationContextSchema = z.preprocess(
 				.optional(),
 			resultJson: z.union([evaluationResultJsonSchema, z.json()]).optional(),
 		})
-		.refine((data) => Object.keys(data).length > 0, {
+		.refine(
+			(data) => Object.values(data).some((value) => value !== undefined),
+			{
 			message: "At least one field must be provided for update",
-		}),
+			},
+		),
 );
 
 export const evaluateProductRequestSchema = z.preprocess(

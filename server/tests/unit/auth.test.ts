@@ -9,9 +9,7 @@ import {
 
 process.env.JWT_SECRET = "test-secret";
 
-// ------------------
 // Typed mocks
-// ------------------
 const mockRegisterUser = jest.fn<
 	() => Promise<UserResponseDto>
 >();
@@ -36,9 +34,7 @@ const mockVerify = jest.fn<
 	(token: string, secret: string) => unknown
 >();
 
-// ------------------
 // Mocks (ESM safe)
-// ------------------
 jest.mock("../../services/user.service.js", () => ({
 	__esModule: true,
 	default: {
@@ -63,15 +59,11 @@ jest.mock("jsonwebtoken", () => ({
 	},
 }));
 
-// ------------------
 // Imports AFTER mocks
-// ------------------
 import authService from "../../services/auth.service.js";
 import authController from "../../controllers/auth.controller.js";
 
-// ------------------
 // Test data
-// ------------------
 const baseUser: UserResponseDto = {
 	id: "11111111-1111-1111-1111-111111111111",
 	email: "user@example.com",
@@ -88,9 +80,7 @@ beforeEach(() => {
 	jest.clearAllMocks();
 });
 
-// ======================
 // REGISTER
-// ======================
 describe("AuthService.register", () => {
 	it("should register user and return token", async () => {
 		mockFindByName.mockResolvedValue({
@@ -131,9 +121,7 @@ describe("AuthService.register", () => {
 	});
 });
 
-// ======================
 // LOGIN
-// ======================
 describe("AuthService.login", () => {
 	it("should login and return token", async () => {
 		mockAuthenticateUser.mockResolvedValue(baseUser);
@@ -165,9 +153,7 @@ describe("AuthService.login", () => {
 	});
 });
 
-// ======================
 // TOKEN
-// ======================
 describe("AuthService.verifyToken", () => {
 	it("should return decoded payload", () => {
 		mockVerify.mockReturnValue({ userId: "user-1" });
@@ -186,9 +172,7 @@ describe("AuthService.verifyToken", () => {
 	});
 });
 
-// ======================
 // CONTROLLER
-// ======================
 describe("AuthController.logout", () => {
 	it("should return success response", async () => {
 		const req = {} as Request;
@@ -210,9 +194,7 @@ describe("AuthController.logout", () => {
 	});
 });
 
-// ======================
 // VALIDATION
-// ======================
 describe("Auth validation", () => {
 	it("should accept valid register input", () => {
 		const result = registerRequestSchema.safeParse({
