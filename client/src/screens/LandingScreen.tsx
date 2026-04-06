@@ -2,15 +2,15 @@ import React from "react";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import EditButton from "../components/Buttons/EditButton";
-import SwitchProfile from "../components/overlays/SwitchProfile";
-import PastAnalysis from "../components/general/pastAnalysis";
-import PreferencesOverview from "../components/general/preferences";
-import profileService from "../services/profileService";
+import IosSwipeButton from "../components/Buttons/IosSwipeButton";
+import SwitchProfile from "../components/profile/SwitchProfile";
+import PastAnalysis from "../components/general/PastAnalysis";
+import PreferencesOverview from "../components/preferences/AllPreferences";
+import AddPreference from "../components/preferences/CreatePreference";
+import profileService, { Profile } from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
 
@@ -24,21 +24,28 @@ const conditionCards = [
 export default function LandingScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const [profileId, setProfileId] = React.useState<string | null>(null);
+	const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
 	const [profiles, setProfiles] = React.useState<Array<{ id: string; name: string; avatarUri?: string }>>([]);
-	const [isSwitchProfileOpen, setIsSwitchProfileOpen] = React.useState(false);
+	const [allPreferences, setAllPreferences] = React.useState<Array<{ id: string; name: string }>>([]);
+	const [isAddPreferenceOpen, setIsAddPreferenceOpen] = React.useState(false);
 
 	React.useEffect(() => {
 		let isMounted = true;
 
 		const loadProfileId = async () => {
 			try {
-				const fetchedProfiles = await profileService.getMyProfile();
+				const [fetchedProfiles, fetchedPreferences] = await Promise.all([
+					profileService.getMyProfile(),
+					profileService.getAllPreferences(),
+				]);
 				const activeProfile = fetchedProfiles.find((item) => item.main_profile) ?? fetchedProfiles[0];
 				if (isMounted) {
+					setAllPreferences(fetchedPreferences.map((item) => ({ id: item.id, name: item.name })));
+					setProfileDetails(fetchedProfiles);
 					setProfiles(
 						fetchedProfiles.map((item) => ({
 							id: item.id,
-							name: `${item.first_name} ${item.last_name}`.trim(),
+							name: item.first_name.trim(),
 							avatarUri: item.profile_image || undefined,
 						})),
 					);
@@ -46,6 +53,8 @@ export default function LandingScreen() {
 				}
 			} catch {
 				if (isMounted) {
+					setAllPreferences([]);
+					setProfileDetails([]);
 					setProfiles([]);
 					setProfileId(null);
 				}
@@ -64,6 +73,41 @@ export default function LandingScreen() {
 		await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
 		navigation.navigate("LoginScreen");
 	};
+
+	const activeProfilePreferences = React.useMemo(() => {
+		const activeProfile =
+			profileDetails.find((profile) => profile.id === profileId) ??
+			profileDetails.find((profile) => profile.main_profile) ??
+			profileDetails[0];
+
+		return activeProfile?.preferences?.map((item) => item.name) ?? [];
+	}, [profileDetails, profileId]);
+
+	const activeProfilePreferenceIds = React.useMemo(() => {
+		const activeProfile =
+			profileDetails.find((profile) => profile.id === profileId) ??
+			profileDetails.find((profile) => profile.main_profile) ??
+			profileDetails[0];
+
+		return activeProfile?.preferences?.map((item) => item.id) ?? [];
+	}, [profileDetails, profileId]);
+
+	const handleSavePreferences = React.useCallback(
+		async (preferenceIds: string[]) => {
+			if (!profileId) {
+				return;
+			}
+
+			const updatedProfile = await profileService.updateProfile(profileId, {
+				preferenceIds,
+			});
+
+			setProfileDetails((previous) =>
+				previous.map((profile) => (profile.id === updatedProfile.id ? updatedProfile : profile)),
+			);
+		},
+		[profileId],
+	);
 
 	return (
 		<Box style={styles.screen} mt="$3.5">
@@ -102,19 +146,20 @@ export default function LandingScreen() {
 
 				<Box style={styles.divider} />
 
-				{/* Profile quick switch card */}
-				<Pressable my="$2" style={styles.switchProfileCard} onPress={() => setIsSwitchProfileOpen(true)}>
-					<Image
-						source={require("../../assets/icon.png")}
-						style={styles.switchAvatar}
-						alt="Profile avatar"
-					/>
-					<Box style={styles.switchCopy}>
-						<Text fontSize={13} fontFamily="Roboto" color="#6D7073">HI, ICHKA!</Text>
-						<Text pt="$2"fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">Switch Profile</Text>
-					</Box>
-					<AntDesign name="right" size={16} color="#111111" />
-				</Pressable>
+				<SwitchProfile
+					profiles={profiles.map((profile) => ({
+						id: profile.id,
+						name: profile.name,
+						avatarSource: profile.avatarUri ? { uri: profile.avatarUri } : undefined,
+					}))}
+					activeProfileId={profileId ?? undefined}
+					onSelectProfile={(selectedProfileId) => {
+						setProfileId(selectedProfileId);
+					}}
+					onAddProfile={() => {
+						navigation.navigate("ProfileScreen");
+					}}
+				/>
 
 				{/* Past analysis cards */}
 				<Box my="$2"style={styles.sectionHeader}>
@@ -124,7 +169,10 @@ export default function LandingScreen() {
 
 				<PastAnalysis profileId={profileId} />
 
-				<PreferencesOverview />
+				<PreferencesOverview
+					profilePreferenceNames={activeProfilePreferences}
+					onAddPreference={() => setIsAddPreferenceOpen(true)}
+				/>
 
 				{/* Conditions summary cards */}
 				<Box style={styles.sectionHeader}>
@@ -144,34 +192,19 @@ export default function LandingScreen() {
 				</Box>
 			</ScrollView>
 
-			<SwitchProfile
-				isOpen={isSwitchProfileOpen}
-				onClose={() => setIsSwitchProfileOpen(false)}
-				profiles={profiles.map((profile) => ({
-					id: profile.id,
-					name: profile.name,
-					avatarSource: profile.avatarUri ? { uri: profile.avatarUri } : undefined,
-				}))}
-				activeProfileId={profileId ?? undefined}
-				onSelectProfile={(selectedProfileId) => {
-					setProfileId(selectedProfileId);
-					setIsSwitchProfileOpen(false);
-				}}
-				onAddProfile={() => {
-					setIsSwitchProfileOpen(false);
-					navigation.navigate("ProfileScreen");
-				}}
+			<AddPreference
+				isOpen={isAddPreferenceOpen}
+				onClose={() => setIsAddPreferenceOpen(false)}
+				availablePreferences={allPreferences}
+				selectedPreferenceIds={activeProfilePreferenceIds}
+				onSave={handleSavePreferences}
 			/>
 
 			{/* Sticky bottom navigation */}
 			<Box style={styles.bottomNav}>
 				<BottomIcon label="HOME" icon={<Feather name="home" size={22} color="#66707A" />} />
 				<BottomIcon label="UPLOAD" icon={<Feather name="upload-cloud" size={22} color="#66707A" />} />
-				<Box style={styles.scanWrap}>
-					<Box style={styles.scanButton}>
-						<MaterialCommunityIcons name="scan-helper" size={32} color="#4A5562" />
-					</Box>
-				</Box>
+				<IosSwipeButton />
 				<BottomIcon label="MY HISTORY" icon={<Ionicons name="bookmark-outline" size={22} color="#66707A" />} />
 				<BottomIcon label="MORE" icon={<Feather name="menu" size={24} color="#66707A" />} />
 			</Box>
@@ -181,7 +214,7 @@ export default function LandingScreen() {
 
 function EntypoDots() {
 	// Keeps section-header action icon usage consistent across sections.
-	return <AntDesign name="ellipsis" size={28} color="#111111" />;
+	return <Feather name="more-horizontal" size={28} color="#111111" />;
 }
 
 function PageDots({ total, activeIndex }: { total: number; activeIndex: number }) {

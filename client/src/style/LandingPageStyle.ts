@@ -4,11 +4,12 @@ export const styles = StyleSheet.create({
 	// Page scaffolding
 	screen: {
 		flex: 1,
-		backgroundColor: "#F3F3F3",
+		backgroundColor: "#ffffff",//will have to mess around with it more
+		
 	},
 	scrollContent: {
 		paddingTop: 28,
-		paddingHorizontal: 16,
+		paddingHorizontal: 3,
 		paddingBottom: 130,
 	},
 	// Header
