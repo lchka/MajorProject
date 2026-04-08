@@ -1,6 +1,11 @@
 export type AuthStackParamList = {
   WelcomeScreen: undefined;
   LandingScreen: undefined;
+  PreferenceScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
   LoginScreen: undefined;
   RegisterScreen: undefined;
   ProfileScreen:

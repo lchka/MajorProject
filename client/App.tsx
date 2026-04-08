@@ -2,6 +2,7 @@ import "react-native-reanimated";
 import "react-native-gesture-handler";
 import AnalyseScreen from "./src/screens/AnalyseScreen";
 import LandingScreen from "./src/screens/LandingScreen";
+import PreferenceScreen from "./src/screens/PreferenceScreen";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import ProfileScreen from "./src/screens/auth/ProfileScreen";
@@ -52,6 +53,7 @@ export default function App() {
             >
               <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
               <Stack.Screen name="LandingScreen" component={LandingScreen} />
+              <Stack.Screen name="PreferenceScreen" component={PreferenceScreen} />
               <Stack.Screen name="LoginScreen" component={LoginScreen} />
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
               <Stack.Screen name="ProfileScreen" component={ProfileScreen} />

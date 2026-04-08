@@ -1,5 +1,5 @@
 import React from "react";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
@@ -7,9 +7,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import EditButton from "../components/Buttons/EditButton";
 import IosSwipeButton from "../components/Buttons/IosSwipeButton";
 import SwitchProfile from "../components/profile/SwitchProfile";
-import PastAnalysis from "../components/general/PastAnalysis";
+import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
-import AddPreference from "../components/preferences/CreatePreference";
 import profileService, { Profile } from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
@@ -26,47 +25,40 @@ export default function LandingScreen() {
 	const [profileId, setProfileId] = React.useState<string | null>(null);
 	const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
 	const [profiles, setProfiles] = React.useState<Array<{ id: string; name: string; avatarUri?: string }>>([]);
-	const [allPreferences, setAllPreferences] = React.useState<Array<{ id: string; name: string }>>([]);
-	const [isAddPreferenceOpen, setIsAddPreferenceOpen] = React.useState(false);
 
-	React.useEffect(() => {
-		let isMounted = true;
+	const loadProfiles = React.useCallback(async () => {
+		try {
+			const fetchedProfiles = await profileService.getMyProfile();
+			const fallbackProfile = fetchedProfiles.find((item) => item.main_profile) ?? fetchedProfiles[0];
 
-		const loadProfileId = async () => {
-			try {
-				const [fetchedProfiles, fetchedPreferences] = await Promise.all([
-					profileService.getMyProfile(),
-					profileService.getAllPreferences(),
-				]);
-				const activeProfile = fetchedProfiles.find((item) => item.main_profile) ?? fetchedProfiles[0];
-				if (isMounted) {
-					setAllPreferences(fetchedPreferences.map((item) => ({ id: item.id, name: item.name })));
-					setProfileDetails(fetchedProfiles);
-					setProfiles(
-						fetchedProfiles.map((item) => ({
-							id: item.id,
-							name: item.first_name.trim(),
-							avatarUri: item.profile_image || undefined,
-						})),
-					);
-					setProfileId(activeProfile?.id ?? null);
+			setProfileDetails(fetchedProfiles);
+			setProfiles(
+				fetchedProfiles.map((item) => ({
+					id: item.id,
+					name: item.first_name.trim(),
+					avatarUri: item.profile_image || undefined,
+				})),
+			);
+
+			setProfileId((previousProfileId) => {
+				if (previousProfileId && fetchedProfiles.some((profile) => profile.id === previousProfileId)) {
+					return previousProfileId;
 				}
-			} catch {
-				if (isMounted) {
-					setAllPreferences([]);
-					setProfileDetails([]);
-					setProfiles([]);
-					setProfileId(null);
-				}
-			}
-		};
 
-		void loadProfileId();
-
-		return () => {
-			isMounted = false;
-		};
+				return fallbackProfile?.id ?? null;
+			});
+		} catch {
+			setProfileDetails([]);
+			setProfiles([]);
+			setProfileId(null);
+		}
 	}, []);
+
+	useFocusEffect(
+		React.useCallback(() => {
+			void loadProfiles();
+		}, [loadProfiles]),
+	);
 
 	// Clears local auth state and routes back to the login flow.
 	const handleSignOut = async () => {
@@ -74,40 +66,17 @@ export default function LandingScreen() {
 		navigation.navigate("LoginScreen");
 	};
 
-	const activeProfilePreferences = React.useMemo(() => {
-		const activeProfile =
+	const activeProfile = React.useMemo(
+		() =>
 			profileDetails.find((profile) => profile.id === profileId) ??
 			profileDetails.find((profile) => profile.main_profile) ??
-			profileDetails[0];
-
-		return activeProfile?.preferences?.map((item) => item.name) ?? [];
-	}, [profileDetails, profileId]);
-
-	const activeProfilePreferenceIds = React.useMemo(() => {
-		const activeProfile =
-			profileDetails.find((profile) => profile.id === profileId) ??
-			profileDetails.find((profile) => profile.main_profile) ??
-			profileDetails[0];
-
-		return activeProfile?.preferences?.map((item) => item.id) ?? [];
-	}, [profileDetails, profileId]);
-
-	const handleSavePreferences = React.useCallback(
-		async (preferenceIds: string[]) => {
-			if (!profileId) {
-				return;
-			}
-
-			const updatedProfile = await profileService.updateProfile(profileId, {
-				preferenceIds,
-			});
-
-			setProfileDetails((previous) =>
-				previous.map((profile) => (profile.id === updatedProfile.id ? updatedProfile : profile)),
-			);
-		},
-		[profileId],
+			profileDetails[0],
+		[profileDetails, profileId],
 	);
+
+	const activeProfilePreferences = React.useMemo(() => {
+		return activeProfile?.preferences?.map((item) => item.name) ?? [];
+	}, [activeProfile]);
 
 	return (
 		<Box style={styles.screen} mt="$3.5">
@@ -171,7 +140,8 @@ export default function LandingScreen() {
 
 				<PreferencesOverview
 					profilePreferenceNames={activeProfilePreferences}
-					onAddPreference={() => setIsAddPreferenceOpen(true)}
+					profileFirstName={activeProfile?.first_name}
+					onAddPreference={() => navigation.navigate("PreferenceScreen", { profileId: profileId ?? undefined })}
 				/>
 
 				{/* Conditions summary cards */}
@@ -191,14 +161,6 @@ export default function LandingScreen() {
 					))}
 				</Box>
 			</ScrollView>
-
-			<AddPreference
-				isOpen={isAddPreferenceOpen}
-				onClose={() => setIsAddPreferenceOpen(false)}
-				availablePreferences={allPreferences}
-				selectedPreferenceIds={activeProfilePreferenceIds}
-				onSave={handleSavePreferences}
-			/>
 
 			{/* Sticky bottom navigation */}
 			<Box style={styles.bottomNav}>

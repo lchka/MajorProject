@@ -1,6 +1,7 @@
 import React from "react";
-import { AddIcon, Box, Icon, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
+import { AddIcon, Box, HStack, Icon, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import EditButton from "../Buttons/EditButton";
+import CurrentProfile from "../general/CurrentProfileName";
 import { styles } from "../../style/LandingPageStyle";
 
 type PreferenceItem = {
@@ -11,6 +12,7 @@ type PreferenceItem = {
 	aliases?: string[];
 };
 
+// This is the master preference list with labels, aliases, and image assets.
 const defaultPreferences: PreferenceItem[] = [
 	{
 		id: "alcohol-free",
@@ -86,13 +88,16 @@ const defaultPreferences: PreferenceItem[] = [
 
 type PreferencesOverviewProps = {
 	profilePreferenceNames?: string[];
+	profileFirstName?: string;
 	onAddPreference?: () => void;
 };
 
+// This normalizes preference text so matching works even with different spacing/hyphens.
 function normalizePreferenceName(value: string) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+// This resolves profile preference names into the display items used by the UI.
 function resolvePreferenceItems(profilePreferenceNames?: string[]) {
 	if (!profilePreferenceNames) {
 		return defaultPreferences;
@@ -121,8 +126,10 @@ function resolvePreferenceItems(profilePreferenceNames?: string[]) {
 
 export default function PreferencesOverview({
 	profilePreferenceNames,
+	profileFirstName,
 	onAddPreference,
 }: PreferencesOverviewProps) {
+	// This is the final preference list shown on landing for the active profile.
 	const preferences = React.useMemo(
 		() => resolvePreferenceItems(profilePreferenceNames),
 		[profilePreferenceNames],
@@ -130,19 +137,24 @@ export default function PreferencesOverview({
 
 	return (
 		<>
+			{/* This is the Preferences section title */}
 			<Box style={styles.sectionHeader}>
-				<Text fontSize={22} lineHeight={22} fontFamily="RobotoMedium" color="#151515">
-					Preferences
-				</Text>
-				<EditButton width={100} textStyle={styles.editText} style={styles.editButton} />
+				<HStack alignItems="center" pl="$2" gap={6}>
+					<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={22} color="#1dd2d8" />
+					<Text fontSize={22} lineHeight={22} fontFamily="RobotoMedium" color="#151515">
+						Preferences
+					</Text>
+				</HStack>
 			</Box>
 
+			{/* This is the horizontal preferences row */}
 			<ScrollView
 				horizontal
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
 			>
 				<Box flexDirection="row" alignItems="flex-start" gap={12}>
+					{/* These are the existing preference icons + labels */}
 					{preferences.map((preference) => (
 						<Box key={preference.id} alignItems="center" width={94}>
 							<Image
@@ -165,6 +177,7 @@ export default function PreferencesOverview({
 						</Box>
 					))}
 
+					{/* This is the Add More button that opens preference management */}
 					<Pressable
 						alignItems="center"
 						width={94}
