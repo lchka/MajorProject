@@ -6,6 +6,7 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
+import LottieView from "lottie-react-native";
 import { Easing } from "react-native-reanimated";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
@@ -16,6 +17,7 @@ import {
   Box,
   Divider,
   HStack,
+  Image,
   Input,
   InputField,
   Pressable,
@@ -32,6 +34,8 @@ import SocialAuth from "../../components/actions/SocialAuth";
 import CreateButton from "../../components/Buttons/CreateButton";
 import useGoogleAuth from "../../hooks/googleAuth.hook";
 import type { AuthResponse } from "../../services";
+import NavLogo from "../../components/general/NavLogo";
+import ValidationAnimation from "../../components/general/ValidationAnimation";
 import { MotiView } from "moti";
 
 const AUTH_TOKEN_KEY = "authToken";
@@ -86,7 +90,8 @@ export default function RegisterScreen() {
 
   const validatePassword = (value: string) => {
     if (!value) return "Password is required.";
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
     if (!strongPasswordRegex.test(value)) {
       return "Use 8+ chars with uppercase, lowercase, number, and symbol.";
     }
@@ -98,6 +103,76 @@ export default function RegisterScreen() {
     if (value !== sourcePassword) return "Passwords do not match.";
     return "";
   };
+
+  const passwordRules = [
+    {
+      id: "length",
+      label: "At least 8 characters",
+      test: (value: string) => value.length >= 8,
+    },
+    {
+      id: "uppercase",
+      label: "At least 1 uppercase letter",
+      test: (value: string) => /[A-Z]/.test(value),
+    },
+    {
+      id: "lowercase",
+      label: "At least 1 lowercase letter",
+      test: (value: string) => /[a-z]/.test(value),
+    },
+    {
+      id: "number",
+      label: "At least 1 number",
+      test: (value: string) => /\d/.test(value),
+    },
+    {
+      id: "symbol",
+      label: "At least 1 symbol",
+      test: (value: string) => /[^A-Za-z\d]/.test(value),
+    },
+  ];
+
+  const firstNameRules = [
+    {
+      id: "first-name-required",
+      label: "First name is required",
+      test: (value: string) => value.trim().length > 0,
+    },
+  ];
+
+  const lastNameRules = [
+    {
+      id: "last-name-required",
+      label: "Last name is required",
+      test: (value: string) => value.trim().length > 0,
+    },
+  ];
+
+  const emailRules = [
+    {
+      id: "email-required",
+      label: "Email is required",
+      test: (value: string) => value.trim().length > 0,
+    },
+    {
+      id: "email-format",
+      label: "Email format is valid",
+      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+    },
+  ];
+
+  const confirmPasswordRules = [
+    {
+      id: "confirm-required",
+      label: "Confirm password is required",
+      test: (value: string) => value.length > 0,
+    },
+    {
+      id: "confirm-match",
+      label: "Passwords match",
+      test: (value: string) => value.length > 0 && value === password,
+    },
+  ];
 
   const setFieldError = (field: keyof typeof errors, message: string) => {
     setErrors((prev) => ({ ...prev, [field]: message }));
@@ -120,7 +195,10 @@ export default function RegisterScreen() {
 
     if (currentStep === 3) {
       const passwordError = validatePassword(password);
-      const confirmPasswordError = validateConfirmPassword(confirmPassword, password);
+      const confirmPasswordError = validateConfirmPassword(
+        confirmPassword,
+        password,
+      );
       setFieldError("password", passwordError);
       setFieldError("confirmPassword", confirmPasswordError);
       return !passwordError && !confirmPasswordError;
@@ -130,10 +208,14 @@ export default function RegisterScreen() {
   };
 
   const isCurrentStepValid = (() => {
-    if (step === 1) return !validateFirstName(firstName) && !validateLastName(lastName);
+    if (step === 1)
+      return !validateFirstName(firstName) && !validateLastName(lastName);
     if (step === 2) return !validateEmail(email);
     if (step === 3) {
-      return !validatePassword(password) && !validateConfirmPassword(confirmPassword, password);
+      return (
+        !validatePassword(password) &&
+        !validateConfirmPassword(confirmPassword, password)
+      );
     }
     return true;
   })();
@@ -336,7 +418,7 @@ export default function RegisterScreen() {
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
-          justifyContent: "center", // 👈 THIS FIXES IT
+          justifyContent: "flex-start",
           paddingHorizontal: 20,
           paddingVertical: 30,
         }}
@@ -365,35 +447,41 @@ export default function RegisterScreen() {
         />
 
         {/* Logo */}
-        <Text
-          size="5xl"
-          style={{
-            fontFamily: "DancingScript",
-            color: "#204C78",
-            marginBottom: 10,
-          }}
-        >
-          Lumière
-        </Text>
-
+        <Box position="relative" mb="$1">
+          <NavLogo />
+          <Divider position="absolute" bottom={0} left={0} right={0} bgColor="lightblue" />
+        </Box>
         {/* Title */}
-        <HStack alignItems="center" justifyContent="space-between" mb="$1.5">
-          <Text
-            size="3xl"
-            style={{
-              fontFamily: "Roboto",
-              color: "#1E293B",
-            }}
+        <HStack
+          pt="$8"
+          alignItems="center"
+          justifyContent="space-between"
+          mb="$1.5"
+        >
+          <MotiView
+            key={`register-title-${step}`}
+            from={{ opacity: 0, translateY: 8 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "timing", duration: 280 }}
+            style={{ flex: 1 }}
           >
-            {step === 0
-              ? "Create Account"
-              : step === 1
-                ? "Your name"
-                : step === 2
-                  ? "Your email"
-                  : "Create password"}
-          </Text>
-                  <Feather name="info" size={24} color="#5E7FA3" />
+            <Text
+              size="3xl"
+              style={{
+                fontFamily: "Roboto",
+                color: "#1E293B",
+              }}
+            >
+              {step === 0
+                ? "Create Account"
+                : step === 1
+                  ? "Your name"
+                  : step === 2
+                    ? "Your email"
+                    : "Create password"}
+            </Text>
+          </MotiView>
+          <Feather name="info" size={24} color="#5E7FA3" />
         </HStack>
 
         {/* Subtext */}
@@ -419,190 +507,216 @@ export default function RegisterScreen() {
             }}
           >
             {step === 0 ? (
-              <VStack space="lg">
-                <CreateButton label="Continue with Email" onPress={handleNext} />
+              <VStack space="lg" mt="$5">
+                <CreateButton
+                  label="Continue with Email"
+                  onPress={handleNext}
+                />
 
                 {/* Social */}
                 <SocialAuth
                   onGooglePress={promptGoogleAuth}
                   onGithubPress={promptGithubAuth}
                 />
+
+                <Box>
+                  <LottieView
+                    source={require("../../../assets/animations/create.json")}
+                    autoPlay
+                    loop
+                    style={{ width: "100%", height: 300 }}
+                  />
+                </Box>
               </VStack>
             ) : (
               <VStack pt="$2" space="lg">
                 {/* Step Inputs */}
                 {step === 1 && (
                   <>
-                    <Input size="lg" borderRadius="$full">
-                      <InputField
-                        placeholder="First name"
-                        value={firstName}
-                        onChangeText={(value) => {
-                          setFirstName(value);
-                          setTouched((prev) => ({ ...prev, firstName: true }));
-                          setFieldError("firstName", validateFirstName(value));
-                        }}
-                        onBlur={() => {
-                          setTouched((prev) => ({ ...prev, firstName: true }));
-                          setFieldError("firstName", validateFirstName(firstName));
-                        }}
-                      />
-                    </Input>
-                    {touched.firstName && errors.firstName ? (
-                      <Text size="xs" color="#DC2626" mt="$1">
-                        {errors.firstName}
-                      </Text>
-                    ) : null}
+                    <VStack space="xs">
+                      <Input size="lg" borderRadius="$full">
+                        <InputField
+                          placeholder="First name"
+                          value={firstName}
+                          onChangeText={(value) => {
+                            setFirstName(value);
+                            setTouched((prev) => ({ ...prev, firstName: true }));
+                            setFieldError("firstName", validateFirstName(value));
+                          }}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, firstName: true }));
+                            setFieldError(
+                              "firstName",
+                              validateFirstName(firstName),
+                            );
+                          }}
+                        />
+                      </Input>
+                      <ValidationAnimation value={firstName} rules={firstNameRules} />
+                    </VStack>
 
-                    <Input size="lg" borderRadius="$full">
-                      <InputField
-                        placeholder="Last name"
-                        value={lastName}
-                        onChangeText={(value) => {
-                          setLastName(value);
-                          setTouched((prev) => ({ ...prev, lastName: true }));
-                          setFieldError("lastName", validateLastName(value));
-                        }}
-                        onBlur={() => {
-                          setTouched((prev) => ({ ...prev, lastName: true }));
-                          setFieldError("lastName", validateLastName(lastName));
-                        }}
-                      />
-                    </Input>
-                    {touched.lastName && errors.lastName ? (
-                      <Text size="xs" color="#DC2626" mt="$1">
-                        {errors.lastName}
-                      </Text>
-                    ) : null}
+                    <VStack space="xs">
+                      <Input size="lg" borderRadius="$full">
+                        <InputField
+                          placeholder="Last name"
+                          value={lastName}
+                          onChangeText={(value) => {
+                            setLastName(value);
+                            setTouched((prev) => ({ ...prev, lastName: true }));
+                            setFieldError("lastName", validateLastName(value));
+                          }}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, lastName: true }));
+                            setFieldError("lastName", validateLastName(lastName));
+                          }}
+                        />
+                      </Input>
+                      <ValidationAnimation value={lastName} rules={lastNameRules} />
+                    </VStack>
                   </>
                 )}
 
                 {step === 2 && (
                   <>
-                    <Input size="lg" borderRadius="$full">
-                      <InputField
-                        placeholder="Email address"
-                        value={email}
-                        onChangeText={(value) => {
-                          setEmail(value);
-                          setTouched((prev) => ({ ...prev, email: true }));
-                          setFieldError("email", validateEmail(value));
-                        }}
-                        onBlur={() => {
-                          setTouched((prev) => ({ ...prev, email: true }));
-                          setFieldError("email", validateEmail(email));
-                        }}
-                      />
-                    </Input>
-                    {touched.email && errors.email ? (
-                      <Text size="xs" color="#DC2626" mt="$1">
-                        {errors.email}
-                      </Text>
-                    ) : null}
+                    <VStack space="xs">
+                      <Input size="lg" borderRadius="$full">
+                        <InputField
+                          placeholder="Email address"
+                          value={email}
+                          onChangeText={(value) => {
+                            setEmail(value);
+                            setTouched((prev) => ({ ...prev, email: true }));
+                            setFieldError("email", validateEmail(value));
+                          }}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, email: true }));
+                            setFieldError("email", validateEmail(email));
+                          }}
+                        />
+                      </Input>
+                      <ValidationAnimation value={email} rules={emailRules} />
+                    </VStack>
                   </>
                 )}
 
                 {step === 3 && (
                   <>
-                    <Box position="relative">
-                      <Input size="lg" borderRadius="$full">
-                        <InputField
-                          placeholder="Password"
-                          secureTextEntry={!showPassword}
-                          value={password}
-                          onChangeText={(value) => {
-                            setPassword(value);
-                            setTouched((prev) => ({ ...prev, password: true }));
-                            setFieldError("password", validatePassword(value));
-                            if (touched.confirmPassword || confirmPassword.length > 0) {
+                    <VStack space="xs">
+                      <Box position="relative">
+                        <Input size="lg" borderRadius="$full">
+                          <InputField
+                            placeholder="Password"
+                            secureTextEntry={!showPassword}
+                            value={password}
+                            onChangeText={(value) => {
+                              setPassword(value);
+                              setTouched((prev) => ({ ...prev, password: true }));
+                              setFieldError("password", validatePassword(value));
+                              if (
+                                touched.confirmPassword ||
+                                confirmPassword.length > 0
+                              ) {
+                                setFieldError(
+                                  "confirmPassword",
+                                  validateConfirmPassword(confirmPassword, value),
+                                );
+                              }
+                            }}
+                            onBlur={() => {
+                              setTouched((prev) => ({ ...prev, password: true }));
+                              setFieldError(
+                                "password",
+                                validatePassword(password),
+                              );
+                            }}
+                            style={{ paddingRight: 44 }}
+                          />
+                        </Input>
+                        <Pressable
+                          position="absolute"
+                          right="$5"
+                          top={0}
+                          bottom={0}
+                          w="$10"
+                          alignItems="center"
+                          justifyContent="center"
+                          hitSlop={10}
+                          onPress={() => setShowPassword((prev) => !prev)}
+                          disabled={loading}
+                        >
+                          <Feather
+                            name={showPassword ? "eye-off" : "eye"}
+                            size={18}
+                            color="#6B7280"
+                          />
+                        </Pressable>
+                      </Box>
+                      <ValidationAnimation value={password} rules={passwordRules} />
+                    </VStack>
+
+                    <VStack space="xs">
+                      <Box position="relative">
+                        <Input size="lg" borderRadius="$full">
+                          <InputField
+                            placeholder="Confirm password"
+                            secureTextEntry={!showConfirmPassword}
+                            value={confirmPassword}
+                            onChangeText={(value) => {
+                              setConfirmPassword(value);
+                              setTouched((prev) => ({
+                                ...prev,
+                                confirmPassword: true,
+                              }));
                               setFieldError(
                                 "confirmPassword",
-                                validateConfirmPassword(confirmPassword, value),
+                                validateConfirmPassword(value, password),
                               );
-                            }
-                          }}
-                          onBlur={() => {
-                            setTouched((prev) => ({ ...prev, password: true }));
-                            setFieldError("password", validatePassword(password));
-                          }}
-                          style={{ paddingRight: 44 }}
-                        />
-                      </Input>
-                      <Pressable
-                        position="absolute"
-                        right="$5"
-                        top={0}
-                        bottom={0}
-                        w="$10"
-                        alignItems="center"
-                        justifyContent="center"
-                        hitSlop={10}
-                        onPress={() => setShowPassword((prev) => !prev)}
-                        disabled={loading}
-                      >
-                        <Feather
-                          name={showPassword ? "eye-off" : "eye"}
-                          size={18}
-                          color="#6B7280"
-                        />
-                      </Pressable>
-                    </Box>
-                    {touched.password && errors.password ? (
-                      <Text size="xs" color="#DC2626" mt="$1">
-                        {errors.password}
-                      </Text>
-                    ) : null}
-
-                    <Box position="relative">
-                      <Input size="lg" borderRadius="$full">
-                        <InputField
-                          placeholder="Confirm password"
-                          secureTextEntry={!showConfirmPassword}
-                          value={confirmPassword}
-                          onChangeText={(value) => {
-                            setConfirmPassword(value);
-                            setTouched((prev) => ({ ...prev, confirmPassword: true }));
-                            setFieldError("confirmPassword", validateConfirmPassword(value, password));
-                          }}
-                          onBlur={() => {
-                            setTouched((prev) => ({ ...prev, confirmPassword: true }));
-                            setFieldError(
-                              "confirmPassword",
-                              validateConfirmPassword(confirmPassword, password),
-                            );
-                          }}
-                          style={{ paddingRight: 44 }}
-                        />
-                      </Input>
-                      <Pressable
-                        position="absolute"
-                        right="$5"
-                        top={0}
-                        bottom={0}
-                        w="$10"
-                        alignItems="center"
-                        justifyContent="center"
-                        hitSlop={10}
-                        onPress={() => setShowConfirmPassword((prev) => !prev)}
-                        disabled={loading}
-                      >
-                        <Feather
-                          name={showConfirmPassword ? "eye-off" : "eye"}
-                          size={18}
-                          color="#6B7280"
-                        />
-                      </Pressable>
-                    </Box>
-                    {touched.confirmPassword && errors.confirmPassword ? (
-                      <Text size="xs" color="#DC2626" mt="$1">
-                        {errors.confirmPassword}
-                      </Text>
-                    ) : null}
+                            }}
+                            onBlur={() => {
+                              setTouched((prev) => ({
+                                ...prev,
+                                confirmPassword: true,
+                              }));
+                              setFieldError(
+                                "confirmPassword",
+                                validateConfirmPassword(
+                                  confirmPassword,
+                                  password,
+                                ),
+                              );
+                            }}
+                            style={{ paddingRight: 44 }}
+                          />
+                        </Input>
+                        <Pressable
+                          position="absolute"
+                          right="$5"
+                          top={0}
+                          bottom={0}
+                          w="$10"
+                          alignItems="center"
+                          justifyContent="center"
+                          hitSlop={10}
+                          onPress={() => setShowConfirmPassword((prev) => !prev)}
+                          disabled={loading}
+                        >
+                          <Feather
+                            name={showConfirmPassword ? "eye-off" : "eye"}
+                            size={18}
+                            color="#6B7280"
+                          />
+                        </Pressable>
+                      </Box>
+                      <ValidationAnimation
+                        value={confirmPassword}
+                        rules={confirmPasswordRules}
+                      />
+                    </VStack>
                   </>
                 )}
 
                 {/* Buttons */}
-                <HStack space="md" mt="$4">
+                <HStack mx="$2" space="md" mt="$4">
                   {step > 0 && (
                     <Box flex={1}>
                       <CreateButton
@@ -632,6 +746,7 @@ export default function RegisterScreen() {
             )}
           </MotiView>
         </Box>
+        
       </ScrollView>
     </KeyboardAvoidingView>
   );

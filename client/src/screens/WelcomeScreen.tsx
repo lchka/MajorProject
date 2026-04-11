@@ -26,7 +26,7 @@ const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 // Sentence that gets rendered with the typewriter effect on the welcome card.
 const WELCOME_SUBTITLE =
-  "Stay ahead of flare-ups with prevention-first skincare guidance.";
+  "Stay ahead of flare-ups with personalised skincare guidance - you can trust.";
 
 // Delay after entering the welcome panel before typewriter starts.
 const TYPEWRITER_START_DELAY_MS = 1500;
