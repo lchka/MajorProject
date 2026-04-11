@@ -8,8 +8,6 @@ import { MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
 import {
 	Box,
-	Button,
-	ButtonText,
 	Center,
 	Divider,
 	HStack,
@@ -17,19 +15,68 @@ import {
 	VStack,
 } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import CreateButton from "../components/Buttons/CreateButton";
 import { AuthStackParamList } from "../types/navigation";
 
+// AsyncStorage key used to detect an existing signed-in session.
 const AUTH_TOKEN_KEY = "authToken";
+
+// Device height used for full-screen intro + welcome panel slide animation.
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
+// Sentence that gets rendered with the typewriter effect on the welcome card.
+const WELCOME_SUBTITLE = "Stay ahead of flare-ups with prevention-first skincare guidance.";
+
+// Delay after entering the welcome panel before typewriter starts.
+const TYPEWRITER_START_DELAY_MS = 1500;
+
+// Milliseconds per character for the typewriter speed.
+const TYPEWRITER_CHAR_INTERVAL_MS = 40;
+
+// Welcome card title fade timing.
+const TITLE_FADE_IN_START_DELAY_MS = 1200;
+const TITLE_FADE_IN_DURATION_MS = 700;
+
+// How long to wait after typing finishes before showing the first checklist row.
+const CHECK_FADE_IN_START_DELAY_MS = 260;
+
+// Gap between each checklist row animation.
+const CHECK_FADE_IN_STAGGER_MS = 460;
+
+// How long each checklist row fade/slide animation lasts.
+const CHECK_FADE_IN_DURATION_MS = 620;
+
+// first button waits until checklist sequence is done (relative to typewriter completion)
+const CTA_FADE_IN_START_DELAY_MS =
+	CHECK_FADE_IN_START_DELAY_MS + CHECK_FADE_IN_STAGGER_MS * 2 + CHECK_FADE_IN_DURATION_MS + 400;
+
+// How long each CTA button fade/slide animation lasts.
+const CTA_FADE_IN_DURATION_MS = 700;
+
+// second button comes in this much later than the first
+const CTA_FADE_IN_STAGGER_MS = 500;
+
 export default function WelcomeScreen() {
+	// Typed navigation helper for moving between auth stack screens.
 	const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+	// Timeout ref for delaying panel switch after lottie animation ends.
 	const scrollDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Timeout ref for delaying the typewriter kickoff.
+	const typewriterStartRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	// Interval ref for character-by-character subtitle rendering.
+	const typewriterIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+	// Controls whether we are showing intro panel or welcome card panel.
 	const [shouldShowWelcomeCard, setShouldShowWelcomeCard] = useState(false);
+	// Current visible substring for the typewriter subtitle.
+	const [typedSubtitle, setTypedSubtitle] = useState("");
+	// True only when full subtitle has finished typing.
+	const isTypewriterDone = shouldShowWelcomeCard && typedSubtitle.length >= WELCOME_SUBTITLE.length;
 
 	useEffect(() => {
 		// If user is already signed in, skip this intro and go straight to landing.
+		// Checks storage once on mount and redirects if token exists.
 		const redirectAuthorizedUsers = async () => {
+			// Session token fetched from async storage.
 			const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
 			if (token) {
 				navigation.replace("LandingScreen");
@@ -45,6 +92,7 @@ export default function WelcomeScreen() {
 		};
 	}, [navigation]);
 
+	// Called by the second lottie animation when it completes.
 	const handleLiveChatAnimationFinished = () => {
 		if (shouldShowWelcomeCard) {
 			return;
@@ -53,8 +101,47 @@ export default function WelcomeScreen() {
 		// After live chat animation ends, wait a bit, then slide to the welcome card.
 		scrollDelayRef.current = setTimeout(() => {
 			setShouldShowWelcomeCard(true);
-		}, 1000);
+		}, 200);
 	};
+
+	useEffect(() => {
+		if (!shouldShowWelcomeCard) {
+			if (typewriterStartRef.current) {
+				clearTimeout(typewriterStartRef.current);
+			}
+			if (typewriterIntervalRef.current) {
+				clearInterval(typewriterIntervalRef.current);
+			}
+			setTypedSubtitle("");
+			return;
+		}
+
+		typewriterStartRef.current = setTimeout(() => {
+			let index = 0;
+			setTypedSubtitle("");
+
+			typewriterIntervalRef.current = setInterval(() => {
+				index += 1;
+				setTypedSubtitle(WELCOME_SUBTITLE.slice(0, index));
+
+				if (index >= WELCOME_SUBTITLE.length && typewriterIntervalRef.current) {
+					clearInterval(typewriterIntervalRef.current);
+					typewriterIntervalRef.current = null;
+				}
+			}, TYPEWRITER_CHAR_INTERVAL_MS);
+		}, TYPEWRITER_START_DELAY_MS);
+
+		return () => {
+			if (typewriterStartRef.current) {
+				clearTimeout(typewriterStartRef.current);
+				typewriterStartRef.current = null;
+			}
+			if (typewriterIntervalRef.current) {
+				clearInterval(typewriterIntervalRef.current);
+				typewriterIntervalRef.current = null;
+			}
+		};
+	}, [shouldShowWelcomeCard]);
 
 	return (
 		<Box h={SCREEN_HEIGHT} overflow="hidden">
@@ -63,7 +150,8 @@ export default function WelcomeScreen() {
 				animate={{ translateY: shouldShowWelcomeCard ? -SCREEN_HEIGHT : 0 }}
 				transition={{
 					type: "timing",
-					duration: 1250,
+					// this is how long the full screen slide takes
+					duration: 1000,
 					easing: Easing.bezier(0.75, 0.0, 0.25, 1.0),
 				}}
 				style={{ height: SCREEN_HEIGHT * 2 }}
@@ -152,60 +240,124 @@ export default function WelcomeScreen() {
 							>
 								<VStack space="lg">
 									<VStack space="sm">
-										<Text size="4xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
-											Welcome to Lumière
-										</Text>
+										<MotiView
+											animate={{ opacity: shouldShowWelcomeCard ? 1 : 0 }}
+											transition={{
+												type: "timing",
+												duration: TITLE_FADE_IN_DURATION_MS,
+												delay: TITLE_FADE_IN_START_DELAY_MS,
+											}}
+										>
+											<Text size="4xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
+												Welcome to Lumière
+											</Text>
+										</MotiView>
 										<Text size="md" color="#57799B" style={{ fontFamily: "Roboto" }}>
-											Stay ahead of flare-ups with prevention-first skincare guidance.
+											{typedSubtitle}
+											{shouldShowWelcomeCard && typedSubtitle.length < WELCOME_SUBTITLE.length ? "|" : ""}
 										</Text>
 									</VStack>
 
 									<VStack space="sm">
-										<HStack alignItems="center" space="sm">
-											<AntDesign name="check-circle" size={18} color="#4A90D9" />
-											<Text size="sm" color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
-												Spot potential triggers earlier
-											</Text>
-										</HStack>
-										<HStack alignItems="center" space="sm">
-											<AntDesign name="check-circle" size={18} color="#4A90D9" />
-											<Text size="sm" color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
-												Understand irritants before reactions
-											</Text>
-										</HStack>
-										<HStack alignItems="center" space="sm">
-											<AntDesign name="check-circle" size={18} color="#4A90D9" />
-											<Text size="sm" color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
-												Understand cosmetic ingredients
-											</Text>
-										</HStack>
+										<MotiView
+											animate={{
+												opacity: isTypewriterDone ? 1 : 0,
+												translateY: isTypewriterDone ? 0 : 8,
+											}}
+											transition={{
+												type: "timing",
+												duration: CHECK_FADE_IN_DURATION_MS,
+												delay: CHECK_FADE_IN_START_DELAY_MS,
+											}}
+										>
+											<HStack alignItems="center" space="sm">
+												<AntDesign name="check-circle" size={18} color="#4A90D9" />
+												<Text size="sm" color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
+													Spot potential triggers earlier
+												</Text>
+											</HStack>
+										</MotiView>
+										<MotiView
+											animate={{
+												opacity: isTypewriterDone ? 1 : 0,
+												translateY: isTypewriterDone ? 0 : 8,
+											}}
+											transition={{
+												type: "timing",
+												duration: CHECK_FADE_IN_DURATION_MS,
+												delay: CHECK_FADE_IN_START_DELAY_MS + CHECK_FADE_IN_STAGGER_MS,
+											}}
+										>
+											<HStack alignItems="center" space="sm">
+												<AntDesign name="check-circle" size={18} color="#4A90D9" />
+												<Text size="sm" color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
+													Understand irritants before reactions
+												</Text>
+											</HStack>
+										</MotiView>
+										<MotiView
+											animate={{
+												opacity: isTypewriterDone ? 1 : 0,
+												translateY: isTypewriterDone ? 0 : 8,
+											}}
+											transition={{
+												type: "timing",
+												duration: CHECK_FADE_IN_DURATION_MS,
+												delay: CHECK_FADE_IN_START_DELAY_MS + CHECK_FADE_IN_STAGGER_MS * 2,
+											}}
+										>
+											<HStack alignItems="center" space="sm">
+												<AntDesign name="check-circle" size={18} color="#4A90D9" />
+												<Text size="sm" color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
+													Understand cosmetic ingredients
+												</Text>
+											</HStack>
+										</MotiView>
 									</VStack>
 								</VStack>
 							</Box>
 
 							<VStack space="md">
-								<Button
-									size="lg"
-									bg="#4A90D9"
-									borderRadius="$xl"
-									onPress={() => navigation.navigate("RegisterScreen")}
+								{/* button 1: fades/slides in first */}
+								<MotiView
+									animate={{
+										opacity: isTypewriterDone ? 1 : 0,
+										translateY: isTypewriterDone ? 0 : 10,
+									}}
+									// tweak duration for speed, tweak delay for when it starts
+									transition={{
+										type: "timing",
+										duration: CTA_FADE_IN_DURATION_MS,
+										delay: CTA_FADE_IN_START_DELAY_MS,
+									}}
 								>
-									<ButtonText color="#F7FBFF" style={{ fontFamily: "Roboto" }}>
-										Create my account
-									</ButtonText>
-								</Button>
+									<CreateButton
+										isPulsing={isTypewriterDone}
+										pulseStartDelayMs={CTA_FADE_IN_START_DELAY_MS}
+										onPress={() => navigation.navigate("RegisterScreen")}
+									/>
+								</MotiView>
 
-								<Button
-									size="lg"
-									variant="outline"
-									borderRadius="$xl"
-									borderColor="#A8CFF5"
-									onPress={() => navigation.navigate("LoginScreen")}
+								{/* button 2: same animation, but delayed so it comes after button 1 */}
+								<MotiView
+									animate={{
+										opacity: isTypewriterDone ? 1 : 0,
+										translateY: isTypewriterDone ? 0 : 10,
+									}}
+									transition={{
+										type: "timing",
+										duration: CTA_FADE_IN_DURATION_MS,
+										delay: CTA_FADE_IN_START_DELAY_MS + CTA_FADE_IN_STAGGER_MS,
+									}}
 								>
-									<ButtonText color="#2E5F8A" style={{ fontFamily: "Roboto" }}>
-										I already have an account
-									</ButtonText>
-								</Button>
+									<CreateButton
+										preset="outline"
+										label="I already have an account"
+										isPulsing={isTypewriterDone}
+										pulseStartDelayMs={CTA_FADE_IN_START_DELAY_MS + CTA_FADE_IN_STAGGER_MS}
+										onPress={() => navigation.navigate("LoginScreen")}
+									/>
+								</MotiView>
 							</VStack>
 						</VStack>
 					</Box>
