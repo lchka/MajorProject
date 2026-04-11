@@ -224,44 +224,77 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Box w="$full" px="$5" py="$8" bg="$backgroundLight0">
-          <VStack space="xl">
+        <Box w="$full" bg="#F2F8FF">
+          <Box
+            position="absolute"
+            top={-90}
+            right={-45}
+            w={220}
+            h={220}
+            borderRadius={999}
+            bg="#D8ECFF"
+            opacity={0.9}
+          />
+          <Box
+            position="absolute"
+            bottom={-70}
+            left={-35}
+            w={180}
+            h={180}
+            borderRadius={999}
+            bg="#BFDFFF"
+            opacity={0.35}
+          />
+
+          <Box w="$full" px="$5" py="$4">
+            <Box
+              bg="#F9FCFF"
+              borderRadius="$2xl"
+              p="$5"
+              style={styles.cardShadow}
+            >
+              <VStack space="xl">
             {/* Header */}
             <VStack space="xs">
               <HStack justifyContent="space-between" alignItems="center">
-                <Text pl="$2" size="6xl" style={{ fontFamily: "DancingScript" }}>
+                <Text
+                  pl="$2"
+                  size="6xl"
+                  style={{ fontFamily: "DancingScript", color: "#204C78" }}
+                >
                   Lumière
                 </Text>
 
                 <Box
-                  w="$8"
-                  h="$8"
+                  w="$9"
+                  h="$9"
                   alignItems="center"
                   justifyContent="center"
-                  mt="$4"
+                  borderRadius={999}
+                  bg="#E6F2FF"
                 >
-                  <AntDesign name="info-circle" size={28} color="gray" />
+                  <AntDesign name="star" size={18} color="#4A90D9" />
                 </Box>
               </HStack>
 
-              <Divider mt={-8} />
+              <Divider mt={-8} bg="#C8E0F8" />
             </VStack>
 
             {/* Title */}
             <VStack>
-              <Text size="3xl" style={{ fontFamily: "Roboto" }}>
+              <Text size="3xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
                 Sign in to your account
               </Text>
 
               <HStack space="xs">
-                <Text style={{ fontFamily: "Roboto" }}>
+                <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>
                   Don't have an account?
                 </Text>
 
                 <Pressable
                   onPress={() => navigation.navigate("RegisterScreen")}
                 >
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="$textLight700">
+                  <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
                     Sign up
                   </Text>
                 </Pressable>
@@ -333,22 +366,22 @@ export default function LoginScreen() {
                       w="$5"
                       h="$5"
                       borderWidth={1}
-                      borderColor="$borderDark400"
+                      borderColor="#9BB9D8"
                       borderRadius="$md"
                       alignItems="center"
                       justifyContent="center"
-                      bg={rememberMe ? "$blue600" : "transparent"}
+                      bg={rememberMe ? "#4A90D9" : "transparent"}
                     >
                       {rememberMe ? (
                         <Feather name="check" size={12} color="white" />
                       ) : null}
                     </Box>
-                    <Text style={{ fontFamily: "Roboto" }}>Remember me</Text>
+                    <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>Remember me</Text>
                   </HStack>
                 </Pressable>
 
                 <Pressable disabled={loading}>
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="$textLight700">
+                  <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
                     Forgot Password?
                   </Text>
                 </Pressable>
@@ -361,14 +394,14 @@ export default function LoginScreen() {
               size="lg"
               onPress={handleLogin}
               isDisabled={loading}
-              bg="$black"
+              bg="#4A90D9"
               borderRadius="$lg"
               w="$full"
             >
               {loading || googleLoading ? (
-                <Spinner color="$white" />
+                <Spinner color="#F7FBFF" />
               ) : (
-                <ButtonText color="$white">Login</ButtonText>
+                <ButtonText color="#F7FBFF">Login</ButtonText>
               )}
             </Button>
 
@@ -386,7 +419,9 @@ export default function LoginScreen() {
                 await promptGithubAuth();
               }}
             />
-          </VStack>
+              </VStack>
+            </Box>
+          </Box>
         </Box>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -396,10 +431,20 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F2F8FF",
   },
   scrollContent: {
     flexGrow: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#F2F8FF",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  cardShadow: {
+    shadowColor: "#4A90D9",
+    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 18,
+    elevation: 5,
   },
 });

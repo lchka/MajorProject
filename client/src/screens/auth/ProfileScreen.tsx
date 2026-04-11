@@ -32,6 +32,7 @@ import { createProfileSchema } from "../../models/profile.schema";
 import { useProfile } from "../../hooks/profile.hook";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
+import ProfileConditions from "../../components/conditions/profileConditions";
 import { ProfileImageUploadFile } from "../../services/profileService";
 
 export default function ProfileScreen() {
@@ -79,7 +80,7 @@ export default function ProfileScreen() {
 	const stepTitle = useMemo(() => {
 		if (step === 0) return "Complete your profile";
 		if (step === 1) return "Your basic details";
-		if (step === 2) return "Health conditions";
+		if (step === 2) return "Skin Conditions";
 		if (step === 3) return "Allergens";
 		if (step === 4) return "Food preferences";
 		return "Profile photo";
@@ -209,47 +210,85 @@ export default function ProfileScreen() {
 				contentContainerStyle={styles.scrollContent}
 				keyboardShouldPersistTaps="handled"
 			>
-				<Box w="$full" px="$5" py="$8" bg="$backgroundLight0">
-					<VStack space="xl">
+				<Box w="$full" bg="#F2F8FF">
+					<Box
+						position="absolute"
+						top={-90}
+						right={-45}
+						w={220}
+						h={220}
+						borderRadius={999}
+						bg="#D8ECFF"
+						opacity={0.9}
+					/>
+					<Box
+						position="absolute"
+						bottom={-70}
+						left={-35}
+						w={180}
+						h={180}
+						borderRadius={999}
+						bg="#BFDFFF"
+						opacity={0.35}
+					/>
+
+					<Box w="$full" px="$5" py="$4">
+						<Box
+							bg="#F9FCFF"
+							borderRadius="$2xl"
+							p="$5"
+							style={styles.cardShadow}
+						>
+							<VStack space="xl">
 						<VStack space="xs">
 							<HStack justifyContent="space-between" alignItems="center">
-								<Text pl="$2" size="6xl" style={{ fontFamily: "DancingScript" }}>
+								<Text
+									pl="$2"
+									size="6xl"
+									style={{ fontFamily: "DancingScript", color: "#204C78" }}
+								>
 									Lumière
 								</Text>
 
-								<Box w="$8" h="$8" alignItems="center" justifyContent="center" mt="$4">
-									<AntDesign name="info-circle" size={28} color="gray" />
+								<Box
+									w="$9"
+									h="$9"
+									alignItems="center"
+									justifyContent="center"
+									borderRadius={999}
+									bg="#E6F2FF"
+								>
+									<AntDesign name="star" size={18} color="#4A90D9" />
 								</Box>
 							</HStack>
-							<Divider mt={-8} />
+							<Divider mt={-8} bg="#C8E0F8" />
 						</VStack>
 
 						<VStack>
-							<Text size="3xl" style={{ fontFamily: "Roboto" }}>
+							<Text size="3xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
 								{stepTitle}
 							</Text>
-							<Text size="sm" color="$textLight500">
+							<Text size="sm" color="#57799B">
 								Step {step + 1} of 6
 							</Text>
 						</VStack>
 
 						{step === 0 ? (
 							<VStack space="xl">
-								<Text size="sm" color="$textLight500">
+								<Text size="sm" color="#57799B">
 									Let’s finish your profile so we can personalize your experience.
 								</Text>
 
 								<Button
 									size="lg"
 									onPress={handleNext}
-									bg="$black"
+									bg="#4A90D9"
 									borderRadius="$lg"
 									w="$full"
 								>
-									<ButtonText color="$white">Continue</ButtonText>
+									<ButtonText color="#F7FBFF">Continue</ButtonText>
 								</Button>
 
-								<SocialAuth />
 							</VStack>
 						) : null}
 
@@ -297,28 +336,12 @@ export default function ProfileScreen() {
 						) : null}
 
 						{step === 2 ? (
-							<VStack space="md">
-								<Text style={{ fontFamily: "RobotoMedium" }}>Select conditions (optional)</Text>
-								<HStack flexWrap="wrap" space="sm">
-									{conditions.map((item) => {
-										const selected = conditionIds.includes(item.id);
-										return (
-											<Pressable
-												key={item.id}
-												onPress={() => toggleId(item.id, conditionIds, setConditionIds)}
-												borderWidth={1}
-												borderColor={selected ? "$black" : "$borderLight300"}
-												bg={selected ? "$black" : "transparent"}
-												borderRadius="$full"
-												px="$3"
-												py="$2"
-											>
-												<Text color={selected ? "$white" : "$textLight700"}>{item.name}</Text>
-											</Pressable>
-										);
-									})}
-								</HStack>
-							</VStack>
+							<ProfileConditions
+								conditions={conditions}
+								selectedConditionIds={conditionIds}
+								onChangeSelectedConditionIds={setConditionIds}
+								isDisabled={loading}
+							/>
 						) : null}
 
 						{step === 3 ? (
@@ -332,13 +355,13 @@ export default function ProfileScreen() {
 												key={item.id}
 												onPress={() => toggleId(item.id, allergenIds, setAllergenIds)}
 												borderWidth={1}
-												borderColor={selected ? "$black" : "$borderLight300"}
-												bg={selected ? "$black" : "transparent"}
+												borderColor={selected ? "#4A90D9" : "#C8E0F8"}
+												bg={selected ? "#4A90D9" : "transparent"}
 												borderRadius="$full"
 												px="$3"
 												py="$2"
 											>
-												<Text color={selected ? "$white" : "$textLight700"}>{item.name}</Text>
+												<Text color={selected ? "#F7FBFF" : "#2E5F8A"}>{item.name}</Text>
 											</Pressable>
 										);
 									})}
@@ -357,13 +380,13 @@ export default function ProfileScreen() {
 												key={item.id}
 												onPress={() => toggleId(item.id, preferenceIds, setPreferenceIds)}
 												borderWidth={1}
-												borderColor={selected ? "$black" : "$borderLight300"}
-												bg={selected ? "$black" : "transparent"}
+												borderColor={selected ? "#4A90D9" : "#C8E0F8"}
+												bg={selected ? "#4A90D9" : "transparent"}
 												borderRadius="$full"
 												px="$3"
 												py="$2"
 											>
-												<Text color={selected ? "$white" : "$textLight700"}>{item.name}</Text>
+												<Text color={selected ? "#F7FBFF" : "#2E5F8A"}>{item.name}</Text>
 											</Pressable>
 										);
 									})}
@@ -376,7 +399,7 @@ export default function ProfileScreen() {
 								<Text style={{ fontFamily: "RobotoMedium" }}>
 									Choose your profile photo (optional)
 								</Text>
-								<Text size="sm" color="$textLight500">
+								<Text size="sm" color="#57799B">
 									This is what your image will look like.
 								</Text>
 
@@ -390,7 +413,7 @@ export default function ProfileScreen() {
 										<Box style={styles.profilePreview} />
 									)}
 
-									<Text size="sm" color="$textLight500">
+									<Text size="sm" color="#57799B">
 										{profileImage ? profileImage.name ?? "Selected image" : "No image selected yet"}
 									</Text>
 								</VStack>
@@ -401,8 +424,9 @@ export default function ProfileScreen() {
 									onPress={handlePickProfileImage}
 									isDisabled={loading}
 									borderRadius="$lg"
+									borderColor="#A8CFF5"
 								>
-									<ButtonText>
+									<ButtonText color="#2E5F8A">
 										{profileImage ? "Change Photo" : "Choose from Photos"}
 									</ButtonText>
 								</Button>
@@ -415,10 +439,11 @@ export default function ProfileScreen() {
 									flex={1}
 									variant="outline"
 									borderRadius="$lg"
+									borderColor="#A8CFF5"
 									onPress={handleBack}
 									isDisabled={loading}
 								>
-									<ButtonText>Back</ButtonText>
+									<ButtonText color="#2E5F8A">Back</ButtonText>
 								</Button>
 							) : null}
 
@@ -427,19 +452,21 @@ export default function ProfileScreen() {
 								size="lg"
 								onPress={step === 5 ? handleSubmitProfile : handleNext}
 								isDisabled={loading}
-								bg="$black"
+								bg="#4A90D9"
 								borderRadius="$lg"
 							>
 								{loading ? (
-									<Spinner color="$white" />
+									<Spinner color="#F7FBFF" />
 								) : (
-									<ButtonText color="$white">
+									<ButtonText color="#F7FBFF">
 										{step === 5 ? "Save Profile" : "Next"}
 									</ButtonText>
 								)}
 							</Button>
 						</HStack>
 					</VStack>
+						</Box>
+					</Box>
 				</Box>
 			</ScrollView>
 		</KeyboardAvoidingView>
@@ -449,16 +476,26 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: "#ffffff",
+		backgroundColor: "#F2F8FF",
 	},
 	scrollContent: {
 		flexGrow: 1,
-		backgroundColor: "#ffffff",
+		backgroundColor: "#F2F8FF",
+		justifyContent: "center",
+		alignItems: "center",
+		paddingVertical: 20,
+	},
+	cardShadow: {
+		shadowColor: "#4A90D9",
+		shadowOpacity: 0.12,
+		shadowOffset: { width: 0, height: 12 },
+		shadowRadius: 18,
+		elevation: 5,
 	},
 	profilePreview: {
 		width: 96,
 		height: 96,
 		borderRadius: 48,
-		backgroundColor: "#f3f4f6",
+		backgroundColor: "#E6F2FF",
 	},
 });

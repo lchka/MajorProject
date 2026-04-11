@@ -16,12 +16,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableScreens } from "react-native-screens";
 import { AuthStackParamList } from "./src/types/navigation";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 
 // Fonts
 import { useFonts, DancingScript_400Regular } from '@expo-google-fonts/dancing-script';
 import { Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
+const AUTH_TOKEN_KEY = "authToken";
 
 enableScreens(false);
 
@@ -37,8 +40,23 @@ export default function App() {
     Roboto: Roboto_400Regular,
     RobotoMedium: Roboto_500Medium,
   });
+  const [authResolved, setAuthResolved] = useState(false);
+  const [initialRouteName, setInitialRouteName] = useState<keyof AuthStackParamList>("WelcomeScreen");
 
-  if (!fontsLoaded) return null;
+  useEffect(() => {
+    const resolveAuthState = async () => {
+      try {
+        const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+        setInitialRouteName(token ? "LandingScreen" : "WelcomeScreen");
+      } finally {
+        setAuthResolved(true);
+      }
+    };
+
+    void resolveAuthState();
+  }, []);
+
+  if (!fontsLoaded || !authResolved) return null;
 
   return (
     <GluestackUIProvider config={config}>
@@ -46,7 +64,7 @@ export default function App() {
         <SafeAreaProvider>
           <NavigationContainer>
             <Stack.Navigator
-                initialRouteName="LandingScreen"
+                initialRouteName={initialRouteName}
               screenOptions={{
                 headerShown: false,
               }}
