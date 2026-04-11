@@ -21,7 +21,7 @@ const PULSE_DURATION_MS = 1400;
 
 const PRESET_STYLES: Record<
 	CreateButtonPreset,
-	{ backgroundColor: string; borderColor: string; textColor: string; variant?: "outline" }
+	{ backgroundColor: string; borderColor: string; textColor: string; borderWidth?: number; variant?: "outline" }
 > = {
 	solid: {
 		backgroundColor: "#4A90D9",
@@ -30,8 +30,9 @@ const PRESET_STYLES: Record<
 	},
 	outline: {
 		backgroundColor: "transparent",
-		borderColor: "#A8CFF5",
-		textColor: "#2E5F8A",
+		borderColor: "#6FA5DA",
+		textColor: "#1F4F80",
+		borderWidth: 2,
 		variant: "outline",
 	},
 };
@@ -68,6 +69,7 @@ export default function CreateButton({
 				variant={stylePreset.variant}
 				bg={stylePreset.backgroundColor}
 				borderColor={stylePreset.borderColor}
+				borderWidth={stylePreset.borderWidth}
 				borderRadius="$xl"
 				onPress={onPress}
 				disabled={disabled}

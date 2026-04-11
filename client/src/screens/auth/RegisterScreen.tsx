@@ -6,6 +6,7 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
+import { Easing } from "react-native-reanimated";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
@@ -13,27 +14,25 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Box,
-  Button,
-  ButtonText,
   Divider,
   HStack,
   Input,
   InputField,
   Pressable,
   ScrollView,
-  Spinner,
   Text,
   VStack,
 } from "@gluestack-ui/themed";
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { authService } from "../../services";
 import profileService from "../../services/profileService";
 import { registerSchema } from "../../models/auth.schema";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
+import CreateButton from "../../components/Buttons/CreateButton";
 import useGoogleAuth from "../../hooks/googleAuth.hook";
 import type { AuthResponse } from "../../services";
+import { MotiView } from "moti";
 
 const AUTH_TOKEN_KEY = "authToken";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
@@ -52,15 +51,103 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+
+  const validateFirstName = (value: string) => {
+    if (!value.trim()) return "First name is required.";
+    return "";
+  };
+
+  const validateLastName = (value: string) => {
+    if (!value.trim()) return "Last name is required.";
+    return "";
+  };
+
+  const validateEmail = (value: string) => {
+    if (!value.trim()) return "Email is required.";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value.trim())) return "Enter a valid email address.";
+    return "";
+  };
+
+  const validatePassword = (value: string) => {
+    if (!value) return "Password is required.";
+    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+    if (!strongPasswordRegex.test(value)) {
+      return "Use 8+ chars with uppercase, lowercase, number, and symbol.";
+    }
+    return "";
+  };
+
+  const validateConfirmPassword = (value: string, sourcePassword: string) => {
+    if (!value) return "Please confirm your password.";
+    if (value !== sourcePassword) return "Passwords do not match.";
+    return "";
+  };
+
+  const setFieldError = (field: keyof typeof errors, message: string) => {
+    setErrors((prev) => ({ ...prev, [field]: message }));
+  };
+
+  const validateStepFields = (currentStep: number) => {
+    if (currentStep === 1) {
+      const firstNameError = validateFirstName(firstName);
+      const lastNameError = validateLastName(lastName);
+      setFieldError("firstName", firstNameError);
+      setFieldError("lastName", lastNameError);
+      return !firstNameError && !lastNameError;
+    }
+
+    if (currentStep === 2) {
+      const emailError = validateEmail(email);
+      setFieldError("email", emailError);
+      return !emailError;
+    }
+
+    if (currentStep === 3) {
+      const passwordError = validatePassword(password);
+      const confirmPasswordError = validateConfirmPassword(confirmPassword, password);
+      setFieldError("password", passwordError);
+      setFieldError("confirmPassword", confirmPasswordError);
+      return !passwordError && !confirmPasswordError;
+    }
+
+    return true;
+  };
+
+  const isCurrentStepValid = (() => {
+    if (step === 1) return !validateFirstName(firstName) && !validateLastName(lastName);
+    if (step === 2) return !validateEmail(email);
+    if (step === 3) {
+      return !validatePassword(password) && !validateConfirmPassword(confirmPassword, password);
+    }
+    return true;
+  })();
 
   const completeLoginFlow = async (response: AuthResponse) => {
     let shouldGoToAnalyse = false;
-    let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
+    let profileIdForEdit: string | undefined =
+      response.user.profile_id ?? undefined;
 
     if (profileIdForEdit) {
       try {
         const profiles = await profileService.getMyProfile();
-        const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
+        const activeProfile =
+          profiles.find((item) => item.main_profile) ?? profiles[0];
         shouldGoToAnalyse = Boolean(activeProfile?.isComplete);
         profileIdForEdit = activeProfile?.id ?? profileIdForEdit;
       } catch {
@@ -130,24 +217,40 @@ export default function RegisterScreen() {
   }, [githubResponse]);
 
   const handleNext = () => {
-    if (step === 1 && (!firstName.trim() || !lastName.trim())) {
-      Alert.alert("Missing info", "Please enter first and last name.");
+    if (!validateStepFields(step)) {
+      if (step === 1) {
+        setTouched((prev) => ({ ...prev, firstName: true, lastName: true }));
+      }
+      if (step === 2) {
+        setTouched((prev) => ({ ...prev, email: true }));
+      }
       return;
     }
 
-    if (step === 2 && !email.trim()) {
-      Alert.alert("Missing info", "Please enter your email.");
-      return;
-    }
-
+    setStepDirection(1);
     setStep((prev) => Math.min(prev + 1, 3));
   };
 
   const handleBack = () => {
+    setStepDirection(-1);
     setStep((prev) => Math.max(prev - 1, 0));
   };
 
   const handleRegister = async () => {
+    const isValidForSubmit = validateStepFields(3);
+    setTouched((prev) => ({
+      ...prev,
+      firstName: true,
+      lastName: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    }));
+
+    if (!isValidForSubmit) {
+      return;
+    }
+
     const result = registerSchema.safeParse({
       first_name: firstName,
       last_name: lastName,
@@ -227,288 +330,307 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={{ flex: 1, backgroundColor: "#F2F8FF" }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center", // 👈 THIS FIXES IT
+          paddingHorizontal: 20,
+          paddingVertical: 30,
+        }}
         keyboardShouldPersistTaps="handled"
       >
-        <Box w="$full" bg="#F2F8FF">
-          <Box
-            position="absolute"
-            top={-90}
-            right={-45}
-            w={220}
-            h={220}
-            borderRadius={999}
-            bg="#D8ECFF"
-            opacity={0.9}
-          />
-          <Box
-            position="absolute"
-            bottom={-70}
-            left={-35}
-            w={180}
-            h={180}
-            borderRadius={999}
-            bg="#BFDFFF"
-            opacity={0.35}
-          />
+        {/* Background circles (lighter, less intrusive) */}
+        <Box
+          position="absolute"
+          top={-60}
+          right={-30}
+          w={180}
+          h={180}
+          borderRadius={999}
+          bg="#D8ECFF"
+          opacity={0.5}
+        />
+        <Box
+          position="absolute"
+          bottom={-40}
+          left={-20}
+          w={140}
+          h={140}
+          borderRadius={999}
+          bg="#BFDFFF"
+          opacity={0.25}
+        />
 
-          <Box w="$full" px="$5" py="$4">
-            <Box
-              bg="#F9FCFF"
-              borderRadius="$2xl"
-              p="$5"
-              style={styles.cardShadow}
-            >
-              <VStack space="xl">
-            {/* Header */}
-            <VStack space="xs">
-              <HStack justifyContent="space-between" alignItems="center">
-                <Text
-                  pl="$2"
-                  size="6xl"
-                  style={{ fontFamily: "DancingScript", color: "#204C78" }}
-                >
-                  Lumière
-                </Text>
+        {/* Logo */}
+        <Text
+          size="5xl"
+          style={{
+            fontFamily: "DancingScript",
+            color: "#204C78",
+            marginBottom: 10,
+          }}
+        >
+          Lumière
+        </Text>
 
-                <Box
-                  w="$9"
-                  h="$9"
-                  alignItems="center"
-                  justifyContent="center"
-                  borderRadius={999}
-                  bg="#E6F2FF"
-                >
-                  <AntDesign name="star" size={18} color="#4A90D9" />
-                </Box>
-              </HStack>
-              <Divider mt={-8} bg="#C8E0F8" />
-            </VStack>
+        {/* Title */}
+        <HStack alignItems="center" justifyContent="space-between" mb="$1.5">
+          <Text
+            size="3xl"
+            style={{
+              fontFamily: "Roboto",
+              color: "#1E293B",
+            }}
+          >
+            {step === 0
+              ? "Create Account"
+              : step === 1
+                ? "Your name"
+                : step === 2
+                  ? "Your email"
+                  : "Create password"}
+          </Text>
+                  <Feather name="info" size={24} color="#5E7FA3" />
+        </HStack>
 
-            {/* Title */}
-            <VStack>
-              <Text size="3xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
-                {step === 0
-                  ? "Welcome to Lumière"
-                  : step === 1
-                  ? "Tell us your name"
-                  : step === 2
-                  ? "Add your email"
-                  : "Set your password"}
-              </Text>
+        {/* Subtext */}
+        <HStack mb="$4">
+          <Text color="#64748B">Already have an account? </Text>
+          <Pressable onPress={() => navigation.navigate("LoginScreen")}>
+            <Text color="#2E5F8A" style={{ fontFamily: "RobotoMedium" }}>
+              Sign in
+            </Text>
+          </Pressable>
+        </HStack>
 
-              <HStack space="xs">
-                <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>
-                  Already have an account?
-                </Text>
-
-                <Pressable onPress={() => navigation.navigate("LoginScreen")}>
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
-                    Sign in
-                  </Text>
-                </Pressable>
-              </HStack>
-            </VStack>
-
+        {/* STEP PANELS */}
+        <Box overflow="hidden" width="100%">
+          <MotiView
+            key={`register-step-${step}`}
+            from={{ opacity: 0.98, translateX: stepDirection === 1 ? 22 : -22 }}
+            animate={{ opacity: 1, translateX: 0 }}
+            transition={{
+              type: "timing",
+              duration: 360,
+              easing: Easing.out(Easing.cubic),
+            }}
+          >
             {step === 0 ? (
-              <VStack space="xl">
-                <Text size="sm" color="#57799B">
-                  Create your account in a few quick steps.
-                </Text>
+              <VStack space="lg">
+                <CreateButton label="Continue with Email" onPress={handleNext} />
 
-                <Button
-                  size="lg"
-                  onPress={handleNext}
-                  bg="#4A90D9"
-                  borderRadius="$lg"
-                  w="$full"
-                >
-                  <ButtonText color="#F7FBFF">Continue with Email</ButtonText>
-                </Button>
-
+                {/* Social */}
                 <SocialAuth
                   onGooglePress={promptGoogleAuth}
-                  onGithubPress={async () => {
-                    if (!GITHUB_CLIENT_ID) {
-                      Alert.alert("GitHub Login", "Missing GitHub client ID.");
-                      return;
-                    }
-                    if (!githubRequest) {
-                      Alert.alert("GitHub Login", "GitHub auth not ready.");
-                      return;
-                    }
-                    await promptGithubAuth();
-                  }}
+                  onGithubPress={promptGithubAuth}
                 />
               </VStack>
             ) : (
-              <VStack space="xl">
-                {step === 1 ? (
+              <VStack pt="$2" space="lg">
+                {/* Step Inputs */}
+                {step === 1 && (
                   <>
-                    <VStack space="xs">
-                      <Text style={{ fontFamily: "RobotoMedium" }}>First Name</Text>
-                      <Input size="lg" borderRadius="$lg">
-                        <InputField
-                          placeholder="Enter first name"
-                          value={firstName}
-                          onChangeText={setFirstName}
-                          autoCapitalize="words"
-                          autoComplete="name-given"
-                          editable={!loading}
-                        />
-                      </Input>
-                    </VStack>
-
-                    <VStack space="xs">
-                      <Text style={{ fontFamily: "RobotoMedium" }}>Last Name</Text>
-                      <Input size="lg" borderRadius="$lg">
-                        <InputField
-                          placeholder="Enter last name"
-                          value={lastName}
-                          onChangeText={setLastName}
-                          autoCapitalize="words"
-                          autoComplete="name-family"
-                          editable={!loading}
-                        />
-                      </Input>
-                    </VStack>
-                  </>
-                ) : null}
-
-                {step === 2 ? (
-                  <VStack space="xs">
-                    <Text style={{ fontFamily: "RobotoMedium" }}>Email</Text>
-                    <Input size="lg" borderRadius="$lg">
+                    <Input size="lg" borderRadius="$full">
                       <InputField
-                        placeholder="abc@gmail.com"
-                        value={email}
-                        onChangeText={setEmail}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        autoComplete="email"
-                        editable={!loading}
+                        placeholder="First name"
+                        value={firstName}
+                        onChangeText={(value) => {
+                          setFirstName(value);
+                          setTouched((prev) => ({ ...prev, firstName: true }));
+                          setFieldError("firstName", validateFirstName(value));
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, firstName: true }));
+                          setFieldError("firstName", validateFirstName(firstName));
+                        }}
                       />
                     </Input>
-                  </VStack>
-                ) : null}
-
-                {step === 3 ? (
-                  <>
-                    <VStack space="xs">
-                      <Text style={{ fontFamily: "RobotoMedium" }}>Password</Text>
-                      <Box position="relative">
-                        <Input size="lg" borderRadius="$lg">
-                          <InputField
-                            placeholder="Enter password"
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
-                            autoCapitalize="none"
-                            autoComplete="password-new"
-                            editable={!loading}
-                            style={{ paddingRight: 44 }}
-                          />
-                        </Input>
-
-                        <Pressable
-                          position="absolute"
-                          right="$3"
-                          top="50%"
-                          mt={-9}
-                          onPress={() => setShowPassword((prev) => !prev)}
-                          disabled={loading}
-                        >
-                          <Feather
-                            name={showPassword ? "eye-off" : "eye"}
-                            size={18}
-                            color="#6B7280"
-                          />
-                        </Pressable>
-                      </Box>
-
-                      <Text size="xs">
-                        Min 8 characters with uppercase, lowercase, number and special
-                        character
+                    {touched.firstName && errors.firstName ? (
+                      <Text size="xs" color="#DC2626" mt="$1">
+                        {errors.firstName}
                       </Text>
-                    </VStack>
+                    ) : null}
 
-                    <VStack space="xs">
-                      <Text style={{ fontFamily: "RobotoMedium" }}>
-                        Confirm Password
+                    <Input size="lg" borderRadius="$full">
+                      <InputField
+                        placeholder="Last name"
+                        value={lastName}
+                        onChangeText={(value) => {
+                          setLastName(value);
+                          setTouched((prev) => ({ ...prev, lastName: true }));
+                          setFieldError("lastName", validateLastName(value));
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, lastName: true }));
+                          setFieldError("lastName", validateLastName(lastName));
+                        }}
+                      />
+                    </Input>
+                    {touched.lastName && errors.lastName ? (
+                      <Text size="xs" color="#DC2626" mt="$1">
+                        {errors.lastName}
                       </Text>
-
-                      <Box position="relative">
-                        <Input size="lg" borderRadius="$lg">
-                          <InputField
-                            placeholder="Re-enter password"
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                            secureTextEntry={!showConfirmPassword}
-                            autoCapitalize="none"
-                            editable={!loading}
-                            style={{ paddingRight: 44 }}
-                          />
-                        </Input>
-
-                        <Pressable
-                          position="absolute"
-                          right="$3"
-                          top="50%"
-                          mt={-9}
-                          onPress={() => setShowConfirmPassword((prev) => !prev)}
-                          disabled={loading}
-                        >
-                          <Feather
-                            name={showConfirmPassword ? "eye-off" : "eye"}
-                            size={18}
-                            color="#6B7280"
-                          />
-                        </Pressable>
-                      </Box>
-                    </VStack>
+                    ) : null}
                   </>
-                ) : null}
+                )}
 
-                <HStack space="md" mt="$2">
-                  {step > 0 ? (
-                    <Button
-                      flex={1}
-                      variant="outline"
-                      borderRadius="$lg"
-                      borderColor="#A8CFF5"
-                      onPress={handleBack}
-                      isDisabled={loading}
-                    >
-                      <ButtonText color="#2E5F8A">Back</ButtonText>
-                    </Button>
-                  ) : null}
+                {step === 2 && (
+                  <>
+                    <Input size="lg" borderRadius="$full">
+                      <InputField
+                        placeholder="Email address"
+                        value={email}
+                        onChangeText={(value) => {
+                          setEmail(value);
+                          setTouched((prev) => ({ ...prev, email: true }));
+                          setFieldError("email", validateEmail(value));
+                        }}
+                        onBlur={() => {
+                          setTouched((prev) => ({ ...prev, email: true }));
+                          setFieldError("email", validateEmail(email));
+                        }}
+                      />
+                    </Input>
+                    {touched.email && errors.email ? (
+                      <Text size="xs" color="#DC2626" mt="$1">
+                        {errors.email}
+                      </Text>
+                    ) : null}
+                  </>
+                )}
 
-                  <Button
-                    flex={1}
-                    size="lg"
-                    onPress={step === 3 ? handleRegister : handleNext}
-                    isDisabled={loading}
-                    bg="#4A90D9"
-                    borderRadius="$lg"
-                  >
-                    {loading && step === 3 ? (
-                      <Spinner color="#F7FBFF" />
-                    ) : (
-                      <ButtonText color="#F7FBFF">
-                        {step === 3 ? "Sign Up" : "Next"}
-                      </ButtonText>
-                    )}
-                  </Button>
+                {step === 3 && (
+                  <>
+                    <Box position="relative">
+                      <Input size="lg" borderRadius="$full">
+                        <InputField
+                          placeholder="Password"
+                          secureTextEntry={!showPassword}
+                          value={password}
+                          onChangeText={(value) => {
+                            setPassword(value);
+                            setTouched((prev) => ({ ...prev, password: true }));
+                            setFieldError("password", validatePassword(value));
+                            if (touched.confirmPassword || confirmPassword.length > 0) {
+                              setFieldError(
+                                "confirmPassword",
+                                validateConfirmPassword(confirmPassword, value),
+                              );
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, password: true }));
+                            setFieldError("password", validatePassword(password));
+                          }}
+                          style={{ paddingRight: 44 }}
+                        />
+                      </Input>
+                      <Pressable
+                        position="absolute"
+                        right="$5"
+                        top={0}
+                        bottom={0}
+                        w="$10"
+                        alignItems="center"
+                        justifyContent="center"
+                        hitSlop={10}
+                        onPress={() => setShowPassword((prev) => !prev)}
+                        disabled={loading}
+                      >
+                        <Feather
+                          name={showPassword ? "eye-off" : "eye"}
+                          size={18}
+                          color="#6B7280"
+                        />
+                      </Pressable>
+                    </Box>
+                    {touched.password && errors.password ? (
+                      <Text size="xs" color="#DC2626" mt="$1">
+                        {errors.password}
+                      </Text>
+                    ) : null}
+
+                    <Box position="relative">
+                      <Input size="lg" borderRadius="$full">
+                        <InputField
+                          placeholder="Confirm password"
+                          secureTextEntry={!showConfirmPassword}
+                          value={confirmPassword}
+                          onChangeText={(value) => {
+                            setConfirmPassword(value);
+                            setTouched((prev) => ({ ...prev, confirmPassword: true }));
+                            setFieldError("confirmPassword", validateConfirmPassword(value, password));
+                          }}
+                          onBlur={() => {
+                            setTouched((prev) => ({ ...prev, confirmPassword: true }));
+                            setFieldError(
+                              "confirmPassword",
+                              validateConfirmPassword(confirmPassword, password),
+                            );
+                          }}
+                          style={{ paddingRight: 44 }}
+                        />
+                      </Input>
+                      <Pressable
+                        position="absolute"
+                        right="$5"
+                        top={0}
+                        bottom={0}
+                        w="$10"
+                        alignItems="center"
+                        justifyContent="center"
+                        hitSlop={10}
+                        onPress={() => setShowConfirmPassword((prev) => !prev)}
+                        disabled={loading}
+                      >
+                        <Feather
+                          name={showConfirmPassword ? "eye-off" : "eye"}
+                          size={18}
+                          color="#6B7280"
+                        />
+                      </Pressable>
+                    </Box>
+                    {touched.confirmPassword && errors.confirmPassword ? (
+                      <Text size="xs" color="#DC2626" mt="$1">
+                        {errors.confirmPassword}
+                      </Text>
+                    ) : null}
+                  </>
+                )}
+
+                {/* Buttons */}
+                <HStack space="md" mt="$4">
+                  {step > 0 && (
+                    <Box flex={1}>
+                      <CreateButton
+                        preset="outline"
+                        label="Back"
+                        onPress={handleBack}
+                        disabled={loading}
+                      />
+                    </Box>
+                  )}
+
+                  <Box flex={1}>
+                    <CreateButton
+                      label={
+                        step === 3
+                          ? loading
+                            ? "Signing up..."
+                            : "Sign Up"
+                          : "Next"
+                      }
+                      onPress={step === 3 ? handleRegister : handleNext}
+                      disabled={loading || !isCurrentStepValid}
+                    />
+                  </Box>
                 </HStack>
               </VStack>
             )}
-              </VStack>
-            </Box>
-          </Box>
+          </MotiView>
         </Box>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -525,13 +647,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#F2F8FF",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 20,
+    paddingVertical: 14,
   },
   cardShadow: {
     shadowColor: "#4A90D9",
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 18,
-    elevation: 5,
+    shadowRadius: 14,
+    elevation: 3,
   },
 });

@@ -4,13 +4,13 @@ import {
 	HStack,
 	Input,
 	InputField,
-	Pressable,
 	ScrollView,
 	Text,
 	VStack,
 } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
+import SelectionChip from "../general/SelectionChip";
 
 type ConditionOption = {
 	id: string;
@@ -33,20 +33,8 @@ const preferredCommonOrder = [
 	"sensitive skin",
 ];
 
-const conditionEmojiByKey: Record<string, string> = {
-	acne: "🫧",
-	eczema: "🪶",
-	rosacea: "🩸",
-	psoriasis: "▫️",
-	dermatitis: "🌿",
-	"sensitive skin": "🫧",
-};
-
 const normalizeConditionName = (value: string) =>
 	value.trim().toLowerCase();
-
-const getConditionEmoji = (name: string) =>
-	conditionEmojiByKey[normalizeConditionName(name)] ?? "🫧";
 
 export default function ProfileConditions({
 	conditions,
@@ -111,13 +99,13 @@ export default function ProfileConditions({
 	};
 
 	return (
-		<VStack space="lg">
+		<VStack space="2xl">
 			{/* HEADER */}
-			<VStack space="xs">
+			<VStack space="sm">
 				
 				<Text
 					size="md"
-					color="#6B7D99"
+					color="#526C88"
 					style={{ fontFamily: "Roboto" }}
 				>
 					Tell us anything about your skin — we’ll tailor everything to you.
@@ -128,15 +116,15 @@ export default function ProfileConditions({
 			<Box opacity={isDisabled ? 0.7 : 1}>
 				<Box
 					borderRadius={28}
-					bg="#F7FAFF"
-					borderWidth={1}
-					borderColor="#D6E6F7"
+					bg="#FFFFFF"
+					borderWidth={1.8}
+					borderColor="#BBD4EC"
 					px="$3"
 					style={{
-						shadowColor: "#000",
-						shadowOpacity: 0.03,
-						shadowRadius: 6,
-						shadowOffset: { width: 0, height: 2 },
+						shadowColor: "#4A90D9",
+						shadowOpacity: 0.11,
+						shadowRadius: 10,
+						shadowOffset: { width: 0, height: 4 },
 					}}
 				>
 					<HStack alignItems="center" space="sm">
@@ -163,7 +151,7 @@ export default function ProfileConditions({
 
 			{/* SUGGESTIONS */}
 			{suggestionConditions.length > 0 && (
-				<VStack space="sm">
+				<VStack space="lg">
 					<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
 						Suggestions
 					</Text>
@@ -176,26 +164,12 @@ export default function ProfileConditions({
 								from={{ scale: 0.95, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
 							>
-								<Pressable
+								<SelectionChip
+									text={`+ ${item.name}`}
 									onPress={() => addCondition(item.id)}
-									borderWidth={1}
-									borderColor="#D8E6F5"
-									bg="#FFFFFF"
-									borderRadius={24}
-									px="$3"
-									py="$2"
 									disabled={isDisabled}
-									style={{
-										shadowColor: "#000",
-										shadowOpacity: 0.05,
-										shadowRadius: 4,
-										shadowOffset: { width: 0, height: 2 },
-									}}
-								>
-									<Text style={{ fontFamily: "Roboto" }}>
-										{`${getConditionEmoji(item.name)} ${item.name}`}
-									</Text>
-								</Pressable>
+									variant="suggestion"
+								/>
 							</MotiView>
 						))}
 					</MotiView>
@@ -203,44 +177,27 @@ export default function ProfileConditions({
 			)}
 
 			{/* SELECTED */}
-			<VStack space="sm">
+			<VStack space="lg">
 				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
 					Selected conditions
 				</Text>
 
 				{selectedConditions.length > 0 ? (
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
-						<HStack space="sm" alignItems="flex-start">
+						<HStack space="md" alignItems="flex-start">
 							{selectedConditionColumns.map((column, columnIndex) => (
-								<VStack key={`selected-column-${columnIndex}`} space="sm">
+								<VStack key={`selected-column-${columnIndex}`} space="md">
 									{column.map((item) => (
 										<MotiView
 											key={item.id}
 											from={{ scale: 0.9, opacity: 0 }}
 											animate={{ scale: 1, opacity: 1 }}
 										>
-											<Pressable
+											<SelectionChip
+												text={`${item.name} ×`}
 												onPress={() => removeCondition(item.id)}
-												bg="#DCEBFA"
-												borderRadius={24}
-												px="$3"
-												py="$2"
-												style={{
-													shadowColor: "#4A90E2",
-													shadowOpacity: 0.15,
-													shadowRadius: 6,
-													shadowOffset: { width: 0, height: 3 },
-												}}
-											>
-												<Text
-													style={{
-														fontFamily: "RobotoMedium",
-														color: "#1E4E79",
-													}}
-												>
-													{`${getConditionEmoji(item.name)} ${item.name} ×`}
-												</Text>
-											</Pressable>
+												variant="selected"
+											/>
 										</MotiView>
 									))}
 								</VStack>
@@ -255,7 +212,7 @@ export default function ProfileConditions({
 			</VStack>
 
 			{/* COMMON */}
-			<VStack space="sm">
+			<VStack space="lg">
 				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
 					Common conditions
 				</Text>
@@ -268,20 +225,12 @@ export default function ProfileConditions({
 								from={{ scale: 0.95, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
 							>
-								<Pressable
+								<SelectionChip
+									text={`+ ${item.name}`}
 									onPress={() => addCondition(item.id)}
-									borderWidth={1}
-									borderColor="#D8E6F5"
-									bg="#FFFFFF"
-									borderRadius={24}
-									px="$3"
-									py="$2"
 									disabled={isDisabled}
-								>
-									<Text style={{ fontFamily: "Roboto" }}>
-										{`${getConditionEmoji(item.name)} ${item.name}`}
-									</Text>
-								</Pressable>
+									variant="common"
+								/>
 							</MotiView>
 						))}
 					</HStack>

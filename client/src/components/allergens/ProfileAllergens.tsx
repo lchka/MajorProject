@@ -12,59 +12,59 @@ import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import SelectionChip from "../general/SelectionChip";
 
-type PreferenceOption = {
+type AllergenOption = {
 	id: string;
 	name: string;
 };
 
-type ProfilePreferenceProps = {
-	preferences: PreferenceOption[];
-	selectedPreferenceIds: string[];
-	onChangeSelectedPreferenceIds: (ids: string[]) => void;
+type ProfileAllergensProps = {
+	allergens: AllergenOption[];
+	selectedAllergenIds: string[];
+	onChangeSelectedAllergenIds: (ids: string[]) => void;
 	isDisabled?: boolean;
 };
 
 const preferredCommonOrder = [
-	"vegan",
-	"vegetarian",
-	"gluten free",
-	"lactose free",
-	"halal",
-	"kosher",
+	"fragrance",
+	"parabens",
+	"sulfates",
+	"alcohol",
+	"essential oils",
+	"nickel",
 ];
 
-const normalizePreferenceName = (value: string) => value.trim().toLowerCase();
+const normalizeAllergenName = (value: string) => value.trim().toLowerCase();
 
-export default function ProfilePreference({
-	preferences,
-	selectedPreferenceIds,
-	onChangeSelectedPreferenceIds,
+export default function ProfileAllergens({
+	allergens,
+	selectedAllergenIds,
+	onChangeSelectedAllergenIds,
 	isDisabled = false,
-}: ProfilePreferenceProps) {
+}: ProfileAllergensProps) {
 	const [query, setQuery] = React.useState("");
 
-	const selectedPreferences = React.useMemo(
-		() => preferences.filter((item) => selectedPreferenceIds.includes(item.id)),
-		[preferences, selectedPreferenceIds],
+	const selectedAllergens = React.useMemo(
+		() => allergens.filter((item) => selectedAllergenIds.includes(item.id)),
+		[allergens, selectedAllergenIds],
 	);
 
-	const availablePreferences = React.useMemo(
-		() => preferences.filter((item) => !selectedPreferenceIds.includes(item.id)),
-		[preferences, selectedPreferenceIds],
+	const availableAllergens = React.useMemo(
+		() => allergens.filter((item) => !selectedAllergenIds.includes(item.id)),
+		[allergens, selectedAllergenIds],
 	);
 
-	const filteredPreferences = React.useMemo(() => {
-		if (!query.trim()) return availablePreferences;
+	const filteredAllergens = React.useMemo(() => {
+		if (!query.trim()) return availableAllergens;
 
 		const normalizedQuery = query.toLowerCase();
-		return availablePreferences.filter((item) =>
+		return availableAllergens.filter((item) =>
 			item.name.toLowerCase().includes(normalizedQuery),
 		);
-	}, [availablePreferences, query]);
+	}, [availableAllergens, query]);
 
-	const commonPreferences = React.useMemo(() => {
-		const withRank = availablePreferences.map((item) => {
-			const key = normalizePreferenceName(item.name);
+	const commonAllergens = React.useMemo(() => {
+		const withRank = availableAllergens.map((item) => {
+			const key = normalizeAllergenName(item.name);
 			const rank = preferredCommonOrder.indexOf(key);
 			return { item, rank: rank === -1 ? 999 : rank };
 		});
@@ -73,35 +73,32 @@ export default function ProfilePreference({
 			.sort((a, b) => a.rank - b.rank || a.item.name.localeCompare(b.item.name))
 			.slice(0, 8)
 			.map((entry) => entry.item);
-	}, [availablePreferences]);
+	}, [availableAllergens]);
 
-	const suggestionPreferences =
-		query.trim().length > 0 ? filteredPreferences.slice(0, 8) : [];
+	const suggestionAllergens = query.trim().length > 0 ? filteredAllergens.slice(0, 8) : [];
 
-	const selectedPreferenceColumns = React.useMemo(() => {
-		const columns: PreferenceOption[][] = [];
-		for (let index = 0; index < selectedPreferences.length; index += 2) {
-			columns.push(selectedPreferences.slice(index, index + 2));
+	const selectedAllergenColumns = React.useMemo(() => {
+		const columns: AllergenOption[][] = [];
+		for (let index = 0; index < selectedAllergens.length; index += 2) {
+			columns.push(selectedAllergens.slice(index, index + 2));
 		}
 		return columns;
-	}, [selectedPreferences]);
+	}, [selectedAllergens]);
 
-	const addPreference = (preferenceId: string) => {
-		onChangeSelectedPreferenceIds([...selectedPreferenceIds, preferenceId]);
+	const addAllergen = (allergenId: string) => {
+		onChangeSelectedAllergenIds([...selectedAllergenIds, allergenId]);
 		setQuery("");
 	};
 
-	const removePreference = (preferenceId: string) => {
-		onChangeSelectedPreferenceIds(
-			selectedPreferenceIds.filter((id) => id !== preferenceId),
-		);
+	const removeAllergen = (allergenId: string) => {
+		onChangeSelectedAllergenIds(selectedAllergenIds.filter((id) => id !== allergenId));
 	};
 
 	return (
 		<VStack space="2xl">
 			<VStack space="sm">
 				<Text size="md" color="#526C88" style={{ fontFamily: "Roboto" }}>
-					Pick any cosmetic preferences so we can tailor recommendations.
+					Add any allergens to avoid so we can personalize safer recommendations.
 				</Text>
 			</VStack>
 
@@ -124,16 +121,13 @@ export default function ProfilePreference({
 						<Box flex={1}>
 							<Input borderWidth={0} bg="transparent">
 								<InputField
-									placeholder="Search or type a preference..."
+									placeholder="Search or type an allergen..."
 									placeholderTextColor="#8499B5"
 									value={query}
 									onChangeText={setQuery}
 									autoCapitalize="words"
 									editable={!isDisabled}
-									style={{
-										color: "#2E5F8A",
-										fontFamily: "Roboto",
-									}}
+									style={{ color: "#2E5F8A", fontFamily: "Roboto" }}
 								/>
 							</Input>
 						</Box>
@@ -141,17 +135,15 @@ export default function ProfilePreference({
 				</Box>
 			</Box>
 
-			{suggestionPreferences.length > 0 && (
+			{suggestionAllergens.length > 0 ? (
 				<VStack space="lg">
-					<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-						Suggestions
-					</Text>
+					<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>Suggestions</Text>
 					<MotiView style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-						{suggestionPreferences.map((item) => (
+						{suggestionAllergens.map((item) => (
 							<MotiView key={item.id} from={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
 								<SelectionChip
 									text={`+ ${item.name}`}
-									onPress={() => addPreference(item.id)}
+									onPress={() => addAllergen(item.id)}
 									disabled={isDisabled}
 									variant="suggestion"
 								/>
@@ -159,23 +151,23 @@ export default function ProfilePreference({
 						))}
 					</MotiView>
 				</VStack>
-			)}
+			) : null}
 
 			<VStack space="lg">
 				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-					Selected preferences
+					Selected allergens
 				</Text>
 
-				{selectedPreferences.length > 0 ? (
+				{selectedAllergens.length > 0 ? (
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
 						<HStack space="md" alignItems="flex-start">
-							{selectedPreferenceColumns.map((column, columnIndex) => (
+							{selectedAllergenColumns.map((column, columnIndex) => (
 								<VStack key={`selected-column-${columnIndex}`} space="md">
 									{column.map((item) => (
 										<MotiView key={item.id} from={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
 											<SelectionChip
 												text={`${item.name} ×`}
-												onPress={() => removePreference(item.id)}
+												onPress={() => removeAllergen(item.id)}
 												variant="selected"
 											/>
 										</MotiView>
@@ -186,23 +178,23 @@ export default function ProfilePreference({
 					</ScrollView>
 				) : (
 					<Text size="sm" color="#7A9BB8">
-						Start typing to add your cosmetic preferences.
+						Start typing to add allergens you want to avoid.
 					</Text>
 				)}
 			</VStack>
 
 			<VStack space="lg">
 				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-					Common preferences
+					Common allergens
 				</Text>
 
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
 					<HStack space="sm" alignItems="center">
-						{commonPreferences.map((item) => (
+						{commonAllergens.map((item) => (
 							<MotiView key={item.id} from={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
 								<SelectionChip
 									text={`+ ${item.name}`}
-									onPress={() => addPreference(item.id)}
+									onPress={() => addAllergen(item.id)}
 									disabled={isDisabled}
 									variant="common"
 								/>
