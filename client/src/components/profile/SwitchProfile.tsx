@@ -15,6 +15,7 @@ type SwitchProfileItem = {
 	id: string;
 	name: string;
 	avatarSource?: ImageSourcePropType;
+	isMain?: boolean;
 };
 
 type SwitchProfileProps = {
@@ -59,6 +60,7 @@ export default function SwitchProfile({
 
 	// This controls the image + greeting shown on the main switch card.
 	const displayedCardAvatarSource = activeProfile?.avatarSource ?? cardAvatarSource;
+	const shouldShowMainCrown = activeProfile ? activeProfile.isMain ?? true : false;
 	const capitalizedName = activeProfile?.name ? toGreetingFirstName(activeProfile.name) : "THERE";
 	const greetingText = greetingLabel ?? `HI, ${capitalizedName}!`;
 
@@ -138,7 +140,23 @@ export default function SwitchProfile({
 				onPress={() => setIsOpen(true)}
 			>
 				{/* This is the active profile image on the card */}
-				<Image source={displayedCardAvatarSource} style={styles.switchAvatar} alt="Profile avatar" />
+				<Box style={{ position: "relative" }}>
+					<Image source={displayedCardAvatarSource} style={styles.switchAvatar} alt="Profile avatar" />
+					{shouldShowMainCrown ? (
+						<Image
+							source={require("../../../assets/crown.png")}
+							style={{
+								position: "absolute",
+								top: -6,
+								right: -6,
+								width: 16,
+								height: 16,
+								zIndex: 2,
+							}}
+							alt="Main profile crown"
+						/>
+					) : null}
+				</Box>
 				{/* This is the greeting + title text block */}
 				<Box style={styles.switchCopy}>
 					<Text fontSize={13} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">

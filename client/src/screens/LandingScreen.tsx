@@ -1,11 +1,12 @@
 import React from "react";
 import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
+import { Box, ScrollView, Text } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import EditButton from "../components/Buttons/EditButton";
 import IosSwipeButton from "../components/Buttons/IosSwipeButton";
+import NavBarTop from "../components/general/NavBarTop";
 import SwitchProfile from "../components/profile/SwitchProfile";
 import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
@@ -24,7 +25,7 @@ export default function LandingScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const [profileId, setProfileId] = React.useState<string | null>(null);
 	const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
-	const [profiles, setProfiles] = React.useState<Array<{ id: string; name: string; avatarUri?: string }>>([]);
+	const [profiles, setProfiles] = React.useState<Array<{ id: string; name: string; avatarUri?: string; isMain: boolean }>>([]);
 
 	const loadProfiles = React.useCallback(async () => {
 		try {
@@ -37,6 +38,7 @@ export default function LandingScreen() {
 					id: item.id,
 					name: item.first_name.trim(),
 					avatarUri: item.profile_image || undefined,
+					isMain: item.main_profile,
 				})),
 			);
 
@@ -79,47 +81,39 @@ export default function LandingScreen() {
 	}, [activeProfile]);
 
 	return (
-		<Box style={styles.screen} mt="$3.5">
-			<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-				{/* Top brand and utility icons */}
-				<Box py="$3.5" mb="$0" style={styles.headerRow}>
-					<Box style={styles.brandWrap}>
-						
-						<Text pl="$1" fontSize={34} lineHeight={34} fontFamily="DancingScript" color="#4E4E4E">
-							Lumière
-						</Text>
-					</Box>
-
-					<Box  style={styles.headerActions}>
-						{/* search icon */}
-						<Box px="$1" >
-						<Feather  name="search" size={28} color="#111111" />
-						</Box>
-						
-						<Box mx="$2" style={styles.bellWrap}>
-							 <Feather name="bell" size={28} color="#111111" />
-							<Box style={styles.badge}>
-								<Text fontSize={10} lineHeight={10} fontWeight="$bold" color="#FFFFFF">2</Text>
-							</Box>
-						</Box>
-						<Pressable onPress={handleSignOut}>
-							<Image
-								source={require("../../assets/icon.png")}
-								style={styles.avatar}
-								resizeMode="cover"
-								alt="User avatar"
-							/>
-						</Pressable>
-					</Box>
-				</Box>
-
-				<Box style={styles.divider} />
-
+		<Box style={styles.screen}>
+			<Box
+				position="absolute"
+				top={-60}
+				right={-30}
+				w={180}
+				h={180}
+				borderRadius={999}
+				bg="#D8ECFF"
+				opacity={0.5}
+			/>
+			<Box
+				position="absolute"
+				bottom={-40}
+				left={-20}
+				w={140}
+				h={140}
+				borderRadius={999}
+				bg="#BFDFFF"
+				opacity={0.25}
+			/>
+			<ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]} showsVerticalScrollIndicator={false}>
+				<NavBarTop
+					notificationCount={2}
+					onPressAvatar={handleSignOut}
+				/>
+<Box mt="$4">
 				<SwitchProfile
 					profiles={profiles.map((profile) => ({
 						id: profile.id,
 						name: profile.name,
 						avatarSource: profile.avatarUri ? { uri: profile.avatarUri } : undefined,
+						isMain: profile.isMain,
 					}))}
 					activeProfileId={profileId ?? undefined}
 					onSelectProfile={(selectedProfileId) => {
@@ -129,7 +123,7 @@ export default function LandingScreen() {
 						navigation.navigate("ProfileScreen");
 					}}
 				/>
-
+</Box>
 				{/* Past analysis cards */}
 				<Box my="$2"style={styles.sectionHeader}>
 					<Text fontSize={22} pt="$2" lineHeight={22} fontFamily="RobotoMedium" color="#151515">Past Analysis</Text>

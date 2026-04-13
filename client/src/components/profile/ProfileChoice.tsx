@@ -28,6 +28,7 @@ type SwitchProfileItem = {
 	id: string;
 	name: string;
 	avatarSource?: ImageSourcePropType;
+	isMain?: boolean;
 };
 
 type ProfileChoiceProps = {
@@ -89,7 +90,20 @@ export default function ProfileChoice({
 	const initialsFontSize = Math.round(clamp(circleSize * 0.34, 30, 42));
 	const nameFontSize = Math.round(clamp(circleSize * 0.19, 16, 20));
 	const addLabelFontSize = Math.round(clamp(circleSize * 0.17, 14, 18));
-	const visibleProfiles = profiles.slice(0, maxProfiles);
+	const orderedProfiles = React.useMemo(() => {
+		if (!activeProfileId) {
+			return profiles;
+		}
+
+		const activeIndex = profiles.findIndex((profile) => profile.id === activeProfileId);
+		if (activeIndex <= 0) {
+			return profiles;
+		}
+
+		const activeProfile = profiles[activeIndex];
+		return [activeProfile, ...profiles.slice(0, activeIndex), ...profiles.slice(activeIndex + 1)];
+	}, [profiles, activeProfileId]);
+	const visibleProfiles = orderedProfiles.slice(0, maxProfiles);
 	const addSlotCount = Math.max(0, maxProfiles - visibleProfiles.length);
 	const slotWidth = circleSize + 24;
 
@@ -225,6 +239,7 @@ export default function ProfileChoice({
 							{/* Existing profile circles */}
 							{visibleProfiles.map((profile) => {
 								const isActive = profile.id === activeProfileId;
+								const shouldShowMainCrown = profile.isMain ?? isActive;
 
 								return (
 									<Pressable
@@ -233,34 +248,65 @@ export default function ProfileChoice({
 										style={{ width: slotWidth }}
 										onPress={() => onSelectProfile?.(profile.id)}
 									>
-										<Box
-											width={circleSize}
-											height={circleSize}
-											borderRadius={circleRadius}
-											alignItems="center"
-											justifyContent="center"
-											overflow="hidden"
-											borderWidth={2}
-											borderColor="#58CCED"
-											bg={isActive ? "#58CCED" : "#FFFFFF"}
-										>
-											{profile.avatarSource ? (
+										<Box style={{ position: "relative" }}>
+											<Box
+												style={
+													isActive
+														? {
+															shadowColor: "#7DD3FC",
+															shadowOpacity: 0.7,
+															shadowRadius: 14,
+															shadowOffset: { width: 0, height: 0 },
+															elevation: 9,
+														}
+														: undefined
+												}
+											>
+											<Box
+												width={circleSize}
+												height={circleSize}
+												borderRadius={circleRadius}
+												alignItems="center"
+												justifyContent="center"
+												overflow="hidden"
+												borderWidth={2}
+												borderColor="#58CCED"
+												bg={isActive ? "#58CCED" : "#FFFFFF"}
+											>
+												{profile.avatarSource ? (
+													<Image
+														source={profile.avatarSource}
+														alt={`${profile.name} avatar`}
+														style={{ width: "100%", height: "100%" }}
+														resizeMode="cover"
+													/>
+												) : (
+													<Text
+														fontSize={initialsFontSize}
+														lineHeight={initialsFontSize}
+														color={isActive ? "#FFFFFF" : "#58CCED"}
+														fontFamily="Roboto"
+													>
+														{getInitials(profile.name)}
+													</Text>
+												)}
+											</Box>
+											</Box>
+											{shouldShowMainCrown ? (
 												<Image
-													source={profile.avatarSource}
-													alt={`${profile.name} avatar`}
-													style={{ width: "100%", height: "100%" }}
-													resizeMode="cover"
+													source={require("../../../assets/crown.png")}
+													style={{
+														position: "absolute",
+														top: -14,
+														right: -2,
+														width: 40,
+														height: 40,
+														transform: [{ rotate: "18deg" }],
+														zIndex: 2,
+													}}
+													alt="Main profile crown"
 												/>
-											) : (
-												<Text
-													fontSize={initialsFontSize}
-													lineHeight={initialsFontSize}
-													color={isActive ? "#FFFFFF" : "#58CCED"}
-													fontFamily="Roboto"
-												>
-													{getInitials(profile.name)}
-												</Text>
-											)}
+											) : null}
 										</Box>
 
 										<Text
