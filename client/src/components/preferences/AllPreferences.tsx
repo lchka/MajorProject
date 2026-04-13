@@ -1,6 +1,5 @@
 import React from "react";
 import { AddIcon, Box, HStack, Icon, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
-import EditButton from "../Buttons/EditButton";
 import CurrentProfile from "../general/CurrentProfileName";
 import { styles } from "../../style/LandingPageStyle";
 
@@ -129,11 +128,8 @@ export default function PreferencesOverview({
 	profileFirstName,
 	onAddPreference,
 }: PreferencesOverviewProps) {
-	// This is the final preference list shown on landing for the active profile.
-	const preferences = React.useMemo(
-		() => resolvePreferenceItems(profilePreferenceNames),
-		[profilePreferenceNames],
-	);
+	// Recompute on each render so mutated arrays or deep value changes are reflected immediately.
+	const preferences = resolvePreferenceItems(profilePreferenceNames);
 
 	return (
 		<>

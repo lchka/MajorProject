@@ -42,7 +42,7 @@ type ProfileChoiceProps = {
 	activeProfileId?: string;
 	onSelectProfile?: (profileId: string) => void;
 	onAddProfile?: () => void;
-	onEditProfile?: () => void;
+	onEditProfile?: (profileId?: string) => void;
 	title?: string;
 };
 
@@ -134,6 +134,19 @@ export default function ProfileChoice({
 
 		onAddProfile?.();
 	}, [isAddDisabled, onAddProfile, showLimitWarning]);
+
+	const handleProfilePress = React.useCallback(
+		(profileId: string) => {
+			if (isEditMode) {
+				onEditProfile?.(profileId);
+				onClose();
+				return;
+			}
+
+			onSelectProfile?.(profileId);
+		},
+		[isEditMode, onEditProfile, onClose, onSelectProfile],
+	);
 
 	// Restrict gesture takeover to vertical-down movement so taps and horizontal drags still work.
 	const handlePanResponder = React.useMemo(
@@ -305,7 +318,7 @@ export default function ProfileChoice({
 							elevation={3}
 						>
 							{activeProfile ? (
-								<Pressable alignItems="center" onPress={() => onSelectProfile?.(activeProfile.id)}>
+								<Pressable alignItems="center" onPress={() => handleProfilePress(activeProfile.id)}>
 									<Box style={{ position: "relative" }}>
 										<Box
 											width={activeCircleSize}
@@ -393,7 +406,7 @@ export default function ProfileChoice({
 									{[secondaryProfiles[0], secondaryProfiles[1]].map((profile, index) => (
 										<Box key={profile?.id ?? `empty-${index}`} alignItems="center" style={{ width: "44%" }}>
 											{profile ? (
-												<Pressable alignItems="center" onPress={() => onSelectProfile?.(profile.id)}>
+												<Pressable alignItems="center" onPress={() => handleProfilePress(profile.id)}>
 													<Box
 														width={secondaryCircleSize}
 														height={secondaryCircleSize}

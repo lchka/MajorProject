@@ -46,7 +46,7 @@ export default function NavBarBottom({
 				icon={
 					<Image
 						source={avatarSource}
-						style={{ width: 32, height: 32, borderRadius: 12, opacity: 0.95 }}
+						style={{ width: 32, height: 32, borderRadius: 20, opacity: 0.95 }}
 						resizeMode="cover"
 						alt="Profile avatar"
 					/>

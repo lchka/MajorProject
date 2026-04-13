@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
 	Alert,
-	Image,
 	KeyboardAvoidingView,
 	Platform,
-	StyleSheet,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -17,8 +15,6 @@ import {
 import {
 	Box,
 	HStack,
-	Input,
-	InputField,
 	Pressable,
 	ScrollView,
 	Text,
@@ -33,6 +29,8 @@ import ProfilePreference from "../../components/preferences/ProfilePreference";
 import CreateButton from "../../components/Buttons/CreateButton";
 import { ProfileImageUploadFile } from "../../services/profileService";
 import NavBarTop from "../../components/general/NavBarTop";
+import ProfileNameAgeSection from "../../components/profile/ProfileNameAgeSection";
+import ProfileImageSection from "../../components/profile/ProfileImageSection";
 
 export default function CreateProfile() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -303,46 +301,15 @@ export default function CreateProfile() {
 						) : null}
 
 					{step === 1 ? (
-							<VStack space="xl">
-								<VStack space="xs">
-									<Text style={{ fontFamily: "RobotoMedium" }}>First Name</Text>
-									<Input size="lg" borderRadius="$full">
-										<InputField
-											placeholder="Enter first name"
-											value={firstName}
-											onChangeText={setFirstName}
-											autoCapitalize="words"
-											editable={!loading}
-										/>
-									</Input>
-								</VStack>
-
-								<VStack space="xs">
-									<Text style={{ fontFamily: "RobotoMedium" }}>Last Name</Text>
-									<Input size="lg" borderRadius="$full">
-										<InputField
-											placeholder="Enter last name"
-											value={lastName}
-											onChangeText={setLastName}
-											autoCapitalize="words"
-											editable={!loading}
-										/>
-									</Input>
-								</VStack>
-
-								<VStack space="xs">
-									<Text style={{ fontFamily: "RobotoMedium" }}>Age (optional)</Text>
-									<Input size="lg" borderRadius="$full">
-										<InputField
-											placeholder="Enter age"
-											value={age}
-											onChangeText={setAge}
-											keyboardType="number-pad"
-											editable={!loading}
-										/>
-									</Input>
-								</VStack>
-							</VStack>
+							<ProfileNameAgeSection
+								firstName={firstName}
+								lastName={lastName}
+								age={age}
+								onFirstNameChange={setFirstName}
+								onLastNameChange={setLastName}
+								onAgeChange={setAge}
+								isDisabled={loading}
+							/>
 						) : null}
 
 					{step === 2 ? (
@@ -373,37 +340,11 @@ export default function CreateProfile() {
 						) : null}
 
 					{step === 5 ? (
-							<VStack space="md">
-								<Text style={{ fontFamily: "RobotoMedium" }}>
-									Choose your profile photo (optional)
-								</Text>
-								<Text size="sm" color="#466785">
-									This is what your image will look like.
-								</Text>
-
-								<VStack space="xs" alignItems="center">
-									{profileImage ? (
-										<Image
-											source={{ uri: profileImage.uri }}
-											style={styles.profilePreview}
-										/>
-									) : (
-										<Box style={styles.profilePreview} />
-									)}
-
-									<Text size="sm" color="#466785">
-										{profileImage ? profileImage.name ?? "Selected image" : "No image selected yet"}
-									</Text>
-								</VStack>
-
-								<CreateButton
-									preset="outline"
-									label={profileImage ? "Change Photo" : "Choose from Photos"}
-									onPress={handlePickProfileImage}
-									disabled={loading}
-									isPulsing={false}
-								/>
-							</VStack>
+							<ProfileImageSection
+								profileImage={profileImage}
+								onPickImage={handlePickProfileImage}
+								isDisabled={loading}
+							/>
 						) : null}
 
 					{step > 0 ? (
@@ -433,12 +374,3 @@ export default function CreateProfile() {
 		</KeyboardAvoidingView>
 	);
 }
-
-const styles = StyleSheet.create({
-	profilePreview: {
-		width: 96,
-		height: 96,
-		borderRadius: 48,
-		backgroundColor: "#E6F2FF",
-	},
-});

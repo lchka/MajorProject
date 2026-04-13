@@ -23,7 +23,7 @@ type SwitchProfileProps = {
 	activeProfileId?: string;
 	onSelectProfile?: (profileId: string) => void;
 	onAddProfile?: () => void;
-	onEditProfile?: () => void;
+	onEditProfile?: (profileId?: string) => void;
 	title?: string;
 	greetingLabel?: string;
 	cardAvatarSource?: ImageSourcePropType;

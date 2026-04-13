@@ -121,8 +121,31 @@ export default function LandingScreen() {
 					onAddProfile={() => {
 						navigation.navigate("ProfileScreen");
 					}}
-					onEditProfile={() => {
-						navigation.navigate("EditProfileScreen", { profileId: profileId ?? undefined });
+					onEditProfile={(selectedProfileId) => {
+						const targetProfileId = selectedProfileId ?? profileId ?? undefined;
+						const targetProfile = profileDetails.find((item) => item.id === targetProfileId) ?? activeProfile;
+						const fullName = [targetProfile?.first_name?.trim(), targetProfile?.last_name?.trim()]
+							.filter(Boolean)
+							.join(" ");
+						const targetProfileName =
+							fullName ||
+							profiles.find((item) => item.id === targetProfileId)?.name ||
+							activeProfile?.first_name ||
+							undefined;
+						const targetProfilePreferenceNames = targetProfile?.preferences?.map((item) => item.name) ?? [];
+						const targetProfileAge = targetProfile?.age?.toString()?.trim() || undefined;
+						const targetProfileImageUri =
+							profiles.find((item) => item.id === targetProfileId)?.avatarUri ??
+							activeProfile?.profile_image ??
+							undefined;
+
+						navigation.navigate("EditProfileScreen", {
+							profileId: targetProfileId,
+							profileName: targetProfileName,
+							profileImageUri: targetProfileImageUri,
+							profilePreferenceNames: targetProfilePreferenceNames,
+							profileAge: targetProfileAge,
+						});
 					}}
 				/>
 </Box>

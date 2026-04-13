@@ -19,6 +19,10 @@ export type AuthStackParamList = {
   EditProfileScreen:
     | {
         profileId?: string;
+        profileName?: string;
+        profileImageUri?: string;
+        profilePreferenceNames?: string[];
+        profileAge?: string;
       }
     | undefined;
   AnalyseScreen: undefined;
