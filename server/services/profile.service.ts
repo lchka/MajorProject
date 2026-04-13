@@ -99,25 +99,61 @@ async createProfile(userId: string, data: CreateProfileDTO):Promise<ProfileRespo
     await this.assertExistingIds("allergen", data.allergenIds, "Allergen ids");
     await this.assertExistingIds("preference", data.preferenceIds, "Preference ids");
 
-    const profile = await prisma.profile.create({
-        data:{
-            userId,
-            first_name:data.first_name,
-            last_name:data.last_name,
-            age:data.age,
-            profile_image:data.profile_image,
-            conditions: data.conditionIds?.length
-                ? { connect: data.conditionIds.map((id) => ({ id })) }
-                : undefined,
-            allergens: data.allergenIds?.length
-                ? { connect: data.allergenIds.map((id) => ({ id })) }
-                : undefined,
-            preferences: data.preferenceIds?.length
-                ? { connect: data.preferenceIds.map((id) => ({ id })) }
-                : undefined,
-        },
-        include: profileInclude
-    })
+    const existingMainProfile = await prisma.profile.findFirst({
+        where: { userId, main_profile: true },
+        select: { id: true },
+    });
+
+    const shouldCreateAsMain = data.main_profile === true || !existingMainProfile;
+
+    const profile = shouldCreateAsMain
+        ? await prisma.$transaction(async (tx) => {
+            await tx.profile.updateMany({
+                where: { userId },
+                data: { main_profile: false },
+            });
+
+            return tx.profile.create({
+                data: {
+                    userId,
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    age: data.age,
+                    profile_image: data.profile_image,
+                    main_profile: true,
+                    conditions: data.conditionIds?.length
+                        ? { connect: data.conditionIds.map((id) => ({ id })) }
+                        : undefined,
+                    allergens: data.allergenIds?.length
+                        ? { connect: data.allergenIds.map((id) => ({ id })) }
+                        : undefined,
+                    preferences: data.preferenceIds?.length
+                        ? { connect: data.preferenceIds.map((id) => ({ id })) }
+                        : undefined,
+                },
+                include: profileInclude,
+            });
+        })
+        : await prisma.profile.create({
+            data: {
+                userId,
+                first_name: data.first_name,
+                last_name: data.last_name,
+                age: data.age,
+                profile_image: data.profile_image,
+                main_profile: false,
+                conditions: data.conditionIds?.length
+                    ? { connect: data.conditionIds.map((id) => ({ id })) }
+                    : undefined,
+                allergens: data.allergenIds?.length
+                    ? { connect: data.allergenIds.map((id) => ({ id })) }
+                    : undefined,
+                preferences: data.preferenceIds?.length
+                    ? { connect: data.preferenceIds.map((id) => ({ id })) }
+                    : undefined,
+            },
+            include: profileInclude,
+        });
 
     return this.toProfileResponse(profile as {
         id: string;
@@ -217,30 +253,52 @@ async updateProfile(id: string, data: UpdateProfileDTO): Promise<ProfileResponse
         throw new HttpError(NOT_FOUND, "Profile not found");
     }
 
+    if (data.main_profile === false) {
+        throw new HttpError(BAD_REQUEST, "Cannot unset main profile directly. Set another profile as main instead.");
+    }
+
     const nextIsComplete = existingProfile.isComplete ? data.isComplete : true;
 
-    const updatedProfile = await prisma.profile.update({
-        where: { id },
-        data: {
-            first_name: data.first_name,
-            last_name: data.last_name,
-            age: data.age,
-            profile_image: data.profile_image,
-            main_profile: data.main_profile,
-            isComplete: nextIsComplete,
-            // if ids are sent, replace existing links
-            conditions: data.conditionIds
-                ? { set: data.conditionIds.map((conditionId) => ({ id: conditionId })) }
-                : undefined,
-            allergens: data.allergenIds
-                ? { set: data.allergenIds.map((allergenId) => ({ id: allergenId })) }
-                : undefined,
-            preferences: data.preferenceIds
-                ? { set: data.preferenceIds.map((preferenceId) => ({ id: preferenceId })) }
-                : undefined,
-        },
-        include: profileInclude
-    });
+    const profileUpdatePayload = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        age: data.age,
+        profile_image: data.profile_image,
+        main_profile: data.main_profile,
+        isComplete: nextIsComplete,
+        // if ids are sent, replace existing links
+        conditions: data.conditionIds
+            ? { set: data.conditionIds.map((conditionId) => ({ id: conditionId })) }
+            : undefined,
+        allergens: data.allergenIds
+            ? { set: data.allergenIds.map((allergenId) => ({ id: allergenId })) }
+            : undefined,
+        preferences: data.preferenceIds
+            ? { set: data.preferenceIds.map((preferenceId) => ({ id: preferenceId })) }
+            : undefined,
+    };
+
+    const updatedProfile = data.main_profile === true
+        ? await prisma.$transaction(async (tx) => {
+            await tx.profile.updateMany({
+                where: {
+                    userId: existingProfile.userId,
+                    id: { not: id },
+                },
+                data: { main_profile: false },
+            });
+
+            return tx.profile.update({
+                where: { id },
+                data: profileUpdatePayload,
+                include: profileInclude,
+            });
+        })
+        : await prisma.profile.update({
+            where: { id },
+            data: profileUpdatePayload,
+            include: profileInclude,
+        });
 
     return this.toProfileResponse(updatedProfile as {
         id: string;

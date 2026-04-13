@@ -2,7 +2,9 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import { MotiView } from "moti";
 import LottieView from "lottie-react-native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { Box, Pressable } from "@gluestack-ui/themed";
+import { AuthStackParamList } from "../../types/navigation";
 
 type ScanButton = {
 	onPress?: () => void;
@@ -18,13 +20,19 @@ export default function ScanButton
 	iconSize = 32,
 	disabled = false,
 }: ScanButton) {
+	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const animationRef = React.useRef<LottieView>(null);
 
 	const handlePress = React.useCallback(() => {
 		animationRef.current?.reset();
 		animationRef.current?.play();
-		onPress?.();
-	}, [onPress]);
+		if (onPress) {
+			onPress();
+			return;
+		}
+
+		navigation.navigate("CameraScreen");
+	}, [navigation, onPress]);
 
 	return (
 		<Box style={styles.wrap}>

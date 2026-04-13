@@ -23,7 +23,10 @@ export type AuthStackParamList = {
         profileImageUri?: string;
         profilePreferenceNames?: string[];
         profileAge?: string;
+        profileIsMain?: boolean;
       }
     | undefined;
   AnalyseScreen: undefined;
+  AccountSettingsScreen: undefined;
+  CameraScreen: undefined;
 };

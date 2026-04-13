@@ -3,7 +3,7 @@ import type { ImageSourcePropType } from "react-native";
 import { MotiView } from "moti";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Box, Image, Text } from "@gluestack-ui/themed";
+import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import ScanButton from "../Buttons/ScanButton";
 import { styles } from "../../style/LandingPageStyle";
 
@@ -17,18 +17,24 @@ type NavBarBottomProps = {
 	onPressUpload?: () => void;
 	onPressHistory?: () => void;
 	onPressMore?: () => void;
+	onPressProfile?: () => void;
 };
 
 export default function NavBarBottom({
 	homeIconColor = "#66707A",
 	avatarSource = require("../../../assets/icon.png"),
 	activeTab = "home",
+	onPressHome,
+	onPressUpload,
+	onPressHistory,
+	onPressProfile,
 }: NavBarBottomProps) {
 	return (
 		<Box style={styles.bottomNav}>
 			<BottomIcon
 				label="HOME"
 				isActive={activeTab === "home"}
+				onPress={onPressHome}
 				icon={
 					<Feather
 						name="home"
@@ -37,12 +43,23 @@ export default function NavBarBottom({
 					/>
 				}
 			/>
-			<BottomIcon label="UPLOAD" isActive={activeTab === "upload"} icon={<Feather name="upload-cloud" size={32} color="#66707A" />} />
+			<BottomIcon
+				label="UPLOAD"
+				isActive={activeTab === "upload"}
+				onPress={onPressUpload}
+				icon={<Feather name="upload-cloud" size={32} color="#66707A" />}
+			/>
             <ScanButton/>
-			<BottomIcon label="MY HISTORY" isActive={activeTab === "history"} icon={<Ionicons name="bookmark-outline" size={32} color="#66707A" />} />
+			<BottomIcon
+				label="MY HISTORY"
+				isActive={activeTab === "history"}
+				onPress={onPressHistory}
+				icon={<Ionicons name="bookmark-outline" size={32} color="#66707A" />}
+			/>
 			<BottomIcon
 				label="PROFILE"
 				isActive={activeTab === "profile"}
+				onPress={onPressProfile}
 				icon={
 					<Image
 						source={avatarSource}
@@ -56,9 +73,19 @@ export default function NavBarBottom({
 	);
 }
 
-function BottomIcon({ label, icon, isActive = false }: { label: string; icon: React.ReactNode; isActive?: boolean }) {
+function BottomIcon({
+	label,
+	icon,
+	isActive = false,
+	onPress,
+}: {
+	label: string;
+	icon: React.ReactNode;
+	isActive?: boolean;
+	onPress?: () => void;
+}) {
 	return (
-		<Box style={styles.bottomItem}>
+		<Pressable style={styles.bottomItem} onPress={onPress}>
 			<Box style={{ alignItems: "center" }}>
 				{icon}
 				{isActive ? (
@@ -80,6 +107,6 @@ function BottomIcon({ label, icon, isActive = false }: { label: string; icon: Re
 			<Text fontSize={12} fontFamily="RobotoMedium" color="#66707A">
 				{label}
 			</Text>
-		</Box>
+		</Pressable>
 	);
 }

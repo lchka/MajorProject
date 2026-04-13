@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
 	scrollContent: {
 		paddingTop: 28,
 		paddingHorizontal: 3,
-		paddingBottom: 130,
+		paddingBottom: 180,
 	},
 	// Header
 	headerRow: {
@@ -212,6 +212,8 @@ export const styles = StyleSheet.create({
 		bottom: 0,
 		height: 92,
 		backgroundColor: "#C6D8E5",
+		borderTopWidth: 1,
+		borderTopColor: "#AEC3D3",
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "space-around",

@@ -3,22 +3,17 @@ import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView, Text } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
-import EditButton from "../components/Buttons/EditButton";
 import NavBarBottom from "../components/general/NavBarBottom";
 import NavBarTop from "../components/general/NavBarTop";
 import SwitchProfile from "../components/profile/SwitchProfile";
 import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
+import AllConditions from "../components/conditions/AllConditions";
 import profileService, { Profile } from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
 
 const AUTH_TOKEN_KEY = "authToken";
-
-const conditionCards = [
-	{ title: "Dermatitis", level: "MODERATE" },
-	{ title: "Eczema", level: "SEVERE" },
-];
 
 export default function LandingScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -79,6 +74,10 @@ export default function LandingScreen() {
 		return activeProfile?.preferences?.map((item) => item.name) ?? [];
 	}, [activeProfile]);
 
+	const activeProfileConditions = React.useMemo(() => {
+		return activeProfile?.conditions?.map((item) => item.name) ?? [];
+	}, [activeProfile]);
+
 	return (
 		<Box style={styles.screen}>
 			<Box
@@ -134,6 +133,7 @@ export default function LandingScreen() {
 							undefined;
 						const targetProfilePreferenceNames = targetProfile?.preferences?.map((item) => item.name) ?? [];
 						const targetProfileAge = targetProfile?.age?.toString()?.trim() || undefined;
+						const targetProfileIsMain = targetProfile?.main_profile ?? false;
 						const targetProfileImageUri =
 							profiles.find((item) => item.id === targetProfileId)?.avatarUri ??
 							activeProfile?.profile_image ??
@@ -145,6 +145,7 @@ export default function LandingScreen() {
 							profileImageUri: targetProfileImageUri,
 							profilePreferenceNames: targetProfilePreferenceNames,
 							profileAge: targetProfileAge,
+							profileIsMain: targetProfileIsMain,
 						});
 					}}
 				/>
@@ -163,28 +164,32 @@ export default function LandingScreen() {
 					onAddPreference={() => navigation.navigate("PreferenceScreen", { profileId: profileId ?? undefined })}
 				/>
 
-				{/* Conditions summary cards */}
-				<Box style={styles.sectionHeader}>
-					<Text fontSize={17} lineHeight={22} fontFamily="RobotoMedium" color="#151515">Conditions Overview</Text>
-					<EditButton width={100} textStyle={styles.editText} style={styles.editButton} />
-				</Box>
-
-				{/* Conditions share a compact card layout for consistent scanning. */}
-				<Box style={styles.conditionsRow}>
-					{conditionCards.map((item) => (
-						<Box key={item.title} style={styles.conditionCard}>
-							<Text fontSize={11} fontFamily="RobotoMedium" color="#111111" mb="$0.5">{item.title}</Text>
-							<Text fontSize={8} fontFamily="RobotoMedium" color="#222222">{item.level}</Text>
-							<Text mt="$0.5" fontSize={7} fontFamily="Roboto" color="#666666">DATED ADDED: 30.3.2026</Text>
-						</Box>
-					))}
-				</Box>
+				<AllConditions
+					conditionNames={activeProfileConditions}
+					onPressEdit={() => {
+						// Can navigate to dedicated conditions editor when available.
+					}}
+				/>
 			</ScrollView>
 
 			{/* Sticky bottom navigation */}
 			<NavBarBottom
 				activeTab="home"
 				avatarSource={activeProfile?.profile_image ? { uri: activeProfile.profile_image } : undefined}
+				onPressProfile={() => {
+					const fullName = [activeProfile?.first_name?.trim(), activeProfile?.last_name?.trim()]
+						.filter(Boolean)
+						.join(" ");
+
+					navigation.navigate("EditProfileScreen", {
+						profileId: activeProfile?.id,
+						profileName: fullName || activeProfile?.first_name || undefined,
+						profileImageUri: activeProfile?.profile_image ?? undefined,
+						profilePreferenceNames: activeProfile?.preferences?.map((item) => item.name) ?? [],
+						profileAge: activeProfile?.age?.toString()?.trim() || undefined,
+						profileIsMain: activeProfile?.main_profile ?? false,
+					});
+				}}
 			/>
 		</Box>
 	);

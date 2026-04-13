@@ -15,6 +15,7 @@ import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 import ProfileEditBadge from "../../components/profile/ProfileEditBadge";
 import PreferencesOverview from "../../components/preferences/AllPreferences";
+import RedBanner from "../../components/banners/RedBanner";
 import profileService, { ProfileImageUploadFile } from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
 
@@ -22,6 +23,7 @@ export default function EditProfileScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "EditProfileScreen">>();
   const profileId = route.params?.profileId;
+  const profileIsMain = route.params?.profileIsMain ?? false;
   const profileName = route.params?.profileName?.trim() ?? "";
   const initialProfileAge = route.params?.profileAge?.trim() ?? "";
   const initialProfileImageUri = route.params?.profileImageUri?.trim();
@@ -39,6 +41,10 @@ export default function EditProfileScreen() {
   >(undefined);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isUpdatingMain, setIsUpdatingMain] = React.useState(false);
+  const [isMainStatus, setIsMainStatus] = React.useState(profileIsMain);
+  const [showMainWarning, setShowMainWarning] = React.useState(false);
+  const mainWarningTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileFirstName = nameValue.trim().split(" ")[0]?.trim();
   const previewImageUri = profileImage?.uri ?? profileImageUri;
   const hasNameChanges = nameValue.trim() !== originalNameValue;
@@ -214,9 +220,79 @@ export default function EditProfileScreen() {
     );
   }, [navigation, profileId]);
 
+  const handleMainToggleAttempt = React.useCallback(() => {
+    if (isMainStatus) {
+      if (mainWarningTimeoutRef.current) {
+        clearTimeout(mainWarningTimeoutRef.current);
+      }
+
+      setShowMainWarning(true);
+      mainWarningTimeoutRef.current = setTimeout(() => {
+        setShowMainWarning(false);
+        mainWarningTimeoutRef.current = null;
+      }, 2600);
+      return;
+    }
+
+    if (!profileId || isUpdatingMain) {
+      return;
+    }
+
+    Alert.alert(
+      "Set as main profile",
+      "Make this your main profile?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Set as main",
+          onPress: async () => {
+            try {
+              setIsUpdatingMain(true);
+              await profileService.updateProfile(profileId, { main_profile: true });
+              setIsMainStatus(true);
+              navigation.setParams({ profileIsMain: true });
+            } catch {
+              Alert.alert("Update failed", "Unable to update main profile right now.");
+            } finally {
+              setIsUpdatingMain(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [isMainStatus, isUpdatingMain, navigation, profileId]);
+
+  React.useEffect(() => {
+    setIsMainStatus(profileIsMain);
+  }, [profileIsMain]);
+
+  React.useEffect(() => {
+    return () => {
+      if (mainWarningTimeoutRef.current) {
+        clearTimeout(mainWarningTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <Box flex={1} bg="#F2F6FA">
       <NavBarTop notificationCount={2} />
+
+      <Box
+        style={{
+          position: "absolute",
+          top: 86,
+          left: 16,
+          right: 16,
+          zIndex: 50,
+          elevation: 30,
+        }}
+      >
+        <RedBanner
+          visible={showMainWarning}
+          message="You must make this change from the designated profile settings."
+        />
+      </Box>
 
       <ScrollView
         contentContainerStyle={{
@@ -276,6 +352,21 @@ export default function EditProfileScreen() {
                 <Image source={{ uri: previewImageUri }} style={{ width: 148, height: 148 }} />
               ) : null}
             </Pressable>
+
+            {isMainStatus ? (
+              <Image
+                source={require("../../../assets/crown.png")}
+                style={{
+                  position: "absolute",
+                  top: -16,
+                  right: 14,
+                  width: 42,
+                  height: 42,
+                  transform: [{ rotate: "25deg" }],
+                  zIndex: 3,
+                }}
+              />
+            ) : null}
 
             <ProfileEditBadge
               sizePreset="large"
@@ -352,6 +443,48 @@ export default function EditProfileScreen() {
         </Box>
 
         <Box style={{ marginTop: 18 }}>
+          <Text
+            fontSize={18}
+            lineHeight={22}
+            color="#111111"
+            fontFamily="RobotoMedium"
+            style={{ marginBottom: 8 }}
+          >
+            Main profile
+          </Text>
+
+          <Pressable
+            onPress={handleMainToggleAttempt}
+            disabled={isUpdatingMain}
+            style={{
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: "#E4ECF3",
+              marginBottom: 10,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+              opacity: isUpdatingMain ? 0.7 : 1,
+            }}
+          >
+            <Feather name={isMainStatus ? "check-square" : "square"} size={20} color="#6F4E37" />
+            <Box style={{ flex: 1 }}>
+              <Text fontSize={15} lineHeight={18} color="#111111" fontFamily="RobotoMedium">
+                {isMainStatus ? "This is the main profile" : "This is not a main profile"}
+              </Text>
+              <Text fontSize={12} lineHeight={15} color="#7B8794" fontFamily="RobotoRegular">
+                {isMainStatus
+                  ? "Main profile status cannot be changed here."
+                  : isUpdatingMain
+                    ? "Setting this profile as main..."
+                    : "Click to change here."}
+              </Text>
+            </Box>
+          </Pressable>
+<Text fontSize={24} py="$6" color="black" fontWeight={600}>Profile Analysis Options</Text>
           <Pressable
             onPress={() => {
               // Conditions editor can be connected here.
@@ -437,7 +570,7 @@ export default function EditProfileScreen() {
 
         <Pressable
           onPress={() => {
-            navigation.navigate("LandingScreen");
+            navigation.navigate("AccountSettingsScreen");
           }}
           style={{
             height: 58,

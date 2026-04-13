@@ -346,7 +346,7 @@ export default function ProfileChoice({
 										</Box>
 
 										{/* Crown marks whichever profile is currently treated as main. */}
-										{(activeProfile.isMain ?? true) ? (
+										{activeProfile.isMain ? (
 											<Image
 												source={require("../../../assets/crown.png")}
 												style={{
@@ -407,6 +407,21 @@ export default function ProfileChoice({
 										<Box key={profile?.id ?? `empty-${index}`} alignItems="center" style={{ width: "44%" }}>
 											{profile ? (
 												<Pressable alignItems="center" onPress={() => handleProfilePress(profile.id)}>
+																	{profile.isMain ? (
+																		<Image
+																			source={require("../../../assets/crown.png")}
+																			style={{
+																				position: "absolute",
+																				top: -14,
+																				right: 6,
+																				width: 28,
+																				height: 28,
+																				transform: [{ rotate: "22deg" }],
+																				zIndex: 3,
+																			}}
+																			alt="Main profile crown"
+																		/>
+																	) : null}
 													<Box
 														width={secondaryCircleSize}
 														height={secondaryCircleSize}
@@ -447,7 +462,11 @@ export default function ProfileChoice({
 													borderWidth={2}
 													borderColor="#D7E1EA"
 													bg="#F8FBFF"
-												/>
+													alignItems="center"
+													justifyContent="center"
+												>
+													<Feather name="plus" size={24} color="#9DB6C8" />
+												</Box>
 											) : null}
 										</Box>
 									))}
