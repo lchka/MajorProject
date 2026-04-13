@@ -1,22 +1,31 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import { MotiView } from "moti";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import LottieView from "lottie-react-native";
 import { Box, Pressable } from "@gluestack-ui/themed";
 
-type IosSwipeButtonProps = {
+type ScanButton = {
 	onPress?: () => void;
 	iconColor?: string;
 	iconSize?: number;
 	disabled?: boolean;
 };
 
-export default function IosSwipeButton({
+export default function ScanButton
+({
 	onPress,
 	iconColor = "#4A5562",
 	iconSize = 32,
 	disabled = false,
-}: IosSwipeButtonProps) {
+}: ScanButton) {
+	const animationRef = React.useRef<LottieView>(null);
+
+	const handlePress = React.useCallback(() => {
+		animationRef.current?.reset();
+		animationRef.current?.play();
+		onPress?.();
+	}, [onPress]);
+
 	return (
 		<Box style={styles.wrap}>
 			<MotiView
@@ -29,8 +38,14 @@ export default function IosSwipeButton({
 					repeatReverse: true,
 				}}
 			>
-				<Pressable style={styles.button} onPress={onPress} disabled={disabled}>
-					<MaterialCommunityIcons name="scan-helper" size={iconSize} color={iconColor} />
+				<Pressable style={styles.button} onPress={handlePress} disabled={disabled}>
+					<LottieView
+						ref={animationRef}
+						source={require("../../../assets/animations/scansmaller.json")}
+						autoPlay={false}
+						loop={false}
+						style={{ width: iconSize + 18, height: iconSize + 18 }}
+					/>
 				</Pressable>
 			</MotiView>
 		</Box>
@@ -48,10 +63,10 @@ const styles = StyleSheet.create({
 		backgroundColor: "#F8F8F8",
 		alignItems: "center",
 		justifyContent: "center",
-		shadowColor: "#88B9E8",
-		shadowOpacity: 0.55,
-		shadowRadius: 16,
-		shadowOffset: { width: 0, height: 8 },
-		elevation: 8,
+		shadowColor: "#6EC6FF",
+		shadowOpacity: 0.9,
+		shadowRadius: 28,
+		shadowOffset: { width: 0, height: 12 },
+		elevation: 18,
 	},
 });

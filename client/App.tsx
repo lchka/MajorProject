@@ -5,7 +5,7 @@ import LandingScreen from "./src/screens/LandingScreen";
 import PreferenceScreen from "./src/screens/PreferenceScreen";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
-import CreateProfile from "./src/screens/Profile/CreateProfile";
+import CreateProfile from "./src/screens/Profile/createProfile";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";

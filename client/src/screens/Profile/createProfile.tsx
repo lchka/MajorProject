@@ -27,7 +27,7 @@ import {
 import { createProfileSchema } from "../../models/profile.schema";
 import { useProfile } from "../../hooks/profile.hook";
 import { AuthStackParamList } from "../../types/navigation";
-import ProfileConditions from "../../components/conditions/ProfileConditions";
+import ProfileConditions from "../../components/conditions/profileConditions";
 import ProfileAllergens from "../../components/allergens/ProfileAllergens";
 import ProfilePreference from "../../components/preferences/ProfilePreference";
 import CreateButton from "../../components/Buttons/CreateButton";

@@ -3,9 +3,8 @@ import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView, Text } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import EditButton from "../components/Buttons/EditButton";
-import IosSwipeButton from "../components/Buttons/IosSwipeButton";
+import NavBarBottom from "../components/general/NavBarBottom";
 import NavBarTop from "../components/general/NavBarTop";
 import SwitchProfile from "../components/profile/SwitchProfile";
 import PastAnalysis from "../components/evaluations/PastAnalysis";
@@ -157,13 +156,10 @@ export default function LandingScreen() {
 			</ScrollView>
 
 			{/* Sticky bottom navigation */}
-			<Box style={styles.bottomNav}>
-				<BottomIcon label="HOME" icon={<Feather name="home" size={22} color="#66707A" />} />
-				<BottomIcon label="UPLOAD" icon={<Feather name="upload-cloud" size={22} color="#66707A" />} />
-				<IosSwipeButton />
-				<BottomIcon label="MY HISTORY" icon={<Ionicons name="bookmark-outline" size={22} color="#66707A" />} />
-				<BottomIcon label="MORE" icon={<Feather name="menu" size={24} color="#66707A" />} />
-			</Box>
+			<NavBarBottom
+				activeTab="home"
+				avatarSource={activeProfile?.profile_image ? { uri: activeProfile.profile_image } : undefined}
+			/>
 		</Box>
 	);
 }
@@ -182,16 +178,6 @@ function PageDots({ total, activeIndex }: { total: number; activeIndex: number }
 					style={[styles.pageDot, index === activeIndex ? styles.pageDotActive : null]}
 				/>
 			))}
-		</Box>
-	);
-}
-
-function BottomIcon({ label, icon }: { label: string; icon: React.ReactNode }) {
-	// Single nav item primitive so icon/label spacing stays uniform.
-	return (
-		<Box style={styles.bottomItem}>
-			{icon}
-			<Text fontSize={10} fontFamily="RobotoMedium" color="#66707A">{label}</Text>
 		</Box>
 	);
 }

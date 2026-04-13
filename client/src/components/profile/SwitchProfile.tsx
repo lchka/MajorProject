@@ -9,7 +9,7 @@ import {
 } from "@gluestack-ui/themed";
 import { SWITCH_PROFILE_CLOSE_DURATION_MS } from "../../style/Animation";
 import { styles } from "../../style/LandingPageStyle";
-import ProfileChoice from "./ProfileChoice";
+import ProfileChoice from "./ChooseProfile";
 
 type SwitchProfileItem = {
 	id: string;
