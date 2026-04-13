@@ -35,7 +35,7 @@ export class UserRepository {
     email: string;
     password: string;
     first_name: string;
-    last_name: string;
+    last_name?: string;
     roleId: string;
   }) {
     return await prisma.user.create({
@@ -46,7 +46,7 @@ export class UserRepository {
         profiles: {
           create: {
             first_name: data.first_name,
-            last_name: data.last_name,
+            last_name: data.last_name ?? "",
           },
         },
       },

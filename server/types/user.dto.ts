@@ -9,7 +9,7 @@ export const userResponseSchema = z.object({
   id: z.string().uuid("User id must be a valid UUID"),
   email: z.string().email("Must be a valid email address"),
   first_name: z.string().min(1, "First name is required"),
-  last_name: z.string().min(1, "Last name is required"),
+  last_name: z.string().optional().default(""),
   profile_id: z
     .string()
     .uuid("Profile id must be a valid UUID")
@@ -28,8 +28,12 @@ export const registerRequestSchema = z
     last_name: z
       .string()
       .trim()
-      .min(2, "Last name must be at least 2 characters")
-      .max(25, "Last name must be at most 25 characters"),
+      .max(25, "Last name must be at most 25 characters")
+      .optional()
+      .refine(
+        (value) => value === undefined || value.length === 0 || value.length >= 2,
+        "Last name must be at least 2 characters",
+      ),
     email: z
       .string()
       .trim()
@@ -81,8 +85,12 @@ export const createUserSchema = z.object({
   last_name: z
     .string()
     .trim()
-    .min(2, "Last name must be at least 2 characters")
-    .max(25, "Last name must be at most 25 characters"),
+    .max(25, "Last name must be at most 25 characters")
+    .optional()
+    .refine(
+      (value) => value === undefined || value.length === 0 || value.length >= 2,
+      "Last name must be at least 2 characters",
+    ),
   roleId: z.string().uuid("Role id must be a valid UUID"),
 });
 

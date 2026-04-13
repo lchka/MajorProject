@@ -11,8 +11,12 @@ export const registerSchema = z
     last_name: z
       .string()
       .trim()
-      .min(2, "Last name must be at least 2 characters")
-      .max(25, "Last name must be at most 25 characters"),
+      .max(25, "Last name must be at most 25 characters")
+      .optional()
+      .refine(
+        (value) => value === undefined || value.length === 0 || value.length >= 2,
+        "Last name must be at least 2 characters",
+      ),
 
     email: z
       .string()
