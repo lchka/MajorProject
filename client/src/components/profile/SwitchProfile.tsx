@@ -23,6 +23,7 @@ type SwitchProfileProps = {
 	activeProfileId?: string;
 	onSelectProfile?: (profileId: string) => void;
 	onAddProfile?: () => void;
+	onEditProfile?: () => void;
 	title?: string;
 	greetingLabel?: string;
 	cardAvatarSource?: ImageSourcePropType;
@@ -44,6 +45,7 @@ export default function SwitchProfile({
 	activeProfileId,
 	onSelectProfile,
 	onAddProfile,
+	onEditProfile,
 	title = "Change Profile",
 	greetingLabel,
 	cardAvatarSource = require("../../../assets/icon.png"),
@@ -186,6 +188,7 @@ export default function SwitchProfile({
 					onAddProfile?.();
 					requestClose();
 				}}
+				onEditProfile={onEditProfile}
 				title={title}
 			/>
 		</>

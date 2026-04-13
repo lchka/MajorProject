@@ -2,10 +2,10 @@ import React from "react";
 import { PanResponder, View, useWindowDimensions } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { MotiView } from "moti";
+import Feather from "@expo/vector-icons/Feather";
 import {
 	Box,
 	Heading,
-	HStack,
 	Icon,
 	Image,
 	Modal,
@@ -16,13 +16,14 @@ import {
 	ModalHeader,
 	Pressable,
 	Text,
-	AddIcon,
 	CloseIcon,
 } from "@gluestack-ui/themed";
 import {
 	SWITCH_PROFILE_IDS,
 	SWITCH_PROFILE_MOTION,
 } from "../../style/Animation";
+import EditButton from "../Buttons/EditButton";
+import ProfileWarning from "../banners/ProfileWarning";
 
 type SwitchProfileItem = {
 	id: string;
@@ -40,6 +41,7 @@ type ProfileChoiceProps = {
 	activeProfileId?: string;
 	onSelectProfile?: (profileId: string) => void;
 	onAddProfile?: () => void;
+	onEditProfile?: () => void;
 	title?: string;
 };
 
@@ -67,6 +69,7 @@ export default function ProfileChoice({
 	activeProfileId,
 	onSelectProfile,
 	onAddProfile,
+	onEditProfile,
 	title = "Change Profile",
 }: ProfileChoiceProps) {
 	const { width: screenWidth } = useWindowDimensions();
@@ -78,18 +81,11 @@ export default function ProfileChoice({
 
 	const maxProfiles = 3;
 	const modalMaxWidth = clamp(screenWidth - 24, 320, 560);
-	const selectorPaddingHorizontal = Math.round(clamp(screenWidth * 0.04, 16, 28));
-	const targetCircleSize = clamp(screenWidth * 0.28, 108, 148);
-	const slotGap = 12;
-	const selectorInnerWidth = modalMaxWidth - 2 * selectorPaddingHorizontal;
-	const maxCircleSizeByContainer = (selectorInnerWidth - slotGap * (maxProfiles - 1)) / maxProfiles;
-	const circleSize = Math.round(clamp(Math.min(targetCircleSize, maxCircleSizeByContainer), 84, 148));
-	const circleRadius = Math.round(circleSize / 2);
-	const selectorPaddingVertical = Math.round(clamp(circleSize * 0.14, 12, 20));
-	const selectorMinHeight = circleSize + selectorPaddingVertical * 2 + 28;
-	const initialsFontSize = Math.round(clamp(circleSize * 0.34, 30, 42));
-	const nameFontSize = Math.round(clamp(circleSize * 0.19, 16, 20));
-	const addLabelFontSize = Math.round(clamp(circleSize * 0.17, 14, 18));
+	const activeCircleSize = Math.round(clamp(screenWidth * 0.35, 122, 164));
+	const activeCircleRadius = Math.round(activeCircleSize / 2);
+	const secondaryCircleSize = Math.round(clamp(screenWidth * 0.2, 72, 98));
+	const secondaryCircleRadius = Math.round(secondaryCircleSize / 2);
+	const initialsFontSize = Math.round(clamp(secondaryCircleSize * 0.34, 24, 34));
 	const orderedProfiles = React.useMemo(() => {
 		if (!activeProfileId) {
 			return profiles;
@@ -104,8 +100,31 @@ export default function ProfileChoice({
 		return [activeProfile, ...profiles.slice(0, activeIndex), ...profiles.slice(activeIndex + 1)];
 	}, [profiles, activeProfileId]);
 	const visibleProfiles = orderedProfiles.slice(0, maxProfiles);
-	const addSlotCount = Math.max(0, maxProfiles - visibleProfiles.length);
-	const slotWidth = circleSize + 24;
+	const activeProfile = visibleProfiles[0];
+	const secondaryProfiles = visibleProfiles.slice(1, 3);
+	const isAddDisabled = profiles.length >= maxProfiles;
+	const [showProfileLimitWarning, setShowProfileLimitWarning] = React.useState(false);
+	const warningTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const showLimitWarning = React.useCallback(() => {
+		setShowProfileLimitWarning(true);
+		if (warningTimerRef.current) {
+			clearTimeout(warningTimerRef.current);
+		}
+		warningTimerRef.current = setTimeout(() => {
+			setShowProfileLimitWarning(false);
+			warningTimerRef.current = null;
+		}, 2600);
+	}, []);
+
+	const handleAddProfile = React.useCallback(() => {
+		if (isAddDisabled) {
+			showLimitWarning();
+			return;
+		}
+
+		onAddProfile?.();
+	}, [isAddDisabled, onAddProfile, showLimitWarning]);
 
 	// Restrict gesture takeover to vertical-down movement so taps and horizontal drags still work.
 	const handlePanResponder = React.useMemo(
@@ -156,6 +175,14 @@ export default function ProfileChoice({
 		[onClose],
 	);
 
+	React.useEffect(() => {
+		return () => {
+			if (warningTimerRef.current) {
+				clearTimeout(warningTimerRef.current);
+			}
+		};
+	}, []);
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick>
 			<ModalBackdrop />
@@ -185,7 +212,7 @@ export default function ProfileChoice({
 					elevation={12}
 				>
 					{/* Top swipe/close handle */}
-					<View {...handlePanResponder.panHandlers}>
+					<View {...handlePanResponder.panHandlers} style={{ position: "relative" }}>
 						<Pressable
 							nativeID={SWITCH_PROFILE_IDS.handleButton}
 							testID={SWITCH_PROFILE_IDS.handleButton}
@@ -195,170 +222,221 @@ export default function ProfileChoice({
 						>
 							<Box width={42} height={5} borderRadius={999} bg="#D7D7D7" />
 						</Pressable>
-					</View>
-
-					{/* Header row: title + X close button */}
-					<ModalHeader alignItems="center" justifyContent="space-between" px="$1" pt="$1" pb="$2">
-						<Heading size="lg" color="#111111" fontWeight="$normal">
-							{title}
-						</Heading>
 						<ModalCloseButton
 							nativeID={SWITCH_PROFILE_IDS.closeButton}
 							testID={SWITCH_PROFILE_IDS.closeButton}
 							p="$1"
 							borderRadius="$full"
 							onPress={onClose}
+							style={{ position: "absolute", right: 0, top: 0 }}
 						>
 							<Icon as={CloseIcon} size="md" color="#111111" />
 						</ModalCloseButton>
+					</View>
+
+					<Box
+						style={{
+							position: "absolute",
+							top: 54,
+							left: 14,
+							right: 14,
+							zIndex: 40,
+							elevation: 20,
+						}}
+					>
+						<ProfileWarning
+							visible={showProfileLimitWarning}
+							message="You can only have up to 3 profiles."
+						/>
+					</Box>
+
+					{/* Header row: title + X close button */}
+					<ModalHeader alignItems="center" justifyContent="space-between" px="$1" py="$1">
+						<Heading size="lg" color="#111111" fontWeight="$normal">
+							{title}
+						</Heading>
+						<Box style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+							<EditButton
+								onPress={onEditProfile}
+								label="Edit"
+								width={72}
+								borderColor="#79C6EE"
+								textColor="#2E96CB"
+								style={{ height: 28, backgroundColor: "#EAF7FF", borderWidth: 1 }}
+								textStyle={{ fontSize: 14, lineHeight: 16, fontWeight: "600", textTransform: "none", letterSpacing: 0 }}
+							/>
+						</Box>
 					</ModalHeader>
 
-					<ModalBody p="$0">
-						{/* Main selector box that contains profile circles */}
-						<HStack
-							alignItems="center"
-							justifyContent="center"
+					<ModalBody p="$0" style={{ position: "relative" }}>
+
+						<Box
 							borderWidth={1}
-							borderColor="#E5E5E5"
-							borderRadius={18}
-							style={{
-								paddingHorizontal: selectorPaddingHorizontal,
-								paddingVertical: selectorPaddingVertical,
-								minHeight: selectorMinHeight,
-								flexWrap: "wrap",
-								columnGap: slotGap,
-								rowGap: 14,
-							}}
+							borderColor="#E6E9EE"
+							borderRadius={20}
 							bg="#FFFFFF"
+							style={{
+								paddingHorizontal: 14,
+								paddingTop: 12,
+								paddingBottom: 10,
+							}}
 							shadowColor="#000000"
 							shadowOpacity={0.08}
-							shadowRadius={8}
-							shadowOffset={{ width: 0, height: 3 }}
+							shadowRadius={10}
+							shadowOffset={{ width: 0, height: 4 }}
 							elevation={3}
 						>
-							{/* Existing profile circles */}
-							{visibleProfiles.map((profile) => {
-								const isActive = profile.id === activeProfileId;
-								const shouldShowMainCrown = profile.isMain ?? isActive;
-
-								return (
-									<Pressable
-										key={profile.id}
-										alignItems="center"
-										style={{ width: slotWidth }}
-										onPress={() => onSelectProfile?.(profile.id)}
-									>
-										<Box style={{ position: "relative" }}>
-											<Box
-												style={
-													isActive
-														? {
-															shadowColor: "#7DD3FC",
-															shadowOpacity: 0.7,
-															shadowRadius: 14,
-															shadowOffset: { width: 0, height: 0 },
-															elevation: 9,
-														}
-														: undefined
-												}
-											>
-											<Box
-												width={circleSize}
-												height={circleSize}
-												borderRadius={circleRadius}
-												alignItems="center"
-												justifyContent="center"
-												overflow="hidden"
-												borderWidth={2}
-												borderColor="#58CCED"
-												bg={isActive ? "#58CCED" : "#FFFFFF"}
-											>
-												{profile.avatarSource ? (
-													<Image
-														source={profile.avatarSource}
-														alt={`${profile.name} avatar`}
-														style={{ width: "100%", height: "100%" }}
-														resizeMode="cover"
-													/>
-												) : (
-													<Text
-														fontSize={initialsFontSize}
-														lineHeight={initialsFontSize}
-														color={isActive ? "#FFFFFF" : "#58CCED"}
-														fontFamily="Roboto"
-													>
-														{getInitials(profile.name)}
-													</Text>
-												)}
-											</Box>
-											</Box>
-											{shouldShowMainCrown ? (
+							{activeProfile ? (
+								<Pressable alignItems="center" onPress={() => onSelectProfile?.(activeProfile.id)}>
+									<Box style={{ position: "relative" }}>
+										<Box
+											width={activeCircleSize}
+											height={activeCircleSize}
+											borderRadius={activeCircleRadius}
+											borderWidth={3}
+											borderColor="#7ED2F4"
+											overflow="hidden"
+											bg="#F4FBFF"
+										>
+											{activeProfile.avatarSource ? (
 												<Image
-													source={require("../../../assets/crown.png")}
-													style={{
-														position: "absolute",
-														top: -14,
-														right: -2,
-														width: 40,
-														height: 40,
-														transform: [{ rotate: "18deg" }],
-														zIndex: 2,
-													}}
-													alt="Main profile crown"
+													source={activeProfile.avatarSource}
+													alt={`${activeProfile.name} avatar`}
+													style={{ width: "100%", height: "100%" }}
+													resizeMode="cover"
 												/>
-											) : null}
+											) : (
+												<Box flex={1} alignItems="center" justifyContent="center">
+													<Text fontSize={36} lineHeight={36} color="#58CCED" fontFamily="Roboto">
+														{getInitials(activeProfile.name)}
+													</Text>
+												</Box>
+											)}
 										</Box>
 
-										<Text
-											mt="$2"
-											fontSize={nameFontSize}
-											lineHeight={nameFontSize + 2}
-											color="#111111"
-											fontFamily="Roboto"
-											textAlign="center"
-											numberOfLines={1}
-										>
-											{profile.name}
-										</Text>
-									</Pressable>
-								);
-							})}
+										{(activeProfile.isMain ?? true) ? (
+											<Image
+												source={require("../../../assets/crown.png")}
+												style={{
+													position: "absolute",
+													top: -16,
+													right: 10,
+													width: 42,
+													height: 42,
+													transform: [{ rotate: "25deg" }],
+													zIndex: 3,
+												}}
+												alt="Main profile crown"
+											/>
+										) : null}
 
-							{/* Add profile circles to fill remaining slots up to maxProfiles */}
-							{Array.from({ length: addSlotCount }).map((_, slotIndex) => (
-								<Pressable
-									key={`add-slot-${slotIndex}`}
-									alignItems="center"
-									style={{ width: slotWidth }}
-									onPress={onAddProfile}
-								>
-									<Box
-										width={circleSize}
-										height={circleSize}
-										borderRadius={circleRadius}
-										alignItems="center"
-										justifyContent="center"
-										borderWidth={2}
-										borderColor="#58CCED"
-										bg="#FFFFFF"
-									>
-										<Icon as={AddIcon} size="xl" color="#58CCED" />
+										<Box
+											style={{
+												position: "absolute",
+												bottom: -8,
+												alignSelf: "center",
+												minWidth: 94,
+												backgroundColor: "#E5F6FF",
+												borderRadius: 999,
+												paddingVertical: 4,
+												paddingHorizontal: 12,
+												flexDirection: "row",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: 4,
+											}}
+										>
+											<Feather name="check" size={14} color="#1788BD" />
+											<Text fontSize={11} lineHeight={12} fontFamily="RobotoMedium" color="#1788BD" numberOfLines={1}>
+												Active
+											</Text>
+										</Box>
 									</Box>
 
-									<Text
-										mt="$2"
-										fontSize={addLabelFontSize}
-										lineHeight={addLabelFontSize + 2}
-										color="#111111"
-										fontFamily="Roboto"
-										textAlign="center"
-										numberOfLines={1}
-									>
-										Add Profile
+									<Text mt="$4" fontSize={40 > 24 ? 24 : 24} lineHeight={30} color="#1A1A1A" fontFamily="RobotoMedium">
+										{activeProfile.name}
+									</Text>
+									<Text mt="$0.5" fontSize={20 > 15 ? 15 : 15} lineHeight={20} color="#3B95C8" fontFamily="Roboto">
+										Active
 									</Text>
 								</Pressable>
-							))}
-						</HStack>
+							) : null}
+
+							<Box mt="$5" style={{ paddingTop: 12 }}>
+								<Box style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-around" }}>
+									{[secondaryProfiles[0], secondaryProfiles[1]].map((profile, index) => (
+										<Box key={profile?.id ?? `empty-${index}`} alignItems="center" style={{ width: "44%" }}>
+											{profile ? (
+												<Pressable alignItems="center" onPress={() => onSelectProfile?.(profile.id)}>
+													<Box
+														width={secondaryCircleSize}
+														height={secondaryCircleSize}
+														borderRadius={secondaryCircleRadius}
+														borderWidth={2}
+														borderColor="#C4D3DF"
+														overflow="hidden"
+														bg="#F8FBFF"
+													>
+														{profile.avatarSource ? (
+															<Image
+																source={profile.avatarSource}
+																alt={`${profile.name} avatar`}
+																style={{ width: "100%", height: "100%" }}
+																resizeMode="cover"
+															/>
+														) : (
+															<Box flex={1} alignItems="center" justifyContent="center">
+																<Text fontSize={initialsFontSize} lineHeight={initialsFontSize} color="#58CCED" fontFamily="Roboto">
+																	{getInitials(profile.name)}
+																</Text>
+															</Box>
+														)}
+													</Box>
+													<Text mt="$2" fontSize={17} lineHeight={19} color="#1A1A1A" fontFamily="Roboto">
+														{profile.name}
+													</Text>
+												</Pressable>
+											) : null}
+										</Box>
+									))}
+								</Box>
+							</Box>
+
+							<Box mt="$3.5" style={{ paddingTop: 10 }}>
+								<Box style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+									<Pressable
+										onPress={handleAddProfile}
+										style={{
+											width: "100%",
+											height: 56,
+											borderRadius: 20,
+											backgroundColor: isAddDisabled ? "#E5E7EB" : "#F1F3F7",
+											flexDirection: "row",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: 8,
+											opacity: isAddDisabled ? 0.85 : 1,
+										}}
+									>
+										<Box
+											style={{
+												width: 28,
+												height: 28,
+												borderRadius: 14,
+												backgroundColor: isAddDisabled ? "#B9BEC8" : "#7EC6EF",
+												alignItems: "center",
+												justifyContent: "center",
+											}}
+										>
+											<Feather name="plus" size={16} color="#FFFFFF" />
+										</Box>
+										<Text fontSize={17} lineHeight={19} color={isAddDisabled ? "#6B7280" : "#1A1A1A"} fontFamily="RobotoMedium" numberOfLines={1}>
+											Add Profile
+										</Text>
+									</Pressable>
+								</Box>
+							</Box>
+						</Box>
 					</ModalBody>
 				</ModalContent>
 			</MotiView>
