@@ -30,11 +30,11 @@ export function ProfileEditBadge({ sizePreset, style }: ProfileEditBadgeProps) {
 	return (
 		<MotiView
 			style={style}
-			from={{ rotate: "0deg" }}
-			animate={{ rotate: "4deg" }}
+			from={{ transform: [{ rotate: "-8deg" }] }}
+			animate={{ transform: [{ rotate: "8deg" }] }}
 			transition={{
 				type: "timing",
-				duration: 110,
+				duration: 180,
 				loop: true,
 				repeatReverse: true,
 			}}

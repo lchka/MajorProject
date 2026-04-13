@@ -439,6 +439,15 @@ export default function ProfileChoice({
 														{profile.name}
 													</Text>
 												</Pressable>
+											) : index === 1 ? (
+												<Box
+													width={secondaryCircleSize}
+													height={secondaryCircleSize}
+													borderRadius={secondaryCircleRadius}
+													borderWidth={2}
+													borderColor="#D7E1EA"
+													bg="#F8FBFF"
+												/>
 											) : null}
 										</Box>
 									))}

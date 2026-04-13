@@ -38,6 +38,7 @@ export default function EditProfileScreen() {
     ProfileImageUploadFile | undefined
   >(undefined);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
   const profileFirstName = nameValue.trim().split(" ")[0]?.trim();
   const previewImageUri = profileImage?.uri ?? profileImageUri;
   const hasNameChanges = nameValue.trim() !== originalNameValue;
@@ -178,6 +179,41 @@ export default function EditProfileScreen() {
     profileImageUri,
   ]);
 
+  const handleDeleteProfile = React.useCallback(() => {
+    if (!profileId) {
+      Alert.alert("Unable to remove", "Missing profile id for this edit session.");
+      return;
+    }
+
+    Alert.alert(
+      "Remove Profile",
+      "Are you sure you want to remove this profile? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsDeleting(true);
+              await profileService.deleteProfile(profileId);
+              Alert.alert("Profile removed", "The profile has been deleted.", [
+                {
+                  text: "OK",
+                  onPress: () => navigation.navigate("LandingScreen"),
+                },
+              ]);
+            } catch {
+              Alert.alert("Remove failed", "Unable to remove profile right now. Please try again.");
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [navigation, profileId]);
+
   return (
     <Box flex={1} bg="#F2F6FA">
       <NavBarTop notificationCount={2} />
@@ -270,7 +306,7 @@ export default function EditProfileScreen() {
                 backgroundColor: "#F7FAFD",
                 borderWidth: 1,
                 borderColor: "#D6E2ED",
-                borderRadius: 12,
+                borderRadius: 18,
                 paddingHorizontal: 12,
                 paddingVertical: 8,
               }}
@@ -279,7 +315,7 @@ export default function EditProfileScreen() {
           </Box>
 
           <Box style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 }}>
-            <Text fontSize={26} lineHeight={30} color="#0F172A" fontFamily="RobotoMedium">
+            <Text fontSize={20} lineHeight={30} color="#0F172A" fontFamily="RobotoMedium">
               Age:
             </Text>
             <TextInput
@@ -290,14 +326,14 @@ export default function EditProfileScreen() {
               placeholderTextColor="#8FA3B8"
               style={{
                 minWidth: 120,
-                height: 42,
-                fontSize: 22,
+                height: 35,
+                fontSize: 20,
                 fontFamily: "Roboto",
                 color: "#0F172A",
                 backgroundColor: "#F7FAFD",
                 borderWidth: 1,
                 borderColor: "#D6E2ED",
-                borderRadius: 12,
+                borderRadius: 18,
                 paddingHorizontal: 12,
                 paddingVertical: 8,
               }}
@@ -379,14 +415,14 @@ export default function EditProfileScreen() {
       {/* Full-width bottom banners for account-level actions */}
       <Box position="absolute" left={0} right={0} bottom={0}>
         <Pressable
-          onPress={() => {
-            // Remove-profile flow can be connected to confirmation modal.
-          }}
+          onPress={handleDeleteProfile}
+          disabled={isDeleting}
           style={{
             height: 58,
             backgroundColor: "#D64545",
             alignItems: "center",
             justifyContent: "center",
+            opacity: isDeleting ? 0.7 : 1,
           }}
         >
           <Text
@@ -395,7 +431,7 @@ export default function EditProfileScreen() {
             color="#FFFFFF"
             fontFamily="RobotoMedium"
           >
-            Remove Profile
+            {isDeleting ? "Removing..." : "Remove Profile"}
           </Text>
         </Pressable>
 

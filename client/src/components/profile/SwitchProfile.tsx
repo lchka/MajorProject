@@ -150,10 +150,12 @@ export default function SwitchProfile({
 							style={{
 								position: "absolute",
 								top: -6,
-								right: -6,
+								right: 0,
 								width: 16,
 								height: 16,
 								zIndex: 2,
+								transform: [{ rotate: "35deg" }],
+
 							}}
 							alt="Main profile crown"
 						/>
