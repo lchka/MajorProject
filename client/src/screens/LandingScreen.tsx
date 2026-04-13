@@ -121,6 +121,9 @@ export default function LandingScreen() {
 					onAddProfile={() => {
 						navigation.navigate("ProfileScreen");
 					}}
+					onEditProfile={() => {
+						navigation.navigate("EditProfileScreen", { profileId: profileId ?? undefined });
+					}}
 				/>
 </Box>
 				{/* Past analysis cards */}

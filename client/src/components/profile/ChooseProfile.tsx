@@ -24,6 +24,7 @@ import {
 } from "../../style/Animation";
 import EditButton from "../Buttons/EditButton";
 import ProfileWarning from "../banners/ProfileWarning";
+import { ProfileEditBadge } from "./ProfileEditBadge";
 
 type SwitchProfileItem = {
 	id: string;
@@ -102,9 +103,16 @@ export default function ProfileChoice({
 	const visibleProfiles = orderedProfiles.slice(0, maxProfiles);
 	const activeProfile = visibleProfiles[0];
 	const secondaryProfiles = visibleProfiles.slice(1, 3);
+	// Lock profile creation once the UI max is reached.
 	const isAddDisabled = profiles.length >= maxProfiles;
+	// Edit mode toggles pencil affordances over each profile avatar.
+	const [isEditMode, setIsEditMode] = React.useState(false);
 	const [showProfileLimitWarning, setShowProfileLimitWarning] = React.useState(false);
 	const warningTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const toggleEditMode = React.useCallback(() => {
+		setIsEditMode((previous) => !previous);
+	}, []);
 
 	const showLimitWarning = React.useCallback(() => {
 		setShowProfileLimitWarning(true);
@@ -117,6 +125,7 @@ export default function ProfileChoice({
 		}, 2600);
 	}, []);
 
+	// Adds a profile when allowed; otherwise shows inline capacity feedback.
 	const handleAddProfile = React.useCallback(() => {
 		if (isAddDisabled) {
 			showLimitWarning();
@@ -183,6 +192,13 @@ export default function ProfileChoice({
 		};
 	}, []);
 
+	React.useEffect(() => {
+		if (!isOpen) {
+			// Reset transient edit state each time modal closes.
+			setIsEditMode(false);
+		}
+	}, [isOpen]);
+
 	return (
 		<Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick>
 			<ModalBackdrop />
@@ -234,6 +250,7 @@ export default function ProfileChoice({
 						</ModalCloseButton>
 					</View>
 
+					{/* Floating warning toast layered above modal content. */}
 					<Box
 						style={{
 							position: "absolute",
@@ -256,9 +273,10 @@ export default function ProfileChoice({
 							{title}
 						</Heading>
 						<Box style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+							{/* Edit toggles visual edit affordances on profile avatars. */}
 							<EditButton
-								onPress={onEditProfile}
-								label="Edit"
+								onPress={toggleEditMode}
+								label={isEditMode ? "Done" : "Edit"}
 								width={72}
 								borderColor="#79C6EE"
 								textColor="#2E96CB"
@@ -314,6 +332,7 @@ export default function ProfileChoice({
 											)}
 										</Box>
 
+										{/* Crown marks whichever profile is currently treated as main. */}
 										{(activeProfile.isMain ?? true) ? (
 											<Image
 												source={require("../../../assets/crown.png")}
@@ -330,27 +349,34 @@ export default function ProfileChoice({
 											/>
 										) : null}
 
-										<Box
-											style={{
-												position: "absolute",
-												bottom: -8,
-												alignSelf: "center",
-												minWidth: 94,
-												backgroundColor: "#E5F6FF",
-												borderRadius: 999,
-												paddingVertical: 4,
-												paddingHorizontal: 12,
-												flexDirection: "row",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: 4,
-											}}
-										>
-											<Feather name="check" size={14} color="#1788BD" />
-											<Text fontSize={11} lineHeight={12} fontFamily="RobotoMedium" color="#1788BD" numberOfLines={1}>
-												Active
-											</Text>
-										</Box>
+										{/* Pencil badge appears only in edit mode. */}
+										{isEditMode ? (
+											<ProfileEditBadge sizePreset="large" style={{ position: "absolute", bottom: 8, right: 8 }} />
+										) : null}
+
+										{!isEditMode ? (
+											<Box
+												style={{
+													position: "absolute",
+													bottom: -8,
+													alignSelf: "center",
+													minWidth: 94,
+													backgroundColor: "#E5F6FF",
+													borderRadius: 999,
+													paddingVertical: 4,
+													paddingHorizontal: 12,
+													flexDirection: "row",
+													alignItems: "center",
+													justifyContent: "center",
+													gap: 4,
+												}}
+											>
+												<Feather name="check" size={14} color="#1788BD" />
+												<Text fontSize={11} lineHeight={12} fontFamily="RobotoMedium" color="#1788BD" numberOfLines={1}>
+													Active
+												</Text>
+											</Box>
+										) : null}
 									</Box>
 
 									<Text mt="$4" fontSize={40 > 24 ? 24 : 24} lineHeight={30} color="#1A1A1A" fontFamily="RobotoMedium">
@@ -392,6 +418,10 @@ export default function ProfileChoice({
 															</Box>
 														)}
 													</Box>
+													{/* Secondary cards show the same edit affordance for consistency. */}
+													{isEditMode ? (
+														<ProfileEditBadge sizePreset="small" style={{ position: "absolute", bottom: 20, right: -5 }} />
+													) : null}
 													<Text mt="$2" fontSize={17} lineHeight={19} color="#1A1A1A" fontFamily="Roboto">
 														{profile.name}
 													</Text>
@@ -404,6 +434,7 @@ export default function ProfileChoice({
 
 							<Box mt="$3.5" style={{ paddingTop: 10 }}>
 								<Box style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+									{/* Add action remains tappable to trigger warning when disabled. */}
 									<Pressable
 										onPress={handleAddProfile}
 										style={{

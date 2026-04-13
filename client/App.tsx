@@ -6,6 +6,7 @@ import PreferenceScreen from "./src/screens/PreferenceScreen";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import CreateProfile from "./src/screens/Profile/createProfile";
+import EditProfileScreen from "./src/screens/Profile/EditProfile";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
@@ -75,6 +76,7 @@ export default function App() {
               <Stack.Screen name="LoginScreen" component={LoginScreen} />
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
               <Stack.Screen name="ProfileScreen" component={CreateProfile} />
+              <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
               <Stack.Screen name="AnalyseScreen" component={AnalyseScreen} />
             </Stack.Navigator>
           </NavigationContainer>
