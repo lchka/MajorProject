@@ -4,6 +4,7 @@ import {
 	HStack,
 	Input,
 	InputField,
+	Pressable,
 	ScrollView,
 	Text,
 	VStack,
@@ -11,6 +12,7 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import SelectionChip from "../general/SelectionChip";
+import OverlayPPreference from "./OverlayPPreference";
 
 type PreferenceOption = {
 	id: string;
@@ -24,17 +26,6 @@ type ProfilePreferenceProps = {
 	isDisabled?: boolean;
 };
 
-const preferredCommonOrder = [
-	"vegan",
-	"vegetarian",
-	"gluten free",
-	"lactose free",
-	"halal",
-	"kosher",
-];
-
-const normalizePreferenceName = (value: string) => value.trim().toLowerCase();
-
 export default function ProfilePreference({
 	preferences,
 	selectedPreferenceIds,
@@ -42,6 +33,7 @@ export default function ProfilePreference({
 	isDisabled = false,
 }: ProfilePreferenceProps) {
 	const [query, setQuery] = React.useState("");
+	const [isCommonOverlayOpen, setIsCommonOverlayOpen] = React.useState(false);
 
 	const selectedPreferences = React.useMemo(
 		() => preferences.filter((item) => selectedPreferenceIds.includes(item.id)),
@@ -61,19 +53,6 @@ export default function ProfilePreference({
 			item.name.toLowerCase().includes(normalizedQuery),
 		);
 	}, [availablePreferences, query]);
-
-	const commonPreferences = React.useMemo(() => {
-		const withRank = availablePreferences.map((item) => {
-			const key = normalizePreferenceName(item.name);
-			const rank = preferredCommonOrder.indexOf(key);
-			return { item, rank: rank === -1 ? 999 : rank };
-		});
-
-		return withRank
-			.sort((a, b) => a.rank - b.rank || a.item.name.localeCompare(b.item.name))
-			.slice(0, 8)
-			.map((entry) => entry.item);
-	}, [availablePreferences]);
 
 	const suggestionPreferences =
 		query.trim().length > 0 ? filteredPreferences.slice(0, 8) : [];
@@ -105,7 +84,7 @@ export default function ProfilePreference({
 				</Text>
 			</VStack>
 
-			<Box opacity={isDisabled ? 0.7 : 1}>
+			<VStack space="sm" opacity={isDisabled ? 0.7 : 1}>
 				<Box
 					borderRadius={28}
 					bg="#FFFFFF"
@@ -139,27 +118,64 @@ export default function ProfilePreference({
 						</Box>
 					</HStack>
 				</Box>
-			</Box>
 
-			{suggestionPreferences.length > 0 && (
-				<VStack space="lg">
-					<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-						Suggestions
-					</Text>
-					<MotiView style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-						{suggestionPreferences.map((item) => (
-							<MotiView key={item.id} from={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-								<SelectionChip
-									text={`+ ${item.name}`}
-									onPress={() => addPreference(item.id)}
-									disabled={isDisabled}
-									variant="suggestion"
-								/>
-							</MotiView>
-						))}
-					</MotiView>
-				</VStack>
-			)}
+				{query.trim().length > 0 ? (
+					<Box
+						bg="#FFFFFF"
+						borderWidth={1.2}
+						borderColor="#D6E5F5"
+						borderRadius={16}
+						px="$2"
+						py="$2"
+						style={{
+							shadowColor: "#4A90D9",
+							shadowOpacity: 0.09,
+							shadowRadius: 8,
+							shadowOffset: { width: 0, height: 3 },
+						}}
+					>
+						{suggestionPreferences.length > 0 ? (
+							<ScrollView nestedScrollEnabled style={{ maxHeight: 210 }}>
+								<VStack space="xs">
+									{suggestionPreferences.map((item) => (
+										<Pressable
+											key={item.id}
+											onPress={() => addPreference(item.id)}
+											disabled={isDisabled}
+											px="$3"
+											py="$3"
+											borderRadius={12}
+										>
+											<HStack alignItems="center" justifyContent="space-between">
+												<Text style={{ fontFamily: "Roboto", color: "#2E5F8A" }}>
+													{item.name}
+												</Text>
+												<Feather name="plus" size={16} color="#8AA6C5" />
+											</HStack>
+										</Pressable>
+									))}
+								</VStack>
+							</ScrollView>
+						) : (
+							<Text size="sm" color="#7A9BB8" px="$2" py="$1">
+								No matching preferences found.
+							</Text>
+						)}
+					</Box>
+				) : null}
+			</VStack>
+
+			<VStack space="sm">
+				<Text size="sm" color="#7A9BB8">
+					Can&apos;t find your preference?
+				</Text>
+				<SelectionChip
+					text="View all preferences"
+					onPress={() => setIsCommonOverlayOpen(true)}
+					disabled={isDisabled}
+					variant="viewAll"
+				/>
+			</VStack>
 
 			<VStack space="lg">
 				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
@@ -191,26 +207,13 @@ export default function ProfilePreference({
 				)}
 			</VStack>
 
-			<VStack space="lg">
-				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-					Common preferences
-				</Text>
-
-				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
-					<HStack space="sm" alignItems="center">
-						{commonPreferences.map((item) => (
-							<MotiView key={item.id} from={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-								<SelectionChip
-									text={`+ ${item.name}`}
-									onPress={() => addPreference(item.id)}
-									disabled={isDisabled}
-									variant="common"
-								/>
-							</MotiView>
-						))}
-					</HStack>
-				</ScrollView>
-			</VStack>
+			<OverlayPPreference
+				isOpen={isCommonOverlayOpen}
+				onClose={() => setIsCommonOverlayOpen(false)}
+				preferences={preferences}
+				selectedPreferenceIds={selectedPreferenceIds}
+				onSave={onChangeSelectedPreferenceIds}
+			/>
 		</VStack>
 	);
 }
