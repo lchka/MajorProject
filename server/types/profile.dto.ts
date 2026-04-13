@@ -44,6 +44,7 @@ export const createProfileSchema = z.object({
     .max(100, "Last Name must not exceed 100 characters"),
   age: z.string().trim().optional(),
   profile_image: imageValid.optional(),
+  main_profile: z.boolean().optional(),
   // ids to link on create (optional)
   conditionIds: z
     .array(z.string().uuid("Condition id must be a valid UUID"))

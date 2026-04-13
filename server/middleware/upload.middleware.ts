@@ -1,4 +1,5 @@
 import multer from "multer";
+import type { NextFunction, Request, Response } from "express";
 import { BAD_REQUEST, HttpError } from "../utils/HttpError.js";
 
 const storage = multer.memoryStorage();
@@ -41,9 +42,9 @@ const productImageUploader = multer({
 ]);
 
 export const profileImageUpload = (
-    req: Express.Request,
-    res: Express.Response,
-    next: Express.NextFunction,
+    req: Request,
+    res: Response,
+    next: NextFunction,
 ): void => {
     profileImageUploader(req, res, (error) => {
         if (error) {
@@ -82,9 +83,9 @@ export const profileImageUpload = (
 };
 
 export const productImageUpload = (
-    req: Express.Request,
-    res: Express.Response,
-    next: Express.NextFunction,
+    req: Request,
+    res: Response,
+    next: NextFunction,
 ): void => {
     productImageUploader(req, res, (error) => {
         if (error) {

@@ -33,7 +33,7 @@ async findById(id:string){
 
 // get profile by owning user id
 async findByUserId(userId: string){
-    return await prisma.profile.findUnique({
+    return await prisma.profile.findFirst({
         where: { userId },
         include: profileInclude
     })

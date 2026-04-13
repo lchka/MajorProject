@@ -1,10 +1,13 @@
 import React from "react";
+import { ScrollView } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
-import { Box, Pressable, Text } from "@gluestack-ui/themed";
+import { Box, HStack, Pressable, Text } from "@gluestack-ui/themed";
 import EditButton from "../Buttons/EditButton";
+import CurrentProfile from "../general/CurrentProfileName";
 
 type AllConditionsProps = {
 	conditionNames?: string[];
+	profileFirstName?: string;
 	onPressEdit?: () => void;
 	onPressCondition?: (conditionName: string) => void;
 };
@@ -40,18 +43,86 @@ function conditionAccent(name: string) {
 
 export default function AllConditions({
 	conditionNames,
+	profileFirstName,
 	onPressEdit,
 	onPressCondition,
 }: AllConditionsProps) {
 	const conditions = conditionNames ?? [];
+	const horizontalColumnWidth = 330;
+	// Switch to horizontal paging once cards exceed two visible stacked rows.
+	const useHorizontalScroller = conditions.length > 2;
+	const conditionColumns = React.useMemo(() => {
+		if (!useHorizontalScroller) {
+			return [] as string[][];
+		}
+
+		// Group cards in pairs so each horizontal column renders up to two stacked items.
+		const columns: string[][] = [];
+		for (let index = 0; index < conditions.length; index += 2) {
+			columns.push(conditions.slice(index, index + 2));
+		}
+
+		return columns;
+	}, [conditions, useHorizontalScroller]);
+
+	const renderConditionCard = React.useCallback(
+		(conditionName: string) => {
+			// Accent colors/icons are derived from condition names for quick visual scanning.
+			const accent = conditionAccent(conditionName);
+
+			return (
+				<Pressable
+					key={conditionName}
+					onPress={() => onPressCondition?.(conditionName)}
+					borderColor="$borderLight300"
+					style={{
+						borderRadius: 18,
+						backgroundColor: accent.surfaceBg,
+						overflow: "hidden",
+					}}
+				>
+					<Box style={{ flexDirection: "row", alignItems: "center", minHeight: 82 }}>
+						<Box style={{ width: 10, alignSelf: "stretch", backgroundColor: accent.stripBg }} />
+
+						<Box 
+							style={{
+								width: 52,
+								height: 52,
+								borderRadius: 26,
+								backgroundColor: accent.iconBg,
+								alignItems: "center",
+								justifyContent: "center",
+								marginLeft: 14,
+							}}
+						>
+							<Feather name={accent.icon} size={22} color="#FFFFFF" />
+						</Box>
+
+						<Text
+							fontSize={22}
+							lineHeight={25}
+							color="$black"
+							fontFamily="RobotoMedium"
+							style={{ marginLeft: 14, flex: 1 }}
+						>
+							{conditionName}
+						</Text>
+
+						<Box  style={{ marginRight: 14 }}>
+							<Feather name="chevron-right" size={24} color="#7D8896" />
+						</Box>
+					</Box>
+				</Pressable>
+			);
+		},
+		[onPressCondition],
+	);
 
 	return (
 		<Box
-			my="$5"
+			my="$9"
 			style={{
-				backgroundColor: "#F1F4F8",
-				borderWidth: 1,
-				borderColor: "#DFE5EC",
+				marginHorizontal: -4,
 				borderRadius: 22,
 				padding: 16,
 				shadowColor: "#0B2033",
@@ -82,12 +153,13 @@ export default function AllConditions({
 				}}
 			>
 				<Box>
-					<Text fontSize={21} lineHeight={24} fontFamily="RobotoMedium" color="#151515">
-						Conditions Overview
-					</Text>
-					<Text mt="$1" fontSize={12} lineHeight={14} color="#748191" fontFamily="Roboto">
-						Track your skin condition profile
-					</Text>
+					<HStack alignItems="center" pl="$1" gap={6}>
+						<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={24} color="#1dd2d8" />
+						<Text fontSize={22} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+							Conditions
+						</Text>
+					</HStack>
+					
 				</Box>
 
 				<Box style={{ marginTop: -4 }}>
@@ -95,78 +167,42 @@ export default function AllConditions({
 						onPress={onPressEdit}
 						width={72}
 						label="Edit"
-						borderColor="#CFD6E0"
-						textColor="#5B5BE6"
-						style={{ backgroundColor: "transparent", borderWidth: 0, height: 28 }}
-						textStyle={{ fontSize: 18, lineHeight: 20, fontFamily: "Roboto", textTransform: "none" }}
+						borderColor="#9ed5f2"
+						textColor="#499bc7"
+						style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
+						textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none" }}
 					/>
 				</Box>
 			</Box>
 
 			{conditions.length ? (
-				<Box style={{ gap: 12 }}>
-					{conditions.map((conditionName) => {
-						const accent = conditionAccent(conditionName);
-
-						return (
-							<Pressable
-								key={conditionName}
-								onPress={() => onPressCondition?.(conditionName)}
-								style={{
-									borderRadius: 18,
-									backgroundColor: accent.surfaceBg,
-									borderWidth: 1,
-									borderColor: "#E7ECF2",
-									overflow: "hidden",
-								}}
-							>
-								<Box style={{ flexDirection: "row", alignItems: "center", minHeight: 82 }}>
-									<Box style={{ width: 7, alignSelf: "stretch", backgroundColor: accent.stripBg }} />
-
-									<Box
-										style={{
-											width: 52,
-											height: 52,
-											borderRadius: 26,
-											backgroundColor: accent.iconBg,
-											alignItems: "center",
-											justifyContent: "center",
-											marginLeft: 14,
-										}}
-									>
-										<Feather name={accent.icon} size={22} color="#FFFFFF" />
-									</Box>
-
-									<Text
-										fontSize={22}
-										lineHeight={25}
-										color="#1A1A1A"
-										fontFamily="RobotoMedium"
-										style={{ marginLeft: 14, flex: 1 }}
-									>
-										{conditionName}
-									</Text>
-
-									<Box style={{ marginRight: 14 }}>
-										<Feather name="chevron-right" size={24} color="#7D8896" />
-									</Box>
+				useHorizontalScroller ? (
+					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 6 }}>
+						<Box style={{ flexDirection: "row", gap: 12 }}>
+							{conditionColumns.map((column, columnIndex) => (
+								<Box key={`condition-column-${columnIndex}`} style={{ width: horizontalColumnWidth, gap: 12 }}>
+									{column.map((conditionName) => renderConditionCard(conditionName))}
 								</Box>
-							</Pressable>
-						);
-					})}
-				</Box>
+							))}
+						</Box>
+					</ScrollView>
+				) : (
+					<Box style={{ gap: 12 }}>
+						{conditions.map((conditionName) => renderConditionCard(conditionName))}
+					</Box>
+				)
 			) : (
 				<Box
+					bg="$white"
+					borderColor="$borderLight300"
 					style={{
-						backgroundColor: "#FFFFFF",
 						borderRadius: 14,
 						paddingVertical: 18,
 						paddingHorizontal: 14,
 						borderWidth: 1,
-						borderColor: "#E9EEF4",
 					}}
 				>
-					<Text fontSize={15} lineHeight={18} color="#667085" fontFamily="Roboto">
+					<Text fontSize={15} lineHeight={18} color="$textLight500" fontFamily="Roboto">
 						No conditions added yet.
 					</Text>
 				</Box>

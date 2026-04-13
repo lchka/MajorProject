@@ -293,8 +293,8 @@ export default function ProfileChoice({
 								width={72}
 								borderColor="#79C6EE"
 								textColor="#2E96CB"
-								style={{ height: 28, backgroundColor: "#EAF7FF", borderWidth: 1 }}
-								textStyle={{ fontSize: 14, lineHeight: 16, fontWeight: "600", textTransform: "none", letterSpacing: 0 }}
+								style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
+								textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none"}}
 							/>
 						</Box>
 					</ModalHeader>
