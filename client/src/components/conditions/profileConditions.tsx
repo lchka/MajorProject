@@ -4,6 +4,7 @@ import {
 	HStack,
 	Input,
 	InputField,
+	Pressable,
 	ScrollView,
 	Text,
 	VStack,
@@ -11,6 +12,7 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import SelectionChip from "../general/SelectionChip";
+import OverlayPCondition from "./OverlayPCondition";
 
 type ConditionOption = {
 	id: string;
@@ -43,6 +45,7 @@ export default function ProfileConditions({
 	isDisabled = false,
 }: ProfileConditionsProps) {
 	const [query, setQuery] = React.useState("");
+	const [isCommonOverlayOpen, setIsCommonOverlayOpen] = React.useState(false);
 
 	const selectedConditions = React.useMemo(
 		() => conditions.filter((item) => selectedConditionIds.includes(item.id)),
@@ -64,7 +67,7 @@ export default function ProfileConditions({
 	}, [availableConditions, query]);
 
 	const commonConditions = React.useMemo(() => {
-		const withRank = availableConditions.map((item) => {
+		const withRank = conditions.map((item) => {
 			const key = normalizeConditionName(item.name);
 			const rank = preferredCommonOrder.indexOf(key);
 			return { item, rank: rank === -1 ? 999 : rank };
@@ -74,7 +77,7 @@ export default function ProfileConditions({
 			.sort((a, b) => a.rank - b.rank || a.item.name.localeCompare(b.item.name))
 			.slice(0, 8)
 			.map((entry) => entry.item);
-	}, [availableConditions]);
+	}, [conditions]);
 
 	const suggestionConditions =
 		query.trim().length > 0 ? filteredConditions.slice(0, 8) : [];
@@ -113,7 +116,7 @@ export default function ProfileConditions({
 			</VStack>
 
 			{/* SEARCH */}
-			<Box opacity={isDisabled ? 0.7 : 1}>
+			<VStack space="sm" opacity={isDisabled ? 0.7 : 1}>
 				<Box
 					borderRadius={28}
 					bg="#FFFFFF"
@@ -147,34 +150,65 @@ export default function ProfileConditions({
 						</Box>
 					</HStack>
 				</Box>
-			</Box>
 
-			{/* SUGGESTIONS */}
-			{suggestionConditions.length > 0 && (
-				<VStack space="lg">
-					<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-						Suggestions
-					</Text>
-					<MotiView
-						style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+				{query.trim().length > 0 ? (
+					<Box
+						bg="#FFFFFF"
+						borderWidth={1.2}
+						borderColor="#D6E5F5"
+						borderRadius={16}
+						px="$2"
+						py="$2"
+						style={{
+							shadowColor: "#4A90D9",
+							shadowOpacity: 0.09,
+							shadowRadius: 8,
+							shadowOffset: { width: 0, height: 3 },
+						}}
 					>
-						{suggestionConditions.map((item) => (
-							<MotiView
-								key={item.id}
-								from={{ scale: 0.95, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-							>
-								<SelectionChip
-									text={`+ ${item.name}`}
-									onPress={() => addCondition(item.id)}
-									disabled={isDisabled}
-									variant="suggestion"
-								/>
-							</MotiView>
-						))}
-					</MotiView>
-				</VStack>
-			)}
+						{suggestionConditions.length > 0 ? (
+							<ScrollView nestedScrollEnabled style={{ maxHeight: 210 }}>
+								<VStack space="xs">
+									{suggestionConditions.map((item) => (
+										<Pressable
+											key={item.id}
+											onPress={() => addCondition(item.id)}
+											disabled={isDisabled}
+											px="$3"
+											py="$3"
+											borderRadius={12}
+										>
+											<HStack alignItems="center" justifyContent="space-between">
+												<Text style={{ fontFamily: "Roboto", color: "#2E5F8A" }}>
+													{item.name}
+												</Text>
+												<Feather name="plus" size={16} color="#8AA6C5" />
+											</HStack>
+										</Pressable>
+									))}
+								</VStack>
+							</ScrollView>
+						) : (
+							<Text size="sm" color="#7A9BB8" px="$2" py="$1">
+								No matching conditions found.
+							</Text>
+						)}
+					</Box>
+				) : null}
+			</VStack>
+
+			{/* VIEW ALL */}
+			<VStack space="sm">
+				<Text size="sm" color="#7A9BB8">
+					Can&apos;t find your condition?
+				</Text>
+				<SelectionChip
+					text="View all conditions"
+					onPress={() => setIsCommonOverlayOpen(true)}
+					disabled={isDisabled}
+					variant="viewAll"
+				/>
+			</VStack>
 
 			{/* SELECTED */}
 			<VStack space="lg">
@@ -211,31 +245,13 @@ export default function ProfileConditions({
 				)}
 			</VStack>
 
-			{/* COMMON */}
-			<VStack space="lg">
-				<Text style={{ fontFamily: "RobotoMedium", color: "#4B5563" }}>
-					Common conditions
-				</Text>
-
-				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
-					<HStack space="sm" alignItems="center">
-						{commonConditions.map((item) => (
-							<MotiView
-								key={item.id}
-								from={{ scale: 0.95, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-							>
-								<SelectionChip
-									text={`+ ${item.name}`}
-									onPress={() => addCondition(item.id)}
-									disabled={isDisabled}
-									variant="common"
-								/>
-							</MotiView>
-						))}
-					</HStack>
-				</ScrollView>
-			</VStack>
+			<OverlayPCondition
+				isOpen={isCommonOverlayOpen}
+				onClose={() => setIsCommonOverlayOpen(false)}
+				conditions={conditions}
+				selectedConditionIds={selectedConditionIds}
+				onSave={onChangeSelectedConditionIds}
+			/>
 		</VStack>
 	);
 }

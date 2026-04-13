@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@google/generative-ai": "^0.24.1"
+    "@google/generative-ai": "^0.24.1",
+    "expo-linear-gradient": "^55.0.13"
   }
 }

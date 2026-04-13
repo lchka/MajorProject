@@ -13,8 +13,6 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Box,
-  Button,
-  ButtonText,
   Divider,
   HStack,
   Input,
@@ -25,7 +23,6 @@ import {
   Text,
   VStack,
 } from "@gluestack-ui/themed";
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { authService } from "../../services";
 import profileService from "../../services/profileService";
@@ -34,6 +31,8 @@ import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
 import useGoogleAuth from "../../hooks/googleAuth.hook";
 import { AuthResponse } from "../../services";
+import CreateButton from "../../components/Buttons/CreateButton";
+import NavLogo from "../../components/general/NavLogo";
 
 const AUTH_TOKEN_KEY = "authToken";
 const REMEMBER_ME_KEY = "rememberMe";
@@ -217,212 +216,177 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={{ flex: 1, backgroundColor: "#F2F8FF" }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "flex-start",
+          paddingHorizontal: 20,
+          paddingVertical: 30,
+        }}
         keyboardShouldPersistTaps="handled"
       >
-        <Box w="$full" bg="#F2F8FF">
-          <Box
-            position="absolute"
-            top={-90}
-            right={-45}
-            w={220}
-            h={220}
-            borderRadius={999}
-            bg="#D8ECFF"
-            opacity={0.9}
-          />
-          <Box
-            position="absolute"
-            bottom={-70}
-            left={-35}
-            w={180}
-            h={180}
-            borderRadius={999}
-            bg="#BFDFFF"
-            opacity={0.35}
-          />
+        <Box
+          position="absolute"
+          top={-60}
+          right={-30}
+          w={180}
+          h={180}
+          borderRadius={999}
+          bg="#D8ECFF"
+          opacity={0.5}
+        />
+        <Box
+          position="absolute"
+          bottom={-40}
+          left={-20}
+          w={140}
+          h={140}
+          borderRadius={999}
+          bg="#BFDFFF"
+          opacity={0.25}
+        />
 
-          <Box w="$full" px="$5" py="$4">
-            <Box
-              bg="#F9FCFF"
-              borderRadius="$2xl"
-              p="$5"
-              style={styles.cardShadow}
+        <Box position="relative" mb="$1">
+          <NavLogo />
+          <Divider position="absolute" bottom={0} left={0} right={0} bgColor="lightblue" />
+        </Box>
+
+        <HStack
+          pt="$8"
+          alignItems="center"
+          justifyContent="space-between"
+          mb="$1.5"
+        >
+          <Text
+            size="3xl"
+            style={{
+              fontFamily: "Roboto",
+              color: "#1E293B",
+              flex: 1,
+            }}
+          >
+            Sign in to your account
+          </Text>
+          <Feather name="log-in" size={22} color="#5E7FA3" />
+        </HStack>
+
+        <HStack mb="$4">
+          <Text color="#64748B">Don&apos;t have an account? </Text>
+          <Pressable onPress={() => navigation.navigate("RegisterScreen")}>
+            <Text color="#2E5F8A" style={{ fontFamily: "RobotoMedium" }}>
+              Sign up
+            </Text>
+          </Pressable>
+        </HStack>
+
+        <VStack pt="$2" space="lg">
+          <VStack space="xs">
+            <Input size="lg" borderRadius="$full">
+              <InputField
+                placeholder="Email address"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                editable={!loading}
+              />
+            </Input>
+          </VStack>
+
+          <VStack space="xs">
+            <Box position="relative">
+              <Input size="lg" borderRadius="$full">
+                <InputField
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoComplete="password"
+                  editable={!loading}
+                  style={{ paddingRight: 44 }}
+                />
+              </Input>
+
+              <Pressable
+                position="absolute"
+                right="$5"
+                top={0}
+                bottom={0}
+                w="$10"
+                alignItems="center"
+                justifyContent="center"
+                hitSlop={10}
+                onPress={() => setShowPassword((prev) => !prev)}
+                disabled={loading}
+              >
+                <Feather
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={18}
+                  color="#6B7280"
+                />
+              </Pressable>
+            </Box>
+          </VStack>
+
+          <HStack justifyContent="space-between" alignItems="center">
+            <Pressable
+              onPress={() => setRememberMe((prev) => !prev)}
+              disabled={loading}
             >
-              <VStack space="xl">
-            {/* Header */}
-            <VStack space="xs">
-              <HStack justifyContent="space-between" alignItems="center">
-                <Text
-                  pl="$2"
-                  size="6xl"
-                  style={{ fontFamily: "DancingScript", color: "#204C78" }}
-                >
-                  Lumière
-                </Text>
-
+              <HStack space="sm" alignItems="center">
                 <Box
-                  w="$9"
-                  h="$9"
+                  w="$5"
+                  h="$5"
+                  borderWidth={1}
+                  borderColor="#9BB9D8"
+                  borderRadius="$md"
                   alignItems="center"
                   justifyContent="center"
-                  borderRadius={999}
-                  bg="#E6F2FF"
+                  bg={rememberMe ? "#4A90D9" : "transparent"}
                 >
-                  <AntDesign name="star" size={18} color="#4A90D9" />
+                  {rememberMe ? (
+                    <Feather name="check" size={12} color="white" />
+                  ) : null}
                 </Box>
-              </HStack>
-
-              <Divider mt={-8} bg="#C8E0F8" />
-            </VStack>
-
-            {/* Title */}
-            <VStack>
-              <Text size="3xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
-                Sign in to your account
-              </Text>
-
-              <HStack space="xs">
                 <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>
-                  Don't have an account?
+                  Remember me
                 </Text>
-
-                <Pressable
-                  onPress={() => navigation.navigate("RegisterScreen")}
-                >
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
-                    Sign up
-                  </Text>
-                </Pressable>
               </HStack>
-            </VStack>
+            </Pressable>
 
-            {/* Form */}
-            <VStack space="xl">
-              {/* Email */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>Email</Text>
+            <Pressable disabled={loading}>
+              <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
+                Forgot Password?
+              </Text>
+            </Pressable>
+          </HStack>
 
-                <Input size="lg" borderRadius="$lg">
-                  <InputField
-                    placeholder="abc@gmail.com"
-                    value={email}
-                    onChangeText={setEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    autoComplete="email"
-                    editable={!loading}
-                  />
-                </Input>
-              </VStack>
+          <CreateButton
+            label={loading || googleLoading ? "Signing in..." : "Login"}
+            onPress={handleLogin}
+            disabled={loading || googleLoading}
+          />
 
-              {/* Password */}
-              <VStack space="xs">
-                <Text style={{ fontFamily: "RobotoMedium" }}>Password</Text>
-
-                <Box position="relative">
-                  <Input size="lg" borderRadius="$lg">
-                    <InputField
-                      placeholder="Enter password"
-                      value={password}
-                      onChangeText={setPassword}
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                      autoComplete="password"
-                      editable={!loading}
-                      style={{ paddingRight: 44 }}
-                    />
-                  </Input>
-
-                  <Pressable
-                    position="absolute"
-                    right="$3"
-                    top="50%"
-                    mt={-9}
-                    onPress={() => setShowPassword((prev) => !prev)}
-                    disabled={loading}
-                  >
-                    <Feather
-                      name={showPassword ? "eye-off" : "eye"}
-                      size={18}
-                      color="#6B7280"
-                    />
-                  </Pressable>
-                </Box>
-              </VStack>
-
-              {/* Remember + forgot */}
-              <HStack justifyContent="space-between" alignItems="center">
-                <Pressable
-                  onPress={() => setRememberMe((prev) => !prev)}
-                  disabled={loading}
-                >
-                  <HStack space="sm" alignItems="center">
-                    <Box
-                      w="$5"
-                      h="$5"
-                      borderWidth={1}
-                      borderColor="#9BB9D8"
-                      borderRadius="$md"
-                      alignItems="center"
-                      justifyContent="center"
-                      bg={rememberMe ? "#4A90D9" : "transparent"}
-                    >
-                      {rememberMe ? (
-                        <Feather name="check" size={12} color="white" />
-                      ) : null}
-                    </Box>
-                    <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>Remember me</Text>
-                  </HStack>
-                </Pressable>
-
-                <Pressable disabled={loading}>
-                  <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
-                    Forgot Password?
-                  </Text>
-                </Pressable>
-              </HStack>
-            </VStack>
-
-            {/* Button */}
-            <Button
-            mt="$4"
-              size="lg"
-              onPress={handleLogin}
-              isDisabled={loading}
-              bg="#4A90D9"
-              borderRadius="$lg"
-              w="$full"
-            >
-              {loading || googleLoading ? (
-                <Spinner color="#F7FBFF" />
-              ) : (
-                <ButtonText color="#F7FBFF">Login</ButtonText>
-              )}
-            </Button>
-
-            <SocialAuth
-              onGooglePress={() => void promptGoogleAuth()}
-              onGithubPress={async () => {
-                if (!GITHUB_CLIENT_ID) {
-                  Alert.alert("GitHub Login", "Missing GitHub client ID.");
-                  return;
-                }
-                if (!githubRequest) {
-                  Alert.alert("GitHub Login", "GitHub auth not ready.");
-                  return;
-                }
-                await promptGithubAuth();
-              }}
-            />
-              </VStack>
-            </Box>
-          </Box>
-        </Box>
+          <SocialAuth
+            onGooglePress={() => void promptGoogleAuth()}
+            onGithubPress={async () => {
+              if (!GITHUB_CLIENT_ID) {
+                Alert.alert("GitHub Login", "Missing GitHub client ID.");
+                return;
+              }
+              if (!githubRequest) {
+                Alert.alert("GitHub Login", "GitHub auth not ready.");
+                return;
+              }
+              await promptGithubAuth();
+            }}
+          />
+        </VStack>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -432,19 +396,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F2F8FF",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: "#F2F8FF",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 20,
-  },
-  cardShadow: {
-    shadowColor: "#4A90D9",
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 18,
-    elevation: 5,
   },
 });

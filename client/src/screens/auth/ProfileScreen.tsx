@@ -6,6 +6,7 @@ import {
 	Platform,
 	StyleSheet,
 } from "react-native";
+import LottieView from "lottie-react-native";
 import * as ImagePicker from "expo-image-picker";
 import {
 	NavigationProp,
@@ -15,6 +16,7 @@ import {
 } from "@react-navigation/native";
 import {
 	Box,
+	Divider,
 	HStack,
 	Input,
 	InputField,
@@ -31,6 +33,7 @@ import ProfileAllergens from "../../components/allergens/ProfileAllergens";
 import ProfilePreference from "../../components/preferences/ProfilePreference";
 import CreateButton from "../../components/Buttons/CreateButton";
 import { ProfileImageUploadFile } from "../../services/profileService";
+import NavLogo from "../../components/general/NavLogo";
 
 export default function ProfileScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -81,6 +84,25 @@ export default function ProfileScreen() {
 		if (step === 3) return "Allergens";
 		if (step === 4) return "Cosmetic Preferences";
 		return "Profile photo";
+	}, [step]);
+
+	const stepDescription = useMemo(() => {
+		if (step === 0) {
+			return "We will use this information to personalize product insights, ingredient safety, and recommendations.";
+		}
+		if (step === 1) {
+			return "Add your name and optional age so your profile is complete and easier to manage.";
+		}
+		if (step === 2) {
+			return "Select any skin conditions you have so we can better evaluate product compatibility.";
+		}
+		if (step === 3) {
+			return "Choose known allergens to help flag ingredients that may not be suitable for you.";
+		}
+		if (step === 4) {
+			return "Share your cosmetic preferences to improve relevance and recommendation quality.";
+		}
+		return "Add an optional profile photo so your account is easier to recognize.";
 	}, [step]);
 
 	const handleNext = () => {
@@ -192,57 +214,80 @@ export default function ProfileScreen() {
 
 	return (
 		<KeyboardAvoidingView
-			style={styles.container}
+			style={{ flex: 1, backgroundColor: "#F2F8FF" }}
 			behavior={Platform.OS === "ios" ? "padding" : "height"}
 		>
 			<ScrollView
-				contentContainerStyle={styles.scrollContent}
+				contentContainerStyle={{
+					flexGrow: 1,
+					justifyContent: "flex-start",
+					paddingHorizontal: 20,
+					paddingVertical: 30,
+				}}
 				keyboardShouldPersistTaps="handled"
 			>
-				<Box w="$full" bg="#F2F8FF">
-					<Box
-						position="absolute"
-						top={-90}
-						right={-45}
-						w={220}
-						h={220}
-						borderRadius={999}
-						bg="#D8ECFF"
-						opacity={0.9}
-					/>
+				<Box
+					position="absolute"
+					top={-60}
+					right={-30}
+					w={180}
+					h={180}
+					borderRadius={999}
+					bg="#D8ECFF"
+					opacity={0.5}
+				/>
+				<Box
+					position="absolute"
+					bottom={-40}
+					left={-20}
+					w={140}
+					h={140}
+					borderRadius={999}
+					bg="#BFDFFF"
+					opacity={0.25}
+				/>
 
-					<Box w="$full" px="$5" py="$2">
-						<VStack space="xl">
-						<VStack space="xs">
-							<Text
-								pl="$2"
-								size="6xl"
-								style={{ fontFamily: "DancingScript", color: "#204C78" }}
-							>
-								Lumière
-							</Text>
-						</VStack>
+				<Box position="relative" mb="$1">
+					<NavLogo />
+					<Divider position="absolute" bottom={0} left={0} right={0} bgColor="lightblue" />
+				</Box>
 
-						<VStack>
-							<Text size="xs" color="#7A8EA8" style={{ fontFamily: "RobotoMedium", marginBottom: 2 }}>
-								Step {step + 1} of 6
-							</Text>
-							<Text size="3xl" style={{ fontFamily: "Roboto", color: "#261A10" }}>
-								{stepTitle}
-							</Text>
-						</VStack>
+				<VStack pt="$8" space="lg">
+					<VStack>
+						<Text
+							size="xs"
+							color="#64748B"
+							style={{ fontFamily: "RobotoMedium", marginBottom: 2 }}
+						>
+							Step {step + 1} of 6
+						</Text>
+						<Text
+							size="3xl"
+							style={{ fontFamily: "Roboto", color: "#1E293B" }}
+						>
+							{stepTitle}
+						</Text>
+						<Text size="sm" color="#64748B" style={{ marginTop: 4 }}>
+							{stepDescription}
+						</Text>
+					</VStack>
 
-						{step === 0 ? (
-							<VStack space="xl">
-								<Text size="sm" color="#466785">
-									Let’s finish your profile so we can personalize your experience.
-								</Text>
+					{step === 0 ? (
+							<VStack  space="xl">
 								<CreateButton label="Continue" onPress={handleNext} isPulsing={false} />
+								<Box mt="$8">
+									<LottieView
+										source={require("../../../assets/animations/create.json")}
+										autoPlay
+										loop
+										style={{ width: "100%", height: 300 }}
+									/>
+								</Box>
 
 							</VStack>
 						) : null}
 
-						{step === 1 ? (
+					{step === 1 ? (
 							<VStack space="xl">
 								<VStack space="xs">
 									<Text style={{ fontFamily: "RobotoMedium" }}>First Name</Text>
@@ -285,7 +330,7 @@ export default function ProfileScreen() {
 							</VStack>
 						) : null}
 
-						{step === 2 ? (
+					{step === 2 ? (
 							<ProfileConditions
 								conditions={conditions}
 								selectedConditionIds={conditionIds}
@@ -294,7 +339,7 @@ export default function ProfileScreen() {
 							/>
 						) : null}
 
-						{step === 3 ? (
+					{step === 3 ? (
 							<ProfileAllergens
 								allergens={allergens}
 								selectedAllergenIds={allergenIds}
@@ -303,7 +348,7 @@ export default function ProfileScreen() {
 							/>
 						) : null}
 
-						{step === 4 ? (
+					{step === 4 ? (
 							<ProfilePreference
 								preferences={preferences}
 								selectedPreferenceIds={preferenceIds}
@@ -312,7 +357,7 @@ export default function ProfileScreen() {
 							/>
 						) : null}
 
-						{step === 5 ? (
+					{step === 5 ? (
 							<VStack space="md">
 								<Text style={{ fontFamily: "RobotoMedium" }}>
 									Choose your profile photo (optional)
@@ -346,7 +391,7 @@ export default function ProfileScreen() {
 							</VStack>
 						) : null}
 
-						{step > 0 ? (
+					{step > 0 ? (
 							<HStack space="md" mt="$2">
 								<Box flex={1}>
 									<CreateButton
@@ -367,27 +412,14 @@ export default function ProfileScreen() {
 									/>
 								</Box>
 							</HStack>
-						) : null}
-					</VStack>
-					</Box>
-				</Box>
+					) : null}
+				</VStack>
 			</ScrollView>
 		</KeyboardAvoidingView>
 	);
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: "#F2F8FF",
-	},
-	scrollContent: {
-		flexGrow: 1,
-		backgroundColor: "#F2F8FF",
-		justifyContent: "center",
-		alignItems: "center",
-		paddingVertical: 14,
-	},
 	profilePreview: {
 		width: 96,
 		height: 96,

@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, Text } from "@gluestack-ui/themed";
 
-type SelectionChipVariant = "suggestion" | "selected" | "common";
+type SelectionChipVariant = "suggestion" | "selected" | "common" | "viewAll";
 
 type SelectionChipProps = {
 	text: string;
@@ -57,6 +57,17 @@ const VARIANT_STYLES: Record<
 		shadowRadius: 5,
 		shadowOffset: { width: 0, height: 2 },
 	},
+	viewAll: {
+		borderWidth: 0,
+		borderColor: "transparent",
+		backgroundColor: "#F8FCFF",
+		textColor: "#245784",
+		fontFamily: "RobotoMedium",
+		shadowColor: "#4A90D9",
+		shadowOpacity: 0.06,
+		shadowRadius: 4,
+		shadowOffset: { width: 0, height: 2 },
+	},
 };
 
 export default function SelectionChip({
@@ -66,6 +77,7 @@ export default function SelectionChip({
 	variant = "common",
 }: SelectionChipProps) {
 	const chipStyle = VARIANT_STYLES[variant];
+	const shouldCenterText = variant === "viewAll";
 
 	return (
 		<Pressable
@@ -78,13 +90,20 @@ export default function SelectionChip({
 			px="$4"
 			py="$3"
 			style={{
+				alignItems: shouldCenterText ? "center" : undefined,
 				shadowColor: chipStyle.shadowColor,
 				shadowOpacity: chipStyle.shadowOpacity,
 				shadowRadius: chipStyle.shadowRadius,
 				shadowOffset: chipStyle.shadowOffset,
 			}}
 		>
-			<Text style={{ fontFamily: chipStyle.fontFamily, color: chipStyle.textColor }}>
+			<Text
+				style={{
+					fontFamily: chipStyle.fontFamily,
+					color: chipStyle.textColor,
+					textAlign: shouldCenterText ? "center" : "left",
+				}}
+			>
 				{text}
 			</Text>
 		</Pressable>
