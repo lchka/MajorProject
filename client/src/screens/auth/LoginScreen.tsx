@@ -13,7 +13,6 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Box,
-  Divider,
   HStack,
   Input,
   InputField,
@@ -32,7 +31,7 @@ import SocialAuth from "../../components/actions/SocialAuth";
 import useGoogleAuth from "../../hooks/googleAuth.hook";
 import { AuthResponse } from "../../services";
 import CreateButton from "../../components/Buttons/CreateButton";
-import NavLogo from "../../components/general/NavLogo";
+import NavBarTop from "../../components/general/NavBarTop";
 
 const AUTH_TOKEN_KEY = "authToken";
 const REMEMBER_ME_KEY = "rememberMe";
@@ -249,10 +248,7 @@ export default function LoginScreen() {
           opacity={0.25}
         />
 
-        <Box position="relative" mb="$1">
-          <NavLogo />
-          <Divider position="absolute" bottom={0} left={0} right={0} bgColor="lightblue" />
-        </Box>
+        <NavBarTop isFirstProfileSetup showAvatar={false} showDivider />
 
         <HStack
           pt="$8"

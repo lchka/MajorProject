@@ -15,7 +15,6 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Box,
-  Divider,
   HStack,
   Image,
   Input,
@@ -34,7 +33,7 @@ import SocialAuth from "../../components/actions/SocialAuth";
 import CreateButton from "../../components/Buttons/CreateButton";
 import useGoogleAuth from "../../hooks/googleAuth.hook";
 import type { AuthResponse } from "../../services";
-import NavLogo from "../../components/general/NavLogo";
+import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
 import { MotiView } from "moti";
 
@@ -446,11 +445,7 @@ export default function RegisterScreen() {
           opacity={0.25}
         />
 
-        {/* Logo */}
-        <Box position="relative" mb="$1">
-          <NavLogo />
-          <Divider position="absolute" bottom={0} left={0} right={0} bgColor="lightblue" />
-        </Box>
+        <NavBarTop isFirstProfileSetup showAvatar={false} showDivider />
         {/* Title */}
         <HStack
           pt="$8"

@@ -12,6 +12,7 @@ import NotificationBadge from "./NotificationBadge";
 type NavBarTopProps = {
 	notificationCount?: number;
 	avatarSource?: ImageSourcePropType;
+	isFirstProfileSetup?: boolean;
 	showSearch?: boolean;
 	showNotifications?: boolean;
 	showAvatar?: boolean;
@@ -24,6 +25,7 @@ type NavBarTopProps = {
 export default function NavBarTop({
 	notificationCount = 0,
 	avatarSource = require("../../../assets/icon.png"),
+	isFirstProfileSetup = false,
 	showSearch = true,
 	showNotifications = true,
 	showAvatar = true,
@@ -32,6 +34,9 @@ export default function NavBarTop({
 	onPressNotifications,
 	onPressAvatar,
 }: NavBarTopProps) {
+	const shouldShowSearch = showSearch && !isFirstProfileSetup;
+	const shouldShowNotifications = showNotifications && !isFirstProfileSetup;
+
 	return (
 		<Box>
 			<Box
@@ -55,13 +60,13 @@ export default function NavBarTop({
 						gap: 14,
 					}}
 				>
-					{showSearch ? (
+					{shouldShowSearch ? (
 						<Pressable px="$1" onPress={onPressSearch}>
 							<Feather name="search" size={32} color="#111111" />
 						</Pressable>
 					) : null}
 
-					{showNotifications ? (
+					{shouldShowNotifications ? (
 						<Pressable
 							onPress={onPressNotifications}
 							mx="$2"

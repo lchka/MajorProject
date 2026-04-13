@@ -16,7 +16,6 @@ import {
 } from "@react-navigation/native";
 import {
 	Box,
-	Divider,
 	HStack,
 	Input,
 	InputField,
@@ -33,7 +32,7 @@ import ProfileAllergens from "../../components/allergens/ProfileAllergens";
 import ProfilePreference from "../../components/preferences/ProfilePreference";
 import CreateButton from "../../components/Buttons/CreateButton";
 import { ProfileImageUploadFile } from "../../services/profileService";
-import NavLogo from "../../components/general/NavLogo";
+import NavBarTop from "../../components/general/NavBarTop";
 
 export default function CreateProfile() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -262,10 +261,11 @@ export default function CreateProfile() {
 					opacity={0.25}
 				/>
 
-				<Box position="relative" mb="$1">
-					<NavLogo />
-					<Divider position="absolute" bottom={0} left={0} right={0} bgColor="lightblue" />
-				</Box>
+				<NavBarTop
+					isFirstProfileSetup
+					showAvatar={false}
+					showDivider
+				/>
 
 				<VStack pt="$8" space="lg">
 					<VStack>
