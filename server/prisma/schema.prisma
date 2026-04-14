@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  roleId    String
+  role      Role      @relation(fields: [roleId], references: [id])
+  profiles  Profile[]
+  products  Product[]
+  isDeleted Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([email])
+  @@index([roleId])
+}
+
+model Profile {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  first_name    String
+  last_name     String
+  age           String?
+  profile_image String?
+  main_profile  Boolean   @default(true)
+  isComplete    Boolean   @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  conditions    Condition[]
+  allergens     Allergen[]
+  preferences   Preference[]
+  evaluations   EvaluationContext[]
+  @@index([userId])
+}
+
+model Condition {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profiles      Profile[]
+}
+
+model Allergen {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profiles      Profile[]
+}
+
+model Preference {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profiles      Profile[]
+}
+
+model Prompt {
+  id            String   @id @default(uuid())
+  prompt_text   String
+  category      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  evaluations   EvaluationContext[]
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  product_image String
+  brand         String
+  ingredients   Json
+  category      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  evaluations   EvaluationContext[]
+
+  @@index([userId])
+}
+
+model EvaluationContext {
+  id            String   @id @default(uuid())
+  profileId     String
+  productId     String
+  promptId      String?
+  resultJson    Json
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  prompt        Prompt?  @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([productId])
+  @@index([promptId])
+}

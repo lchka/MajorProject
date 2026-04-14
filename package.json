@@ -1,23 +1,11 @@
 {
-  "name": "majorproject",
-  "version": "1.0.0",
-  "type": "module",
-  "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.js",
-  "start": "node src/server.js"
+    "build": "npm install --prefix server && npm run build --prefix server",
+    "start": "npm run start --prefix server"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "pg": "^8.17.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.11"
+    "@google/generative-ai": "^0.24.1",
+    "expo-linear-gradient": "^55.0.13"
   }
 }
