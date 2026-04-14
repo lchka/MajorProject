@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 import { authService } from "../services";
 import type { AuthResponse } from "../services";
 
@@ -31,22 +32,37 @@ export const useGoogleAuth = (
 
   const redirectUri = "https://auth.expo.io/@lchkas-organization/lumiere";
   const isExpoGo = Constants.appOwnership === "expo";
+  const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+  const iosClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || webClientId;
+  const androidClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || webClientId;
+  const expoClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID || webClientId;
 
   const config: Parameters<typeof Google.useAuthRequest>[0] = {
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    webClientId,
     redirectUri,
     scopes: ["openid", "profile", "email"],
     responseType: "id_token",
   };
 
-  if (process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID) {
-    config.iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  if (iosClientId) {
+    config.iosClientId = iosClientId;
+  }
+
+  if (androidClientId) {
+    config.androidClientId = androidClientId;
   }
 
   if (isExpoGo) {
-    config.clientId =
-      process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID ||
-      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    config.clientId = expoClientId;
+  }
+
+  if (Platform.OS === "ios" && !config.iosClientId) {
+    console.warn(
+      `${GOOGLE_AUTH_DEBUG_PREFIX} Missing iOS Google client id; check EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`,
+    );
   }
 
   const [request, response, promptAsync] = Google.useAuthRequest(config);

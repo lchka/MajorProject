@@ -8,19 +8,33 @@ const AUTH_TOKEN_KEY = 'authToken';
 const DEFAULT_API_PORT = '3000';
 const DEFAULT_API_PATH = '/api';
 
+const ensureApiBasePath = (url: string): string => {
+  const trimmed = url.trim().replace(/\/+$/, '');
+  if (trimmed.endsWith('/api')) {
+    return trimmed;
+  }
+
+  return `${trimmed}/api`;
+};
+
+const extractHostname = (value: string): string | null => {
+  const normalized = value.includes('://') ? value : `http://${value}`;
+  const withoutProtocol = normalized.split('://')[1] || '';
+  const hostAndPath = withoutProtocol.split('/')[0] || '';
+  const hostname = hostAndPath.split(':')[0] || '';
+
+  return hostname || null;
+};
+
 const getMetroHost = (): string | null => {
   const scriptURL = NativeModules?.SourceCode?.scriptURL as string | undefined;
 
 
   const linkingUri = (Constants as any)?.linkingUri as string | undefined;
   if (linkingUri) {
-    try {
-      const parsedUrl = new URL(linkingUri);
-      if (parsedUrl.hostname) {
-        return parsedUrl.hostname;
-      }
-    } catch {
-      // no-op
+    const host = extractHostname(linkingUri);
+    if (host) {
+      return host;
     }
   }
 
@@ -37,12 +51,7 @@ const getMetroHost = (): string | null => {
     return null;
   }
 
-  try {
-    const parsedUrl = new URL(scriptURL);
-    return parsedUrl.hostname;
-  } catch {
-    return null;
-  }
+  return extractHostname(scriptURL);
 };
 
 const normalizeAndroidLocalhost = (url: string): string => {
@@ -74,12 +83,16 @@ const buildDefaultApiUrl = (): string => {
 };
 
 const envApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-const API_URL = normalizeAndroidLocalhost(envApiUrl || buildDefaultApiUrl());
+const API_URL = normalizeAndroidLocalhost(
+  ensureApiBasePath(envApiUrl || buildDefaultApiUrl()),
+);
+
+console.log('[API] Using base URL:', API_URL);
 
 // Create axios instance with default configuration
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000, // 10 seconds
+  timeout: 60000, // Render free instances can take longer on cold start
   headers: {
     'Content-Type': 'application/json',
   },
@@ -107,6 +120,12 @@ api.interceptors.response.use(
   },
   (error) => {
     // Handle common errors
+    if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout - backend may be cold starting');
+      error.message = `Request timeout while connecting to API at ${API_URL}. If using Render free tier, wait a moment and retry.`;
+      return Promise.reject(error);
+    }
+
     if (error.response) {
       // Server responded with error status
       switch (error.response.status) {
