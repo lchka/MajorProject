@@ -2,7 +2,7 @@ import userRepository from "../repositories/user.repository.js";
 import roleRepository from "../repositories/role.repository.js";
 import UserSecurity from "../utils/UserSecurity.js";
 import { HttpError } from "../utils/HttpError.js";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import {
   CreateUserDto,
   UserResponseDto,

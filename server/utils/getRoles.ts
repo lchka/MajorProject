@@ -1,4 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import prismaClientPkg from "@prisma/client";
+
+const { PrismaClient } = prismaClientPkg;
 
 const prisma = new PrismaClient();
 
@@ -6,7 +8,7 @@ async function getRoles() {
   try {
     const roles = await prisma.role.findMany();
 
-    console.log("\n📋 Available Roles:\n");
+    console.log("\nAvailable Roles:\n");
     roles.forEach((role) => {
       console.log(`  Name: ${role.name}`);
       console.log(`  ID: ${role.id}`);
@@ -17,7 +19,7 @@ async function getRoles() {
     // Find the user role specifically
     const userRole = roles.find((r) => r.name === "user");
     if (userRole) {
-      console.log("\n✅ User Role ID (use this in RegisterScreen):");
+      console.log("\nUser Role ID (use this in RegisterScreen):");
       console.log(`  ${userRole.id}\n`);
     }
   } catch (error) {
