@@ -1,5 +1,5 @@
-import prisma from "../lib/prisma";
-import { HttpError } from "../utils/HttpError";
+import prisma from "../lib/prisma.js";
+import { HttpError } from "../utils/HttpError.js";
 
 import {
   CreatePreferenceDto,

@@ -1,7 +1,7 @@
-import prisma from "../lib/prisma";
-import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError";
+import prisma from "../lib/prisma.js";
+import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError.js";
 
-import { CreateProfileDTO, ProfileResponseDTO, UpdateProfileDTO } from "../types/profile.dto";
+import { CreateProfileDTO, ProfileResponseDTO, UpdateProfileDTO } from "../types/profile.dto.js";
 
 // relation fields we always load with a profile
 const profileInclude = {

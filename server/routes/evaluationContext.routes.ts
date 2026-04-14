@@ -1,14 +1,14 @@
 import express, { Router } from "express";
-import evaluationContextController from "../controllers/evaluationContext.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
-import { can, canAccessEvaluationContextById, canAccessProfileByProfileId } from "../middleware/permission.middleware";
-import { validate } from "../middleware/validateRequest";
+import evaluationContextController from "../controllers/evaluationContext.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { can, canAccessEvaluationContextById, canAccessProfileByProfileId } from "../middleware/permission.middleware.js";
+import { validate } from "../middleware/validateRequest.js";
 import {
 	createEvaluationContextSchema,
 	evaluateProductRequestSchema,
 	updateEvaluationContextSchema,
-} from "../types/evaluationContext.dto";
-import { Permission } from "../types/permissions.dto";
+} from "../types/evaluationContext.dto.js";
+import { Permission } from "../types/permissions.dto.js";
 
 const router: Router = express.Router();
 

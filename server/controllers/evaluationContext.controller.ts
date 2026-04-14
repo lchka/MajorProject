@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from "express";
-import { EvaluationContextService } from "../services/evaluationContext.service";
+import { EvaluationContextService } from "../services/evaluationContext.service.js";
 import {
 	CreateEvaluationContextDto,
 	EvaluateProductRequestDto,
 	UpdateEvaluationContextDto,
-} from "../types/evaluationContext.dto";
-import { Permission, hasPermission } from "../types/permissions.dto";
-import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError";
+} from "../types/evaluationContext.dto.js";
+import { Permission, hasPermission } from "../types/permissions.dto.js";
+import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 const evaluationContextService = new EvaluationContextService();
 

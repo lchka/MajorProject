@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { imageValid } from "./profile.dto";
-import { categoryEnum } from "./prompt.dto";
+import { imageValid } from "./profile.dto.js";
+import { categoryEnum } from "./prompt.dto.js";
 export const ingredientsJsonSchema = z.json().refine(
 	(value) =>
 		Array.isArray(value) &&

@@ -1,15 +1,15 @@
 import { z, ZodError } from "zod";
 import type { Prisma } from "@prisma/client";
-import prisma from "../lib/prisma";
+import prisma from "../lib/prisma.js";
 import {
 	CreateProductDto,
 	ProductResponseDto,
 	UpdateProductDto,
 	createProductSchema,
 	productResponseSchema,
-} from "../types/product.dto";
-import { categoryEnum } from "../types/prompt.dto";
-import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError";
+} from "../types/product.dto.js";
+import { categoryEnum } from "../types/prompt.dto.js";
+import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError.js";
 
 type ProductScanInput = {
 	name: unknown;

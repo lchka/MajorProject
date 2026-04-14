@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import crypto from "node:crypto";
-import geminiService from "../services/gemini.service";
-import { ProductService } from "../services/product.service";
-import { CreateProductDto, UpdateProductDto } from "../types/product.dto";
-import { uploadProductImageToS3 } from "../lib/s3";
-import { BAD_REQUEST, CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/HttpError";
+import geminiService from "../services/gemini.service.js";
+import { ProductService } from "../services/product.service.js";
+import { CreateProductDto, UpdateProductDto } from "../types/product.dto.js";
+import { uploadProductImageToS3 } from "../lib/s3.js";
+import { BAD_REQUEST, CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/HttpError.js";
 
 const productService = new ProductService();
 

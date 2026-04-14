@@ -1,11 +1,11 @@
-import prisma from "../lib/prisma";
+import prisma from "../lib/prisma.js";
 import {
   CreatePromptDto,
   PromptResponseDto,
   promptResponseSchema,
   UpdatePromptDto,
-} from "../types/prompt.dto";
-import { HttpError, NOT_FOUND } from "../utils/HttpError";
+} from "../types/prompt.dto.js";
+import { HttpError, NOT_FOUND } from "../utils/HttpError.js";
 
 export class PromptService {
   async createPrompt(data: CreatePromptDto): Promise<PromptResponseDto> {

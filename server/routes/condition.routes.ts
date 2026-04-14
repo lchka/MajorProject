@@ -1,10 +1,10 @@
 import express, {Router} from"express";
-import conditionController from "../controllers/condition.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
-import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware";
-import { validate } from "../middleware/validateRequest";
-import { Permission } from "../types/permissions.dto";
-import { createConditionSchema, updateConditionSchema } from "../types/condition.dto";
+import conditionController from "../controllers/condition.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware.js";
+import { validate } from "../middleware/validateRequest.js";
+import { Permission } from "../types/permissions.dto.js";
+import { createConditionSchema, updateConditionSchema } from "../types/condition.dto.js";
 
 const router: Router= express.Router();
 

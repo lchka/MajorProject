@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { Express } from "express";
-import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../utils/HttpError";
+import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../utils/HttpError.js";
 
 export type ParsedProductFromImage = {
 	name: string;

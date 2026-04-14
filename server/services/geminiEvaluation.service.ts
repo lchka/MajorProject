@@ -2,9 +2,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
 	evaluationResultJsonSchema,
 	type EvaluationResultJsonDto,
-} from "../types/evaluationContext.dto";
-import { HttpError, INTERNAL_SERVER_ERROR } from "../utils/HttpError";
-import { formatChunksForPrompt, retrieveRelevantChunks, type RagChunkMatch } from "../RAG/src/retrieve.service";
+} from "../types/evaluationContext.dto.js";
+import { HttpError, INTERNAL_SERVER_ERROR } from "../utils/HttpError.js";
+import { formatChunksForPrompt, retrieveRelevantChunks, type RagChunkMatch } from "../RAG/src/retrieve.service.js";
 
 export type GeminiEvaluationInput = {
 	productName: string;

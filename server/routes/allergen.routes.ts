@@ -1,10 +1,10 @@
 import express, {Router} from "express";
-import allergenController from "../controllers/allergen.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
-import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware";
-import { validate } from "../middleware/validateRequest";
-import { Permission } from "../types/permissions.dto";
-import { createAllergenSchema, updateAllergenSchema } from "../types/allergen.dto";
+import allergenController from "../controllers/allergen.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { can, canAccessProfileByProfileId } from "../middleware/permission.middleware.js";
+import { validate } from "../middleware/validateRequest.js";
+import { Permission } from "../types/permissions.dto.js";
+import { createAllergenSchema, updateAllergenSchema } from "../types/allergen.dto.js";
 
 const router: Router= express.Router();
 

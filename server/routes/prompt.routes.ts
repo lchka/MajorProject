@@ -1,10 +1,10 @@
 import express, { Router } from "express";
-import promptController from "../controllers/prompt.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
-import { can } from "../middleware/permission.middleware";
-import { validate } from "../middleware/validateRequest";
-import { Permission } from "../types/permissions.dto";
-import { createPromptSchema, updatePromptSchema } from "../types/prompt.dto";
+import promptController from "../controllers/prompt.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { can } from "../middleware/permission.middleware.js";
+import { validate } from "../middleware/validateRequest.js";
+import { Permission } from "../types/permissions.dto.js";
+import { createPromptSchema, updatePromptSchema } from "../types/prompt.dto.js";
 
 const router: Router = express.Router();
 

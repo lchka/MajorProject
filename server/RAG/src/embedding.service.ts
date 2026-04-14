@@ -1,4 +1,4 @@
-import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../../utils/HttpError";
+import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../../utils/HttpError.js";
 
 type GeminiEmbedResponse = {
 	embedding?: {

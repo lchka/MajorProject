@@ -1,11 +1,11 @@
 import express, { Router } from "express";
-import productController from "../controllers/product.controller";
-import { authMiddleware } from "../middleware/auth.middleware";
-import { productImageUpload } from "../middleware/upload.middleware";
-import { can } from "../middleware/permission.middleware";
-import { validate } from "../middleware/validateRequest";
-import { createProductSchema, updateProductSchema } from "../types/product.dto";
-import { Permission } from "../types/permissions.dto";
+import productController from "../controllers/product.controller.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { productImageUpload } from "../middleware/upload.middleware.js";
+import { can } from "../middleware/permission.middleware.js";
+import { validate } from "../middleware/validateRequest.js";
+import { createProductSchema, updateProductSchema } from "../types/product.dto.js";
+import { Permission } from "../types/permissions.dto.js";
 
 const router: Router = express.Router();
 

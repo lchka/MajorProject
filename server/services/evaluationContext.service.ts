@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import prisma from "../lib/prisma";
+import prisma from "../lib/prisma.js";
 import {
 	CreateEvaluationContextDto,
 	EvaluateProductRequestDto,
@@ -7,9 +7,9 @@ import {
 	EvaluationResultJsonDto,
 	evaluationContextResponseSchema,
 	UpdateEvaluationContextDto,
-} from "../types/evaluationContext.dto";
-import geminiEvaluationService from "./geminiEvaluation.service";
-import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError";
+} from "../types/evaluationContext.dto.js";
+import geminiEvaluationService from "./geminiEvaluation.service.js";
+import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError.js";
 
 type NamedEntity = { name: string };
 

@@ -1,5 +1,5 @@
-import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../../utils/HttpError";
-import { ragEmbeddingService } from "./embedding.service";
+import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../../utils/HttpError.js";
+import { ragEmbeddingService } from "./embedding.service.js";
 
 export type RagChunkMatch = {
 	id: string;

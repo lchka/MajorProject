@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { PromptService } from "../services/prompt.service";
-import { CreatePromptDto, UpdatePromptDto } from "../types/prompt.dto";
-import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError";
+import { PromptService } from "../services/prompt.service.js";
+import { CreatePromptDto, UpdatePromptDto } from "../types/prompt.dto.js";
+import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 const promptService = new PromptService();
 
