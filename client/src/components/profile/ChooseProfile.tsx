@@ -454,7 +454,7 @@ export default function ProfileChoice({
 														{profile.name}
 													</Text>
 												</Pressable>
-											) : index === 1 ? (
+											) : (
 												<Box
 													width={secondaryCircleSize}
 													height={secondaryCircleSize}
@@ -467,7 +467,7 @@ export default function ProfileChoice({
 												>
 													<Feather name="plus" size={24} color="#9DB6C8" />
 												</Box>
-											) : null}
+											)}
 										</Box>
 									))}
 								</Box>

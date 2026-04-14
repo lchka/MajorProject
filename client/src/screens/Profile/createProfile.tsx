@@ -162,7 +162,6 @@ export default function CreateProfile() {
 			// Newly created additional profiles should be marked complete but not as main profile.
 			const completedAdditionalProfile = await updateProfile(savedProfile.id, {
 				isComplete: true,
-				main_profile: false,
 			});
 
 			if (!completedAdditionalProfile) {
