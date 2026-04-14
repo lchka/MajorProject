@@ -31,6 +31,7 @@ type ProductWithIngredients = {
 type PromptRecord = {
 	id: string;
 	prompt_text: string;
+	category: string;
 };
 
 type PrismaRuntime = {
@@ -49,12 +50,70 @@ type PrismaRuntime = {
 	};
 	prompt: {
 		findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
+		findFirst: (args: Record<string, unknown>) => Promise<unknown | null>;
 	};
 };
 
 const prismaRuntime = prisma as unknown as PrismaRuntime;
 
 export class EvaluationContextService {
+	private normalizeCategory(value: unknown): string {
+		if (typeof value !== "string") {
+			return "Other";
+		}
+
+		const trimmed = value.trim();
+		return trimmed.length > 0 ? trimmed : "Other";
+	}
+
+	private async resolvePromptForProduct(
+		productCategory: string,
+		requestedPromptId?: string,
+	): Promise<PromptRecord | undefined> {
+		if (requestedPromptId) {
+			const prompt = (await prismaRuntime.prompt.findUnique({
+				where: { id: requestedPromptId },
+				select: { id: true, prompt_text: true, category: true },
+			})) as PromptRecord | null;
+
+			if (!prompt) {
+				throw new HttpError(NOT_FOUND, `Prompt with id '${requestedPromptId}' not found`);
+			}
+
+			const promptCategory = this.normalizeCategory(prompt.category);
+			if (promptCategory !== productCategory) {
+				throw new HttpError(
+					BAD_REQUEST,
+					`Prompt category '${promptCategory}' must match product category '${productCategory}'`,
+				);
+			}
+
+			return prompt;
+		}
+
+		const categoryPrompt = (await prismaRuntime.prompt.findFirst({
+			where: { category: productCategory },
+			orderBy: { updatedAt: "desc" },
+			select: { id: true, prompt_text: true, category: true },
+		})) as PromptRecord | null;
+
+		if (categoryPrompt) {
+			return categoryPrompt;
+		}
+
+		if (productCategory !== "Other") {
+			const fallbackPrompt = (await prismaRuntime.prompt.findFirst({
+				where: { category: "Other" },
+				orderBy: { updatedAt: "desc" },
+				select: { id: true, prompt_text: true, category: true },
+			})) as PromptRecord | null;
+
+			return fallbackPrompt ?? undefined;
+		}
+
+		return undefined;
+	}
+
 	private toResponseDto(record: unknown): EvaluationContextResponseDto {
 		return evaluationContextResponseSchema.parse(record);
 	}
@@ -184,7 +243,7 @@ export class EvaluationContextService {
 
 	private async buildEvaluationResult(
 		data: EvaluateProductRequestDto,
-	): Promise<{ resultJson: EvaluationResultJsonDto }> {
+	): Promise<{ resultJson: EvaluationResultJsonDto; promptId?: string }> {
 		const profile = (await prismaRuntime.profile.findUnique({
 			where: { id: data.profileId },
 			select: {
@@ -208,19 +267,9 @@ export class EvaluationContextService {
 			throw new HttpError(NOT_FOUND, `Product with id '${data.productId}' not found`);
 		}
 
-		let promptText: string | undefined;
-		if (data.promptId) {
-			const prompt = (await prismaRuntime.prompt.findUnique({
-				where: { id: data.promptId },
-				select: { id: true, prompt_text: true },
-			})) as PromptRecord | null;
-
-			if (!prompt) {
-				throw new HttpError(NOT_FOUND, `Prompt with id '${data.promptId}' not found`);
-			}
-
-			promptText = prompt.prompt_text;
-		}
+		const productCategory = this.normalizeCategory(product.category);
+		const selectedPrompt = await this.resolvePromptForProduct(productCategory, data.promptId);
+		const promptText = selectedPrompt?.prompt_text;
 
 		const ingredientTerms = this.normalizeIngredients(product.ingredients);
 		if (!ingredientTerms.length) {
@@ -236,7 +285,7 @@ export class EvaluationContextService {
 			resultJson = await geminiEvaluationService.evaluate({
 				productName: product.name,
 				productBrand: product.brand,
-				productCategory: product.category,
+				productCategory,
 				ingredients: ingredientTerms,
 				allergens: profileAllergens,
 				conditions: profileConditions,
@@ -254,7 +303,7 @@ export class EvaluationContextService {
 			profile_preferences: profilePreferences,
 		};
 
-		return { resultJson };
+		return { resultJson, promptId: selectedPrompt?.id };
 	}
 
 	async createEvaluationContext(data: CreateEvaluationContextDto): Promise<EvaluationContextResponseDto> {
@@ -391,11 +440,11 @@ export class EvaluationContextService {
 	}
 
 	async evaluateProduct(data: EvaluateProductRequestDto): Promise<EvaluationContextResponseDto> {
-		const { resultJson } = await this.buildEvaluationResult(data);
+		const { resultJson, promptId } = await this.buildEvaluationResult(data);
 		return this.createEvaluationContext({
 			profileId: data.profileId,
 			productId: data.productId,
-			promptId: data.promptId,
+			promptId,
 			resultJson,
 		});
 	}
