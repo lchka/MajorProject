@@ -444,6 +444,7 @@ export default function LandingScreen() {
       <NavBarBottom
         activeTab="home"
         historyProfileId={profileId ?? activeProfile?.id}
+        cameraProfileId={profileId ?? activeProfile?.id}
         avatarSource={
           activeProfile?.profile_image
             ? { uri: activeProfile.profile_image }

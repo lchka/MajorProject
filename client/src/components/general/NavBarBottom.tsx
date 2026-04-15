@@ -16,6 +16,7 @@ type NavBarBottomProps = {
 	avatarSource?: ImageSourcePropType;
 	activeTab?: BottomTab;
 	historyProfileId?: string;
+	cameraProfileId?: string;
 	onPressHome?: () => void;
 	onPressUpload?: () => void;
 	onPressHistory?: () => void;
@@ -28,6 +29,7 @@ export default function NavBarBottom({
 	avatarSource = require("../../../assets/icon.png"),
 	activeTab = "home",
 	historyProfileId,
+	cameraProfileId,
 	onPressHome,
 	onPressUpload,
 	onPressHistory,
@@ -55,8 +57,11 @@ export default function NavBarBottom({
 			return;
 		}
 
-		navigation.navigate("CameraScreen");
-	}, [navigation, onPressUpload]);
+		navigation.navigate(
+			"CameraScreen",
+			cameraProfileId ? { profileId: cameraProfileId } : undefined,
+		);
+	}, [cameraProfileId, navigation, onPressUpload]);
 
 	const handleHistoryPress = React.useCallback(() => {
 		if (onPressHistory) {

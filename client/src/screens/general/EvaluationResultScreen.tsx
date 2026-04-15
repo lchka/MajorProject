@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Text } from "@gluestack-ui/themed";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NavigationProp } from "@react-navigation/native";
-import CreateEvaluations from "../../components/evaluations/ShowEvaluations";
+import CreateEvaluations from "../../components/evaluations/ShowEvaluation";
 import { evaluationContextService, productService, profileService } from "../../services";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
@@ -91,9 +91,14 @@ export default function EvaluationResultScreen() {
       productName={product?.name ?? "Evaluated Product"}
       greetingName={profile?.first_name?.trim() || "Lili"}
       profileImageUri={profile?.profile_image}
+      currentProfileAllergens={profile?.allergens?.map((item) => item.name) ?? []}
+      currentProfileConditions={profile?.conditions?.map((item) => item.name) ?? []}
+      currentProfilePreferences={profile?.preferences?.map((item) => item.name) ?? []}
       resultJson={context.resultJson}
       onRetake={() => {
-        navigation.navigate("CameraScreen");
+        navigation.navigate("CameraScreen", {
+          profileId: context.profileId,
+        });
       }}
     />
   );

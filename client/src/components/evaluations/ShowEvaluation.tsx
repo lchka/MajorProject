@@ -1,11 +1,15 @@
 import React from "react";
-import { Linking } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
-import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
+import { Box, Image, ScrollView, Text } from "@gluestack-ui/themed";
 import NavBarTop from "../general/NavBarTop";
 import NavBarBottom from "../general/NavBarBottom";
+import ProfileRetakeBanner from "../banners/ProfileRetakeBanner";
+import Citations from "./Citations";
+import ImageEvaluation from "./ImageEvaluation";
+import ProfileSignals from "./ProfileSignals";
+import WhyThisResult from "./WhyThisResult";
 import type { EvaluationResultJson, EvaluationStatus } from "../../services/evaluationContextService";
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
@@ -21,6 +25,9 @@ type CreateEvaluationsProps = {
 	isProcessing?: boolean;
 	greetingName?: string;
 	profileImageUri?: string;
+	currentProfileAllergens?: string[];
+	currentProfileConditions?: string[];
+	currentProfilePreferences?: string[];
 	resultJson?: EvaluationResultJson | null;
 	onRetake?: () => void;
 };
@@ -72,6 +79,31 @@ const KNOWN_KEYS = new Set([
 
 const toStringArray = (value: unknown): string[] =>
 	Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const normalizeName = (value: string): string =>
+	value.trim().toLowerCase().replace(/\s+/g, " ");
+
+const normalizeAndSort = (values?: string[]): string[] => {
+	if (!values) {
+		return [];
+	}
+
+	return values
+		.map(normalizeName)
+		.filter(Boolean)
+		.sort((left, right) => left.localeCompare(right));
+};
+
+const sameEntityList = (left?: string[], right?: string[]): boolean => {
+	const normalizedLeft = normalizeAndSort(left);
+	const normalizedRight = normalizeAndSort(right);
+
+	if (normalizedLeft.length !== normalizedRight.length) {
+		return false;
+	}
+
+	return normalizedLeft.every((value, index) => value === normalizedRight[index]);
+};
 
 const safeJsonValue = (value: unknown): string => {
 	if (typeof value === "string") {
@@ -164,6 +196,9 @@ export default function CreateEvaluations({
 	isProcessing = false,
 	greetingName = "Lili",
 	profileImageUri,
+	currentProfileAllergens,
+	currentProfileConditions,
+	currentProfilePreferences,
 	resultJson,
 	onRetake,
 }: CreateEvaluationsProps) {
@@ -213,6 +248,35 @@ export default function CreateEvaluations({
 		? "Analyzing ingredients..."
 		: resultJson?.summary || "Analysis complete";
 
+	const profileMismatchDetected = React.useMemo(() => {
+		if (!resultJson) {
+			return false;
+		}
+
+		if (
+			!currentProfileAllergens &&
+			!currentProfileConditions &&
+			!currentProfilePreferences
+		) {
+			return false;
+		}
+
+		const snapshotAllergens = toStringArray(resultJson.profile_allergens);
+		const snapshotConditions = toStringArray(resultJson.profile_conditions);
+		const snapshotPreferences = toStringArray(resultJson.profile_preferences);
+
+		return (
+			!sameEntityList(snapshotAllergens, currentProfileAllergens) ||
+			!sameEntityList(snapshotConditions, currentProfileConditions) ||
+			!sameEntityList(snapshotPreferences, currentProfilePreferences)
+		);
+	}, [
+		currentProfileAllergens,
+		currentProfileConditions,
+		currentProfilePreferences,
+		resultJson,
+	]);
+
 	const reasons = React.useMemo(() => {
 		if (!resultJson || !Array.isArray(resultJson.reasons)) {
 			return [];
@@ -221,28 +285,9 @@ export default function CreateEvaluations({
 		return resultJson.reasons;
 	}, [resultJson]);
 
-	const citations = React.useMemo(() => toStringArray(resultJson?.citations), [resultJson]);
-	const citationLinks = React.useMemo(() => toStringArray(resultJson?.citation_links), [resultJson]);
-
-	const citationSources = React.useMemo(() => {
-		const value = resultJson?.citation_sources;
-		if (!Array.isArray(value)) {
-			return [];
-		}
-
-		return value.filter(
-			(item): item is { title: string; lead_author: string; year: number | null; url: string } =>
-				typeof item === "object" &&
-				item !== null &&
-				typeof (item as { title?: unknown }).title === "string" &&
-				typeof (item as { lead_author?: unknown }).lead_author === "string" &&
-				typeof (item as { url?: unknown }).url === "string",
-		);
-	}, [resultJson]);
-
 	const additionalEntries = React.useMemo(() => {
 		if (!resultJson) {
-			return [] as Array<[string, unknown]>;
+			return [] as [string, unknown][];
 		}
 
 		return Object.entries(resultJson).filter(([key]) => !KNOWN_KEYS.has(key));
@@ -251,22 +296,6 @@ export default function CreateEvaluations({
 	const score = typeof resultJson?.score === "number" ? Math.max(0, Math.min(100, resultJson.score)) : null;
 	const status = resultJson?.status;
 	const statusTone = status && ["safe", "caution", "avoid"].includes(status) ? status : null;
-
-	const openLink = React.useCallback(async (url: string) => {
-		const trimmed = url.trim();
-		if (!trimmed) {
-			return;
-		}
-
-		try {
-			const supported = await Linking.canOpenURL(trimmed);
-			if (supported) {
-				await Linking.openURL(trimmed);
-			}
-		} catch {
-			// Ignore link opening errors on unsupported platforms/URLs.
-		}
-	}, []);
 
 	const avatarUri = resolveMediaUrl(profileImageUri);
 	const avatarSource = avatarUri ? { uri: avatarUri } : undefined;
@@ -297,15 +326,6 @@ export default function CreateEvaluations({
 			<NavBarTop notificationCount={0} />
 
 			<Box flex={1} px="$3" pt="$5" style={{ paddingBottom: 120 }}>
-			<Box 
-				bg="#FCFDFE"
-				borderRadius={18}
-				borderWidth={1}
-				borderColor="#DEE6EF"
-				px="$3"
-				py="$3"
-				flex={1}
-			>
 				<Box 
 					flexDirection="row"
 					alignItems="center"
@@ -342,49 +362,11 @@ export default function CreateEvaluations({
 				</Box>
 
 				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-					<MotiView
-						from={{ opacity: 0, scale: 0.97 }}
-						animate={{ opacity: 1, scale: 1 }}
-						transition={{ type: "timing", duration: 280 }}
-					>
-					<Box mt="$4" alignItems="center">
-						<Box
-							w={120}
-							h={156}
-							borderRadius={14}
-							overflow="hidden"
-							bg="#F2F4F6"
-							borderWidth={1}
-							borderColor="#E3E7EC"
-						>
-							{imageUri ? (
-								<Image
-									source={{ uri: imageUri }}
-									alt={productName}
-									resizeMode="contain"
-									style={{ width: "100%", height: "100%" }}
-								/>
-							) : (
-								<Box flex={1} alignItems="center" justifyContent="center">
-									<Feather name="image" size={24} color="#9CA8B4" />
-								</Box>
-							)}
-						</Box>
-						<Text
-							mt="$3"
-							fontSize={20}
-							lineHeight={24}
-							color="#152433"
-							fontFamily="RobotoMedium"
-							textAlign="center"
-						>
-							{productName}
-						</Text>
-						<Text mt="$1" fontSize={12} lineHeight={16} color="#637384" fontFamily="Roboto" textAlign="center">
-							{statusText}
-						</Text>
-					</Box>
-					</MotiView>
+					<ImageEvaluation
+						imageUri={imageUri}
+						productName={productName}
+						statusText={statusText}
+					/>
 
 					{statusTone ? (
 						<MotiView
@@ -404,6 +386,11 @@ export default function CreateEvaluations({
 						</Box>
 						</MotiView>
 					) : null}
+
+					<ProfileRetakeBanner
+						isVisible={profileMismatchDetected}
+						onRetake={onRetake}
+					/>
 
 					{score !== null ? (
 						<SectionCard
@@ -498,164 +485,30 @@ export default function CreateEvaluations({
 						</SectionCard>
 					) : null}
 
-					{reasons.length > 0 ? (
-						<SectionCard
-							title="Why This Result"
-							icon={<Feather name="message-circle" size={16} color="#42586F" />}
-							index={3}
-						>
-							{reasons.map((reason, index) => (
-								<Text
-									key={`${reason}-${index}`}
-									fontSize={12}
-									lineHeight={17}
-									color="#425264"
-									fontFamily="Roboto"
-									mb={index === reasons.length - 1 ? 0 : 6}
-								>
-									{`- ${reason}`}
-								</Text>
-							))}
-						</SectionCard>
-					) : null}
+					<WhyThisResult reasons={reasons} index={3} />
 
-					<SectionCard
-						title="Matched Profile Signals"
-						icon={<Ionicons name="git-compare-outline" size={16} color="#42586F" />}
+					<ProfileSignals
+						matchedAllergens={toStringArray(resultJson?.matched_allergens)}
+						matchedConditions={toStringArray(resultJson?.matched_conditions)}
+						matchedPreferences={toStringArray(resultJson?.matched_preferences)}
 						index={4}
-					>
-						<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mb="$1">
-							Allergens
-						</Text>
-						<ChipList items={toStringArray(resultJson?.matched_allergens)} />
-						<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mt="$2" mb="$1">
-							Conditions
-						</Text>
-						<ChipList items={toStringArray(resultJson?.matched_conditions)} />
-						<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mt="$2" mb="$1">
-							Preferences
-						</Text>
-						<ChipList items={toStringArray(resultJson?.matched_preferences)} />
-					</SectionCard>
-
-					<SectionCard
-						title="Profile Inputs Used"
-						icon={<Feather name="users" size={16} color="#42586F" />}
-						index={5}
-					>
-						<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mb="$1">
-							Profile Allergens
-						</Text>
-						<ChipList items={toStringArray(resultJson?.profile_allergens)} />
-						<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mt="$2" mb="$1">
-							Profile Conditions
-						</Text>
-						<ChipList items={toStringArray(resultJson?.profile_conditions)} />
-						<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mt="$2" mb="$1">
-							Profile Preferences
-						</Text>
-						<ChipList items={toStringArray(resultJson?.profile_preferences)} />
-					</SectionCard>
+					/>
 
 					<SectionCard
 						title="All Ingredients"
 						icon={<Ionicons name="list-outline" size={16} color="#42586F" />}
-						index={6}
+						index={5}
 					>
 						<ChipList items={toStringArray(resultJson?.all_ingredients)} />
 					</SectionCard>
 
-					<SectionCard
-						title="Citations"
-						icon={<Ionicons name="book-outline" size={16} color="#42586F" />}
-						index={7}
-					>
-						{citations.length > 0 ? (
-							<Box mb={citationLinks.length > 0 || citationSources.length > 0 ? "$2" : 0}>
-								{citations.map((citation, index) => (
-									<Text
-										key={`${citation}-${index}`}
-										fontSize={12}
-										lineHeight={17}
-										color="#374658"
-										fontFamily="Roboto"
-										mb={index === citations.length - 1 ? 0 : 6}
-									>
-										{`- ${citation}`}
-									</Text>
-								))}
-							</Box>
-						) : null}
-
-						{citationLinks.length > 0 ? (
-							<Box mb={citationSources.length > 0 ? "$2" : 0}>
-								<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mb="$1">
-									Citation Links
-								</Text>
-								{citationLinks.map((link, index) => (
-									<Pressable
-										key={`${link}-${index}`}
-										onPress={() => {
-											void openLink(link);
-										}}
-										mb={index === citationLinks.length - 1 ? 0 : 6}
-									>
-										<Text fontSize={12} lineHeight={17} color="#1E6CA8" fontFamily="Roboto">
-											{link}
-										</Text>
-									</Pressable>
-								))}
-							</Box>
-						) : null}
-
-						{citationSources.length > 0 ? (
-							<Box>
-								<Text fontSize={12} lineHeight={16} color="#57677A" fontFamily="Roboto" mb="$1">
-									Citation Sources
-								</Text>
-								{citationSources.map((source, index) => (
-									<Box
-										key={`${source.title}-${index}`}
-										borderWidth={1}
-										borderColor="#E2E7EE"
-										bg="#FAFBFC"
-										borderRadius={10}
-										p="$2"
-										mb={index === citationSources.length - 1 ? 0 : 8}
-									>
-										<Text fontSize={12} lineHeight={16} color="#203145" fontFamily="RobotoMedium">
-											{source.title}
-										</Text>
-										<Text fontSize={11} lineHeight={15} color="#5D6A79" fontFamily="Roboto" mt={2}>
-											{`${source.lead_author}${source.year ? ` (${source.year})` : ""}`}
-										</Text>
-										<Pressable
-											onPress={() => {
-												void openLink(source.url);
-											}}
-											mt={4}
-										>
-											<Text fontSize={11} lineHeight={15} color="#1E6CA8" fontFamily="Roboto">
-												{source.url}
-											</Text>
-										</Pressable>
-									</Box>
-								))}
-							</Box>
-						) : null}
-
-						{!citations.length && !citationLinks.length && !citationSources.length ? (
-							<Text fontSize={12} lineHeight={16} color="#7A838D" fontFamily="Roboto">
-								No citation data available.
-							</Text>
-						) : null}
-					</SectionCard>
+					<Citations resultJson={resultJson} index={6} />
 
 					{additionalEntries.length > 0 ? (
 						<SectionCard
 							title="Additional Result Data"
 							icon={<Feather name="info" size={16} color="#42586F" />}
-							index={8}
+							index={7}
 						>
 							{additionalEntries.map(([key, value], index) => (
 								<Box key={key} mb={index === additionalEntries.length - 1 ? 0 : 10}>
@@ -670,26 +523,8 @@ export default function CreateEvaluations({
 						</SectionCard>
 					) : null}
 
-					{onRetake ? (
-						<Pressable
-							mt="$4"
-							alignSelf="center"
-							onPress={onRetake}
-							bg="#FFFFFF"
-							borderWidth={1}
-							borderColor="#CED9E5"
-							borderRadius={10}
-							px="$5"
-							py="$2"
-						>
-							<Text fontFamily="RobotoMedium" color="#294057" fontSize={14}>
-								Retake
-							</Text>
-						</Pressable>
-					) : null}
 				</ScrollView>
 			</Box>
-		</Box>
 
 			<NavBarBottom
 				activeTab="history"
