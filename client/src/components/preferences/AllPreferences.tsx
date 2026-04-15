@@ -2,6 +2,7 @@ import React from "react";
 import { AddIcon, Box, HStack, Icon, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import CurrentProfile from "../general/CurrentProfileName";
 import EditButton from "../Buttons/EditButton";
+import RemoveIconTag from "../general/RemoveIconTag";
 import { styles } from "../../style/LandingPageStyle";
 
 type PreferenceItem = {
@@ -10,6 +11,10 @@ type PreferenceItem = {
 	imageSource: number;
 	imageAlt: string;
 	aliases?: string[];
+};
+
+type ResolvedPreferenceItem = PreferenceItem & {
+	runtimeId: string;
 };
 
 // This is the master preference list with labels, aliases, and image assets.
@@ -88,8 +93,14 @@ const defaultPreferences: PreferenceItem[] = [
 
 type AllPreferencesProps = {
 	profilePreferenceNames?: string[];
+	preferences?: { id: string; name: string }[];
 	profileFirstName?: string;
 	onAddPreference?: () => void;
+	onRemovePreference?: (preferenceId: string) => Promise<void> | void;
+	isRemovingPreference?: boolean;
+	isEditMode?: boolean;
+	onToggleEditMode?: () => void;
+	onCloseEditMode?: () => void;
 	onPressEdit?: () => void;
 };
 
@@ -98,28 +109,56 @@ function normalizePreferenceName(value: string) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+function findPreferenceByName(name: string) {
+	const normalizedName = normalizePreferenceName(name);
+
+	return defaultPreferences.find((item) => {
+		const valuesToMatch = [item.id, item.label, ...(item.aliases ?? [])];
+		return valuesToMatch.some((candidate) => normalizePreferenceName(candidate) === normalizedName);
+	});
+}
+
 // This resolves profile preference names into the display items used by the UI.
-function resolvePreferenceItems(profilePreferenceNames?: string[]) {
-	if (!profilePreferenceNames) {
-		return defaultPreferences;
+function resolvePreferenceItems(
+	profilePreferenceNames?: string[],
+	sourcePreferences?: { id: string; name: string }[],
+) {
+	if (sourcePreferences && sourcePreferences.length > 0) {
+		const resolvedFromSource: ResolvedPreferenceItem[] = [];
+		const seen = new Set<string>();
+
+		sourcePreferences.forEach((item) => {
+			const match = findPreferenceByName(item.name);
+			if (!match || seen.has(item.id)) {
+				return;
+			}
+
+			seen.add(item.id);
+			resolvedFromSource.push({
+				...match,
+				runtimeId: item.id,
+			});
+		});
+
+		return resolvedFromSource;
 	}
 
-	const resolved: PreferenceItem[] = [];
+	if (!profilePreferenceNames) {
+		return defaultPreferences.map((item) => ({ ...item, runtimeId: item.id }));
+	}
+
+	const resolved: ResolvedPreferenceItem[] = [];
 	const seen = new Set<string>();
 
 	profilePreferenceNames.forEach((name) => {
-		const normalizedName = normalizePreferenceName(name);
-		const match = defaultPreferences.find((item) => {
-			const valuesToMatch = [item.id, item.label, ...(item.aliases ?? [])];
-			return valuesToMatch.some((candidate) => normalizePreferenceName(candidate) === normalizedName);
-		});
+		const match = findPreferenceByName(name);
 
 		if (!match || seen.has(match.id)) {
 			return;
 		}
 
 		seen.add(match.id);
-		resolved.push(match);
+		resolved.push({ ...match, runtimeId: match.id });
 	});
 
 	return resolved;
@@ -127,15 +166,89 @@ function resolvePreferenceItems(profilePreferenceNames?: string[]) {
 
 export default function AllPreferences({
 	profilePreferenceNames,
+	preferences,
 	profileFirstName,
 	onAddPreference,
+	onRemovePreference,
+	isRemovingPreference = false,
+	isEditMode = false,
+	onToggleEditMode,
+	onCloseEditMode,
 	onPressEdit,
 }: AllPreferencesProps) {
-	// Recompute on each render so mutated arrays or deep value changes are reflected immediately.
-	const preferences = resolvePreferenceItems(profilePreferenceNames);
+	const [removingId, setRemovingId] = React.useState<string | null>(null);
+	const inactivityTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const resolvedPreferences = React.useMemo(() => {
+		return resolvePreferenceItems(profilePreferenceNames, preferences);
+	}, [preferences, profilePreferenceNames]);
+
+	const handleDeletePreference = React.useCallback(
+		async (preferenceId: string) => {
+			if (!onRemovePreference || isRemovingPreference || removingId) {
+				return;
+			}
+
+			try {
+				setRemovingId(preferenceId);
+				await onRemovePreference(preferenceId);
+			} finally {
+				setRemovingId(null);
+			}
+		},
+		[onRemovePreference, isRemovingPreference, removingId],
+	);
+
+	const toggleEditMode = React.useMemo(
+		() => onToggleEditMode ?? onPressEdit,
+		[onToggleEditMode, onPressEdit],
+	);
+
+	const closeEditMode = React.useCallback(() => {
+		if (!isEditMode) {
+			return;
+		}
+
+		if (onCloseEditMode) {
+			onCloseEditMode();
+			return;
+		}
+
+		toggleEditMode?.();
+	}, [isEditMode, onCloseEditMode, toggleEditMode]);
+
+	const resetInactivityTimer = React.useCallback(() => {
+		if (!isEditMode) {
+			return;
+		}
+
+		if (inactivityTimeoutRef.current) {
+			clearTimeout(inactivityTimeoutRef.current);
+		}
+
+		inactivityTimeoutRef.current = setTimeout(() => {
+			closeEditMode();
+		}, 25000);
+	}, [isEditMode, closeEditMode]);
+
+	React.useEffect(() => {
+		if (isEditMode) {
+			resetInactivityTimer();
+		} else if (inactivityTimeoutRef.current) {
+			clearTimeout(inactivityTimeoutRef.current);
+			inactivityTimeoutRef.current = null;
+		}
+
+		return () => {
+			if (inactivityTimeoutRef.current) {
+				clearTimeout(inactivityTimeoutRef.current);
+				inactivityTimeoutRef.current = null;
+			}
+		};
+	}, [isEditMode, resetInactivityTimer]);
 
 	return (
-		<Box my="$6" >
+		<Box my="$6" onTouchStart={resetInactivityTimer}>
 			{/* This is the Preferences section title */}
 			<Box 
 				pr="$2"
@@ -158,9 +271,12 @@ export default function AllPreferences({
 
 				<Box style={{ marginTop: -4 }}>
 					<EditButton
-						onPress={onPressEdit}
+						onPress={() => {
+							resetInactivityTimer();
+							toggleEditMode?.();
+						}}
 						width={72}
-						label="Edit"
+						label={isEditMode ? "Done" : "Edit"}
 						borderColor="#9ed5f2"
 						textColor="#499bc7"
 						style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
@@ -172,19 +288,35 @@ export default function AllPreferences({
 			{/* This is the horizontal preferences row */}
 			<ScrollView
 				horizontal
+				onScrollBeginDrag={resetInactivityTimer}
 				showsHorizontalScrollIndicator={false}
 				contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
 			>
 				<Box flexDirection="row" alignItems="flex-start" gap={12}>
 					{/* These are the existing preference icons + labels */}
-					{preferences.map((preference) => (
-						<Box key={preference.id} alignItems="center" width={94}>
-							<Image
-								source={preference.imageSource}
-								alt={preference.imageAlt}
-								resizeMode="contain"
-								style={{ width: 70, height: 70 }}
-							/>
+					{resolvedPreferences.map((preference) => (
+						<Box key={preference.runtimeId} alignItems="center" width={94}>
+							<Box position="relative">
+								<Image
+									source={preference.imageSource}
+									alt={preference.imageAlt}
+									resizeMode="contain"
+									style={{ width: 70, height: 70 }}
+								/>
+
+								{isEditMode && onRemovePreference ? (
+									<RemoveIconTag
+										onDelete={() => {
+											resetInactivityTimer();
+											void handleDeletePreference(preference.runtimeId);
+										}}
+										disabled={isRemovingPreference || removingId !== null}
+										size={22}
+										position={{ top:0, right: -8 }}
+										accessibilityLabel={`Remove ${preference.label}`}
+									/>
+								) : null}
+							</Box>
 							<Text
 								mt="$2"
 								pt="$1"
@@ -203,7 +335,10 @@ export default function AllPreferences({
 					<Pressable
 						alignItems="center"
 						width={94}
-						onPress={onAddPreference}
+						onPress={() => {
+							resetInactivityTimer();
+							onAddPreference?.();
+						}}
 						disabled={!onAddPreference}
 					>
 						<Box

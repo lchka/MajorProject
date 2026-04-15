@@ -26,6 +26,8 @@ export default function LandingScreen() {
   const [availableAllergens, setAvailableAllergens] = React.useState<
     { id: string; name: string }[]
   >([]);
+  const [isRemovingPreference, setIsRemovingPreference] = React.useState(false);
+  const [isPreferenceEditMode, setIsPreferenceEditMode] = React.useState(false);
   const [isRemovingAllergen, setIsRemovingAllergen] = React.useState(false);
   const [isAllergenEditMode, setIsAllergenEditMode] = React.useState(false);
   const [profiles, setProfiles] = React.useState<
@@ -148,6 +150,50 @@ export default function LandingScreen() {
     [activeProfile, isRemovingAllergen, loadProfiles, profileDetails],
   );
 
+  const handleRemovePreference = React.useCallback(
+    async (preferenceId: string) => {
+      if (!activeProfile?.id || isRemovingPreference) {
+        return;
+      }
+
+      const previousProfileDetails = profileDetails;
+
+      const nextPreferenceIds =
+        activeProfile.preferences
+          ?.filter((item) => item.id !== preferenceId)
+          .map((item) => item.id) ?? [];
+      const dedupedPreferenceIds = Array.from(new Set(nextPreferenceIds));
+
+      // Optimistic UI update so preference removal feels immediate.
+      setProfileDetails((previous) =>
+        previous.map((profile) => {
+          if (profile.id !== activeProfile.id) {
+            return profile;
+          }
+
+          return {
+            ...profile,
+            preferences:
+              profile.preferences?.filter((item) => item.id !== preferenceId) ?? [],
+          };
+        }),
+      );
+
+      try {
+        setIsRemovingPreference(true);
+        await profileApiService.updateProfile(activeProfile.id, {
+          preferenceIds: dedupedPreferenceIds,
+        });
+        void loadProfiles();
+      } catch {
+        setProfileDetails(previousProfileDetails);
+      } finally {
+        setIsRemovingPreference(false);
+      }
+    },
+    [activeProfile, isRemovingPreference, loadProfiles, profileDetails],
+  );
+
   const handleSaveAllergens = React.useCallback(
     async (allergenIds: string[]) => {
       if (!activeProfile?.id || isRemovingAllergen) {
@@ -256,13 +302,21 @@ export default function LandingScreen() {
 
         <PreferencesOverview
           profilePreferenceNames={activeProfilePreferences}
+          preferences={activeProfile?.preferences?.map((item) => ({
+            id: item.id,
+            name: item.name,
+          }))}
           profileFirstName={activeProfile?.first_name}
+          onRemovePreference={handleRemovePreference}
+          isRemovingPreference={isRemovingPreference}
+          isEditMode={isPreferenceEditMode}
+          onToggleEditMode={() => {
+            setIsPreferenceEditMode((previous) => !previous);
+          }}
+          onCloseEditMode={() => {
+            setIsPreferenceEditMode(false);
+          }}
           onAddPreference={() =>
-            navigation.navigate("PreferenceScreen", {
-              profileId: profileId ?? undefined,
-            })
-          }
-          onPressEdit={() =>
             navigation.navigate("PreferenceScreen", {
               profileId: profileId ?? undefined,
             })
