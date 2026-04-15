@@ -48,6 +48,7 @@ export type AuthStackParamList = {
         profileId?: string;
       }
     | undefined;
+  EvaluationLoading: undefined;
   EvaluationResultScreen: {
     evaluationContextId: string;
   };

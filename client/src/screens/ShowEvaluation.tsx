@@ -1,21 +1,22 @@
 import React from "react";
 import Feather from "@expo/vector-icons/Feather";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, ScrollView, Text } from "@gluestack-ui/themed";
-import NavBarTop from "../general/NavBarTop";
-import NavBarBottom from "../general/NavBarBottom";
-import ProfileRetakeBanner from "../banners/ProfileRetakeBanner";
-import Citations from "./Citations";
-import ProdouctInfo from "../conditions/ProductInfo";
-import AllIngredients from "./AllIngredients";
-import DifferentProfile, { type DifferentProfileItem } from "../profile/DifferentProfile";
-import ImageEvaluation from "./ImageEvaluation";
-import ProfileSignals from "./ProfileSignals";
-import WhyThisResult from "./WhyThisResult";
-import type { EvaluationResultJson, EvaluationStatus } from "../../services/evaluationContextService";
-import { resolveMediaUrl } from "../../config/api";
-import { styles } from "../../style/LandingPageStyle";
+import NavBarTop from "../components/general/NavBarTop";
+import NavBarBottom from "../components/general/NavBarBottom";
+import ProfileRetakeBanner from "../components/banners/ProfileRetakeBanner";
+import Citations from "../components/evaluations/Citations";
+import ProdouctInfo from "../components/conditions/ProductInfo";
+import AllIngredients from "../components/evaluations/AllIngredients";
+import DangerousIngredients from "../components/evaluations/DangerousIngredients";
+import RiskMap from "../components/evaluations/RiskMap";
+import DifferentProfile, { type DifferentProfileItem } from "../components/profile/DifferentProfile";
+import ImageEvaluation from "../components/evaluations/ImageEvaluation";
+import ProfileSignals from "../components/evaluations/ProfileSignals";
+import WhyThisResult from "../components/evaluations/WhyThisResult";
+import type { EvaluationResultJson, EvaluationStatus } from "../services/evaluationContextService";
+import { resolveMediaUrl } from "../config/api";
+import { styles } from "../style/LandingPageStyle";
 
 type IngredientRow = {
 	label: string;
@@ -48,12 +49,6 @@ const defaultIngredients: IngredientRow[] = [
 	{ label: "Ingredient5", status: "safe" },
 	{ label: "Ingredient6", status: "avoid" },
 ];
-
-const statusColor: Record<IngredientRow["status"], string> = {
-	safe: "#3D9560",
-	caution: "#313538",
-	avoid: "#E34141",
-};
 
 const KNOWN_KEYS = new Set([
 	"status",
@@ -367,78 +362,9 @@ export default function CreateEvaluations({
 						</SectionCard>
 					) : null}
 
-					<SectionCard
-						title="Ingredient Risk Map"
-						icon={<Ionicons name="flask-outline" size={16} color="#42586F" />}
-						index={1}
-					>
-						<Box borderWidth={1} borderStyle="dashed" borderColor="#BFD0E1" borderRadius={8} p="$2">
-							{ingredients.map((ingredient, index) => (
-								<Box
-									key={`${ingredient.label}-${index}`}
-									flexDirection="row"
-									alignItems="center"
-									mb={index === ingredients.length - 1 ? 0 : 8}
-								>
-									<Text
-										minWidth={95}
-										fontSize={13}
-										lineHeight={17}
-										color="#233142"
-										fontFamily="Roboto"
-										numberOfLines={1}
-									>
-										{`${ingredient.label}:`}
-									</Text>
-									<Box flex={1} h={5} bg="#E6ECF2" borderRadius={999} overflow="hidden">
-										<Box
-											h={5}
-											borderRadius={999}
-											bg={statusColor[ingredient.status]}
-											style={{
-												width:
-													ingredient.status === "safe"
-														? "100%"
-														: ingredient.status === "caution"
-															? "72%"
-															: "86%",
-											}}
-										/>
-									</Box>
-								</Box>
-							))}
-						</Box>
-					</SectionCard>
+					<RiskMap ingredients={ingredients} index={1} />
 
-					{Array.isArray(resultJson?.dangerous_ingredients) && resultJson.dangerous_ingredients.length > 0 ? (
-						<SectionCard
-							title="Dangerous Ingredients"
-							icon={<Ionicons name="warning-outline" size={16} color="#A22626" />}
-							index={2}
-						>
-							{resultJson.dangerous_ingredients.map((item, index) => {
-								const level = Math.max(0, Math.min(10, item.danger_level));
-								return (
-									<Box key={`${item.ingredient}-${index}`} mb={index === resultJson.dangerous_ingredients!.length - 1 ? 0 : 10}>
-										<Text fontSize={13} lineHeight={18} color="#1C2938" fontFamily="RobotoMedium">
-											{item.ingredient}
-										</Text>
-										<Text fontSize={12} lineHeight={16} color="#4A5A6B" fontFamily="Roboto" mt={2}>
-											{`Danger level: ${level}/10`}
-										</Text>
-										<Box mt={4} h={5} bg="#E6ECF2" borderRadius={999} overflow="hidden">
-											<Box h={5} borderRadius={999} bg="#DD4B4B" style={{ width: `${level * 10}%` }} />
-										</Box>
-										{item.reason ? (
-											<Text fontSize={12} lineHeight={16} color="#5C6A78" fontFamily="Roboto" mt={4}>
-												{item.reason}
-											</Text>
-										) : null}
-									</Box>
-								);
-							})}
-						</SectionCard>
-					) : null}
+					<DangerousIngredients items={resultJson?.dangerous_ingredients} index={2} />
 
 					<WhyThisResult reasons={reasons} index={3} />
 

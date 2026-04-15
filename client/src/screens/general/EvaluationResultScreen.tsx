@@ -1,8 +1,7 @@
 import React from "react";
 import { Box, Text } from "@gluestack-ui/themed";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
-import { NavigationProp } from "@react-navigation/native";
-import CreateEvaluations from "../../components/evaluations/ShowEvaluation";
+import { NavigationProp, RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import CreateEvaluations from "../ShowEvaluation";
 import { evaluationContextService, productService, profileService } from "../../services";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";

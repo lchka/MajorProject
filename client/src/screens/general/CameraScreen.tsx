@@ -9,7 +9,8 @@ import {
 } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
-import CreateEvaluations from "../../components/evaluations/ShowEvaluation";
+import CreateEvaluations from "../ShowEvaluation";
+import EvaluationLoading from "./EvaluationLoading";
 import { evaluationContextService, productService, profileService } from "../../services";
 import { isGeminiSystemFailure } from "../../config/api";
 import type { EvaluationContext } from "../../services/evaluationContextService";
@@ -105,11 +106,15 @@ export default function CameraScreen() {
 	}, [isOpeningCamera, processCapturedPhoto]);
 
 	if (capturedUri) {
+		if (isProcessingEvaluation) {
+			return <EvaluationLoading />;
+		}
+
 		return (
 			<CreateEvaluations
 				imageUri={capturedUri}
 				productName={evaluatedProduct?.name ?? "Analyzing Product"}
-				isProcessing={isProcessingEvaluation}
+				isProcessing={false}
 				resultJson={evaluationContext?.resultJson}
 				greetingName={activeProfile?.first_name?.trim() || "Lili"}
 				profileImageUri={activeProfile?.profile_image}

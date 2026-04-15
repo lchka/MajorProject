@@ -43,8 +43,8 @@ export default function WhyThisResult({
 				p="$3"
 			>
 				<Box flexDirection="row" alignItems="center" mb="$2" style={{ gap: 8 }}>
-					<Feather name="message-circle" size={16} color="#42586F" />
-					<Text fontSize={14} lineHeight={18} color="#202A36" fontFamily="RobotoMedium">
+					<Feather name="message-circle" size={20} color="#42586F" />
+					<Text fontSize={20} lineHeight={24} color="#202A36" fontFamily="RobotoMedium">
 						Why This Result
 					</Text>
 				</Box>

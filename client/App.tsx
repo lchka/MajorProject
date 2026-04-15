@@ -12,6 +12,7 @@ import EditProfileScreen from "./src/screens/Profile/EditProfile";
 import AccountSettings from "./src/screens/general/AccountSettings";
 import CameraScreen from "./src/screens/general/CameraScreen";
 import EvaluationResultScreen from "./src/screens/general/EvaluationResultScreen";
+import EvaluationLoading from "./src/screens/general/EvaluationLoading";
 import HistoryScreen from "./src/screens/general/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
@@ -32,6 +33,7 @@ import { Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 const AUTH_TOKEN_KEY = "authToken";
+const PREVIEW_EVALUATION_LOADING = false;
 
 enableScreens(false);
 
@@ -51,6 +53,12 @@ export default function App() {
   const [initialRouteName, setInitialRouteName] = useState<keyof AuthStackParamList>("WelcomeScreen");
 
   useEffect(() => {
+    if (PREVIEW_EVALUATION_LOADING) {
+      setInitialRouteName("EvaluationLoading");
+      setAuthResolved(true);
+      return;
+    }
+
     const resolveAuthState = async () => {
       try {
         const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
@@ -90,6 +98,7 @@ export default function App() {
               <Stack.Screen name="CameraScreen" component={CameraScreen} />
               <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
               <Stack.Screen name="EvaluationResultScreen" component={EvaluationResultScreen} />
+              <Stack.Screen name="EvaluationLoading" component={EvaluationLoading} />
             </Stack.Navigator>
           </NavigationContainer>
         </SafeAreaProvider>
