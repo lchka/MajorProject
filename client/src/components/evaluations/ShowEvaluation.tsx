@@ -2,11 +2,14 @@ import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
-import { Box, Image, ScrollView, Text } from "@gluestack-ui/themed";
+import { Box, ScrollView, Text } from "@gluestack-ui/themed";
 import NavBarTop from "../general/NavBarTop";
 import NavBarBottom from "../general/NavBarBottom";
 import ProfileRetakeBanner from "../banners/ProfileRetakeBanner";
 import Citations from "./Citations";
+import ProdouctInfo from "../conditions/ProductInfo";
+import AllIngredients from "./AllIngredients";
+import DifferentProfile, { type DifferentProfileItem } from "../profile/DifferentProfile";
 import ImageEvaluation from "./ImageEvaluation";
 import ProfileSignals from "./ProfileSignals";
 import WhyThisResult from "./WhyThisResult";
@@ -25,6 +28,11 @@ type CreateEvaluationsProps = {
 	isProcessing?: boolean;
 	greetingName?: string;
 	profileImageUri?: string;
+	differentProfiles?: DifferentProfileItem[];
+	activeDifferentProfileId?: string;
+	onSelectDifferentProfile?: (profileId: string) => void;
+	onAddDifferentProfile?: () => void;
+	onEditDifferentProfile?: (profileId?: string) => void;
 	currentProfileAllergens?: string[];
 	currentProfileConditions?: string[];
 	currentProfilePreferences?: string[];
@@ -45,18 +53,6 @@ const statusColor: Record<IngredientRow["status"], string> = {
 	safe: "#3D9560",
 	caution: "#313538",
 	avoid: "#E34141",
-};
-
-const statusCardColor: Record<EvaluationStatus, string> = {
-	safe: "#E6F5EC",
-	caution: "#FFF6E5",
-	avoid: "#FDEAEA",
-};
-
-const statusTextColor: Record<EvaluationStatus, string> = {
-	safe: "#1C6D3F",
-	caution: "#8A5A00",
-	avoid: "#A22626",
 };
 
 const KNOWN_KEYS = new Set([
@@ -168,34 +164,17 @@ function SectionCard({
 	);
 }
 
-function ChipList({ items }: { items: string[] }) {
-	if (!items.length) {
-		return (
-			<Text fontSize={12} lineHeight={16} color="#7A838D" fontFamily="Roboto">
-				None
-			</Text>
-		);
-	}
-
-	return (
-		<Box flexDirection="row" flexWrap="wrap" style={{ gap: 8 }}>
-			{items.map((item, index) => (
-				<Box key={`${item}-${index}`} px="$2" py="$1" bg="#F2F4F7" borderRadius={999}>
-					<Text fontSize={12} lineHeight={16} color="#2F3A47" fontFamily="Roboto">
-						{item}
-					</Text>
-				</Box>
-			))}
-		</Box>
-	);
-}
-
 export default function CreateEvaluations({
 	imageUri,
 	productName = "Scanned Product",
 	isProcessing = false,
 	greetingName = "Lili",
 	profileImageUri,
+	differentProfiles,
+	activeDifferentProfileId,
+	onSelectDifferentProfile,
+	onAddDifferentProfile,
+	onEditDifferentProfile,
 	currentProfileAllergens,
 	currentProfileConditions,
 	currentProfilePreferences,
@@ -298,7 +277,23 @@ export default function CreateEvaluations({
 	const statusTone = status && ["safe", "caution", "avoid"].includes(status) ? status : null;
 
 	const avatarUri = resolveMediaUrl(profileImageUri);
-	const avatarSource = avatarUri ? { uri: avatarUri } : undefined;
+	const avatarSource = React.useMemo(() => (avatarUri ? { uri: avatarUri } : undefined), [avatarUri]);
+	const profileSwitcherItems = React.useMemo<DifferentProfileItem[]>(() => {
+		if (differentProfiles && differentProfiles.length > 0) {
+			return differentProfiles;
+		}
+
+		return [
+			{
+				id: "current-profile",
+				name: greetingName,
+				avatarSource: avatarSource,
+				isMain: true,
+			},
+		];
+	}, [avatarSource, differentProfiles, greetingName]);
+
+	const activeProfileId = activeDifferentProfileId ?? profileSwitcherItems[0]?.id;
 
 	return (
 		<Box style={styles.screen}>
@@ -325,67 +320,27 @@ export default function CreateEvaluations({
 
 			<NavBarTop notificationCount={0} />
 
-			<Box flex={1} px="$3" pt="$5" style={{ paddingBottom: 120 }}>
-				<Box 
-					flexDirection="row"
-					alignItems="center"
-					justifyContent="space-between"
-					borderBottomWidth={1}
-					borderBottomColor="#E8EDF3"
-					pb="$2"
-				>
-					<Box flexDirection="row" alignItems="center"  gap={10}>
-						<Box
-							w={32}
-							h={32}
-							borderRadius={16}
-							bg="#E8EEF5"
-							alignItems="center"
-							justifyContent="center"
-						>
-							<Feather name="user" size={17} color="#58708A" />
-						</Box>
-						<Text fontFamily="RobotoMedium" color="#0F1D2C" fontSize={24} lineHeight={26}>
-							{`Hi, ${greetingName}!`}
-						</Text>
-					</Box>
-					{avatarSource ? (
-						<Image
-							source={avatarSource}
-							alt="Profile avatar"
-							style={{ width: 34, height: 34, borderRadius: 17 }}
-							resizeMode="cover"
-						/>
-					) : (
-						<Feather name="menu" size={23} color="#607487" />
-					)}
-				</Box>
+			<Box flex={1} px="$3" pt="$2" style={{ paddingBottom: 120 }}>
+				<DifferentProfile
+					profiles={profileSwitcherItems}
+					activeProfileId={activeProfileId}
+					onSelectProfile={onSelectDifferentProfile}
+					onAddProfile={onAddDifferentProfile}
+					onEditProfile={onEditDifferentProfile}
+					title="Profiles Used"
+					cardTitle="Different Profile"
+					cardAvatarSource={avatarSource}
+				/>
 
 				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-					<ImageEvaluation
-						imageUri={imageUri}
-						productName={productName}
-						statusText={statusText}
-					/>
+					<ImageEvaluation imageUri={imageUri} />
 
-					{statusTone ? (
-						<MotiView
-							from={{ opacity: 0, translateY: 6 }}
-							animate={{ opacity: 1, translateY: 0 }}
-							transition={{ type: "timing", duration: 260, delay: 100 }}
-						>
-						<Box mt="$3" bg={statusCardColor[statusTone]} borderRadius={12} px="$3" py="$2">
-							<Text
-								fontFamily="RobotoMedium"
-								fontSize={13}
-								lineHeight={18}
-								color={statusTextColor[statusTone]}
-							>
-								{`Overall status: ${statusTone.toUpperCase()}`}
-							</Text>
-						</Box>
-						</MotiView>
-					) : null}
+					<ProdouctInfo
+						productName={productName}
+						summary={statusText}
+						status={statusTone}
+						isProcessing={isProcessing}
+					/>
 
 					<ProfileRetakeBanner
 						isVisible={profileMismatchDetected}
@@ -494,13 +449,7 @@ export default function CreateEvaluations({
 						index={4}
 					/>
 
-					<SectionCard
-						title="All Ingredients"
-						icon={<Ionicons name="list-outline" size={16} color="#42586F" />}
-						index={5}
-					>
-						<ChipList items={toStringArray(resultJson?.all_ingredients)} />
-					</SectionCard>
+					<AllIngredients items={toStringArray(resultJson?.all_ingredients)} index={5} />
 
 					<Citations resultJson={resultJson} index={6} />
 

@@ -67,7 +67,7 @@ export default function Citations({ resultJson, index = 6 }: CitationsProps) {
         <Box flexDirection="row" alignItems="center" mb="$2" style={{ gap: 8 }}>
           <Ionicons name="book-outline" size={20} color="#42586F" />
           <Text
-            fontSize={24}
+            fontSize={20}
             lineHeight={24}
             color="#202A36"
             fontFamily="RobotoMedium"

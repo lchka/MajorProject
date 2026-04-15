@@ -11,7 +11,15 @@ export default function ProfileRetakeBanner({
   isVisible,
   onRetake,
 }: ProfileRetakeBannerProps) {
-  if (!isVisible) {
+  const [isDismissed, setIsDismissed] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isVisible) {
+      setIsDismissed(false);
+    }
+  }, [isVisible]);
+
+  if (!isVisible || isDismissed) {
     return null;
   }
 
@@ -24,7 +32,19 @@ export default function ProfileRetakeBanner({
       bg="#FFF8EA"
       px="$3"
       py="$3"
+      position="relative"
     >
+      <Pressable
+        position="absolute"
+        top="$2"
+        right="$2"
+        p="$1"
+        borderRadius={999}
+        onPress={() => setIsDismissed(true)}
+      >
+        <Feather name="x" size={16} color="#7A5C1A" />
+      </Pressable>
+
       <Box flexDirection="row" alignItems="flex-start" style={{ gap: 10 }}>
         <Box
           w={24}

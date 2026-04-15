@@ -1,17 +1,25 @@
 import React from "react";
 import { ImageSourcePropType, ScrollView } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { AddIcon, Box, Icon, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CurrentProfile from "../general/CurrentProfileName";
 import EditButton from "../Buttons/EditButton";
 import RemoveIconTag from "../general/RemoveIconTag";
 
 type AllergenItem = {
-	id: string;
+	id?: string;
 	name: string;
+};
+
+type ResolvedAllergenItem = {
+	runtimeId: string;
+	name: string;
+	visual: AllergenVisual;
 };
 
 type AllAllergensProps = {
 	profileFirstName?: string;
+	allergenNames?: string[];
 	allergens?: AllergenItem[];
 	availableAllergens?: AllergenItem[];
 	onSaveAllergens?: (allergenIds: string[]) => Promise<void> | void;
@@ -21,6 +29,7 @@ type AllAllergensProps = {
 	isEditMode?: boolean;
 	onToggleEditMode?: () => void;
 	onCloseEditMode?: () => void;
+	variant?: "visual" | "chips";
 };
 
 type AllergenVisual = {
@@ -86,6 +95,8 @@ const ALLERGEN_VISUALS: Record<string, AllergenVisual> = {
 // Normalize incoming names so backend variants still match one visual card.
 const normalizeName = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
 
+const normalizeLabel = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+
 const resolveVisual = (name: string): AllergenVisual => {
 	const key = normalizeName(name);
 
@@ -108,8 +119,45 @@ const resolveVisual = (name: string): AllergenVisual => {
 	};
 };
 
+function resolveAllergenItems(
+	allergenNames?: string[],
+	sourceAllergens?: { id?: string; name: string }[],
+) {
+	const resolved: ResolvedAllergenItem[] = [];
+	const seen = new Set<string>();
+
+	const input =
+		sourceAllergens && sourceAllergens.length > 0
+			? sourceAllergens.map((item) => ({
+					key: item.id ?? item.name,
+					name: item.name,
+				}))
+			: allergenNames?.map((name) => ({
+					key: name,
+					name,
+				})) ?? [];
+
+	input.forEach((item) => {
+		const visual = resolveVisual(item.name);
+		const dedupeKey = normalizeLabel(visual.label);
+		if (!dedupeKey || seen.has(dedupeKey)) {
+			return;
+		}
+
+		seen.add(dedupeKey);
+		resolved.push({
+			runtimeId: String(item.key),
+			name: item.name,
+			visual,
+		});
+	});
+
+	return resolved;
+}
+
 export default function AllAllergens({
 	profileFirstName,
+	allergenNames,
 	allergens,
 	onRemoveAllergen,
 	onOpenAddAllergen,
@@ -117,18 +165,16 @@ export default function AllAllergens({
 	isEditMode = false,
 	onToggleEditMode,
 	onCloseEditMode,
+	variant = "visual",
 }: AllAllergensProps) {
 	const [removingId, setRemovingId] = React.useState<string | null>(null);
 	const inactivityTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// Enrich profile allergens with UI metadata once per allergens input change.
-	const allergenItems = React.useMemo(() => {
-		const uniqueById = Array.from(new Map((allergens ?? []).map((item) => [item.id, item])).values());
-		return uniqueById.map((item) => ({
-			...item,
-			visual: resolveVisual(item.name),
-		}));
-	}, [allergens]);
+	const allergenItems = React.useMemo(
+		() => resolveAllergenItems(allergenNames, allergens),
+		[allergenNames, allergens],
+	);
 
 	const handleDeleteAllergen = React.useCallback(
 		async (allergenId: string) => {
@@ -189,9 +235,45 @@ export default function AllAllergens({
 		};
 	}, [isEditMode, resetInactivityTimer]);
 
+	const renderChips = React.useCallback(() => {
+		if (!allergenItems.length) {
+			return (
+				<Text fontSize={12} lineHeight={16} color="#7A838D" fontFamily="Roboto">
+					None
+				</Text>
+			);
+		}
+
+		return (
+			<Box flexDirection="row" flexWrap="wrap" style={{ gap: 8 }}>
+				{allergenItems.map((item) => (
+					<Box
+						key={item.runtimeId}
+						flexDirection="row"
+						alignItems="center"
+						px="$3"
+						py="$1"
+						borderRadius={20}
+						bg="#EEF6FF"
+						borderWidth={1}
+						borderColor="#D6E8FF"
+						style={{ gap: 6 }}
+					>
+						<Ionicons name="checkmark" size={12} color="#3B82F6" />
+						<Text fontSize={12} fontFamily="RobotoMedium" color="#2A3642">
+							{item.visual.label}
+						</Text>
+					</Box>
+				))}
+			</Box>
+		);
+	}, [allergenItems]);
+
 	return (
-		<Box mb="$9" pb="$9" onTouchStart={resetInactivityTimer}>
-			<Box my="$6">
+		<Box mb={variant === "chips" ? "$0" : "$9"} pb={variant === "chips" ? "$0" : "$9"} onTouchStart={resetInactivityTimer}>
+			<Box my={variant === "chips" ? "$0" : "$6"}>
+			{variant === "visual" ? (
+				<>
 			<Box
 				px="$1"
 				pr="$2"
@@ -204,8 +286,8 @@ export default function AllAllergens({
 			>
 				<Box>
 					<Box flexDirection="row" alignItems="center" gap={6}>
-						<CurrentProfile firstName={profileFirstName} fontSize={24} lineHeight={24} color="#1dd2d8" />
-						<Text fontSize={24} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+						<CurrentProfile firstName={profileFirstName} fontSize={20} lineHeight={24} color="#1dd2d8" />
+						<Text fontSize={20} lineHeight={24} fontFamily="RobotoMedium" color="$black">
 							Allergens
 						</Text>
 					</Box>
@@ -226,8 +308,13 @@ export default function AllAllergens({
 					/>
 				</Box>
 			</Box>
+				</>
+			) : null}
 
 			{allergenItems.length > 0 ? (
+				variant === "chips" ? (
+					renderChips()
+				) : (
 				// Horizontal-only row to match the swipe interaction from the design.
 				<ScrollView
 					horizontal
@@ -239,7 +326,7 @@ export default function AllAllergens({
 				>
 					<Box flexDirection="row" alignItems="flex-start" gap={16}>
 						{allergenItems.map((item) => (
-							<Box key={item.id} alignItems="center" width={122}>
+							<Box key={item.runtimeId} alignItems="center" width={122}>
 								<Box position="relative">
 									<Box
 										width={100}
@@ -261,9 +348,9 @@ export default function AllAllergens({
 										<RemoveIconTag
 											onDelete={() => {
 													resetInactivityTimer();
-												void handleDeleteAllergen(item.id);
+												void handleDeleteAllergen(item.runtimeId);
 											}}
-											disabled={isRemovingAllergen || removingId === item.id}
+											disabled={isRemovingAllergen || removingId === item.runtimeId}
 											size={22}
 											position={{ top: 2, right: 2 }}
 											accessibilityLabel={`Remove ${item.visual.label}`}
@@ -274,9 +361,9 @@ export default function AllAllergens({
 								<Text
 									mt="$2"
 									textAlign="center"
-									fontSize={16}
+									fontSize={12}
 									lineHeight={15}
-                                    fontWeight={600}
+                                    fontWeight={700}
 									fontFamily="RobotoBold"
 									color="#111111"
 								>
@@ -321,48 +408,55 @@ export default function AllAllergens({
 						</Pressable>
 					</Box>
 				</ScrollView>
+				)
 			) : (
 				<Box
-					bg="#FFFFFF"
+					bg={variant === "chips" ? "#F8FAFC" : "#FFFFFF"}
 					borderWidth={1}
-					borderColor="#DCE5EF"
-					borderRadius={14}
-					px="$4"
-					py="$4"
-					alignItems="center"
+					borderColor={variant === "chips" ? "#E4EDF6" : "#DCE5EF"}
+					borderRadius={variant === "chips" ? 12 : 14}
+					px={variant === "chips" ? "$3" : "$4"}
+					py={variant === "chips" ? "$2" : "$4"}
+					alignItems={variant === "chips" ? undefined : "center"}
 				>
-					<Pressable
-						alignItems="center"
-						onPress={() => {
-							resetInactivityTimer();
-							onOpenAddAllergen?.();
-						}}
-						disabled={!onOpenAddAllergen || isRemovingAllergen}
-					>
-						<Box
-							width={64}
-							height={64}
-							borderRadius={32}
-							borderWidth={2}
-							borderColor="#58CCED"
-							bg="#FFFFFF"
-							alignItems="center"
-							justifyContent="center"
-							opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
-						>
-							<Icon as={AddIcon} size="xl" color="#58CCED" />
-						</Box>
-						<Text
-							mt="$2"
-							textAlign="center"
-							fontSize={13}
-							lineHeight={15}
-							fontFamily="RobotoBold"
-							color="#111111"
-						>
-							ADD MORE
+					{variant === "chips" ? (
+						<Text fontSize={12} lineHeight={16} color="#7A838D" fontFamily="Roboto">
+							None
 						</Text>
-					</Pressable>
+					) : (
+						<Pressable
+							alignItems="center"
+							onPress={() => {
+								resetInactivityTimer();
+								onOpenAddAllergen?.();
+							}}
+							disabled={!onOpenAddAllergen || isRemovingAllergen}
+						>
+							<Box
+								width={64}
+								height={64}
+								borderRadius={32}
+								borderWidth={2}
+								borderColor="#58CCED"
+								bg="#FFFFFF"
+								alignItems="center"
+								justifyContent="center"
+								opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
+							>
+								<Icon as={AddIcon} size="xl" color="#58CCED" />
+							</Box>
+							<Text
+								mt="$2"
+								textAlign="center"
+								fontSize={13}
+								lineHeight={15}
+								fontFamily="RobotoBold"
+								color="#111111"
+							>
+								ADD MORE
+							</Text>
+						</Pressable>
+					)}
 				</Box>
 			)}
 			</Box>
