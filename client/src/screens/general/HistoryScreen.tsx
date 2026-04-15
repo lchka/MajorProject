@@ -1,5 +1,5 @@
 import React from "react";
-import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NavigationProp, RouteProp, useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import NavBarTop from "../../components/general/NavBarTop";
@@ -15,6 +15,8 @@ import { styles } from "../../style/LandingPageStyle";
 
 export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+  const route = useRoute<RouteProp<AuthStackParamList, "HistoryScreen">>();
+  const routeProfileId = route.params?.profileId;
 
   const [loading, setLoading] = React.useState(true);
   const [historyItems, setHistoryItems] = React.useState<EvaluationHistoryCard[]>([]);
@@ -29,8 +31,12 @@ export default function HistoryScreen() {
         profileService.getMyProfile(),
       ]);
 
-      const uniqueProductIds = Array.from(new Set(contexts.map((context) => context.productId)));
-      const uniqueProfileIds = Array.from(new Set(contexts.map((context) => context.profileId)));
+      const scopedContexts = routeProfileId
+        ? contexts.filter((context) => context.profileId === routeProfileId)
+        : contexts;
+
+      const uniqueProductIds = Array.from(new Set(scopedContexts.map((context) => context.productId)));
+      const uniqueProfileIds = Array.from(new Set(scopedContexts.map((context) => context.profileId)));
 
       const profileMap = new Map<string, Profile>(
         myProfiles.map((profile) => [profile.id, profile]),
@@ -71,7 +77,7 @@ export default function HistoryScreen() {
           .map((product) => [product.id, product]),
       );
 
-      const sortedContexts = [...contexts].sort(
+      const sortedContexts = [...scopedContexts].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
 
@@ -96,7 +102,7 @@ export default function HistoryScreen() {
         } satisfies EvaluationHistoryCard;
       });
 
-      setProfiles(myProfiles);
+      setProfiles(Array.from(profileMap.values()));
       setHistoryItems(items);
     } catch {
       setProfiles([]);
@@ -104,7 +110,7 @@ export default function HistoryScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [routeProfileId]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -113,8 +119,11 @@ export default function HistoryScreen() {
   );
 
   const activeProfile = React.useMemo(
-    () => profiles.find((profile) => profile.main_profile) ?? profiles[0],
-    [profiles],
+    () =>
+      (routeProfileId ? profiles.find((profile) => profile.id === routeProfileId) : undefined) ??
+      profiles.find((profile) => profile.main_profile) ??
+      profiles[0],
+    [profiles, routeProfileId],
   );
 
   return (

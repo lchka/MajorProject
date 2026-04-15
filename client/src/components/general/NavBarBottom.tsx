@@ -15,6 +15,7 @@ type NavBarBottomProps = {
 	homeIconColor?: string;
 	avatarSource?: ImageSourcePropType;
 	activeTab?: BottomTab;
+	historyProfileId?: string;
 	onPressHome?: () => void;
 	onPressUpload?: () => void;
 	onPressHistory?: () => void;
@@ -26,6 +27,7 @@ export default function NavBarBottom({
 	homeIconColor = "#66707A",
 	avatarSource = require("../../../assets/icon.png"),
 	activeTab = "home",
+	historyProfileId,
 	onPressHome,
 	onPressUpload,
 	onPressHistory,
@@ -62,8 +64,11 @@ export default function NavBarBottom({
 			return;
 		}
 
-		navigation.navigate("HistoryScreen");
-	}, [navigation, onPressHistory]);
+		navigation.navigate(
+			"HistoryScreen",
+			historyProfileId ? { profileId: historyProfileId } : undefined,
+		);
+	}, [navigation, onPressHistory, historyProfileId]);
 
 	const handleProfilePress = React.useCallback(() => {
 		if (onPressProfile) {

@@ -23,6 +23,11 @@ export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const [profileId, setProfileId] = React.useState<string | null>(null);
   const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
+  const [availableAllergens, setAvailableAllergens] = React.useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [isRemovingAllergen, setIsRemovingAllergen] = React.useState(false);
+  const [isAllergenEditMode, setIsAllergenEditMode] = React.useState(false);
   const [profiles, setProfiles] = React.useState<
     Array<{ id: string; name: string; avatarUri?: string; isMain: boolean }>
   >([]);
@@ -63,6 +68,17 @@ export default function LandingScreen() {
   useFocusEffect(
     React.useCallback(() => {
       void loadProfiles();
+
+      void profileService
+        .getAllAllergens()
+        .then((items) => {
+          setAvailableAllergens(
+            items.map((item) => ({ id: item.id, name: item.name })),
+          );
+        })
+        .catch(() => {
+          setAvailableAllergens([]);
+        });
     }, [loadProfiles]),
   );
 
@@ -87,6 +103,52 @@ export default function LandingScreen() {
   const activeProfileConditions = React.useMemo(() => {
     return activeProfile?.conditions?.map((item) => item.name) ?? [];
   }, [activeProfile]);
+
+  const handleRemoveAllergen = React.useCallback(
+    async (allergenId: string) => {
+      if (!activeProfile?.id || isRemovingAllergen) {
+        return;
+      }
+
+      const nextAllergenIds =
+        activeProfile.allergens
+          ?.filter((item) => item.id !== allergenId)
+          .map((item) => item.id) ?? [];
+      const dedupedAllergenIds = Array.from(new Set(nextAllergenIds));
+
+      try {
+        setIsRemovingAllergen(true);
+        await profileService.updateProfile(activeProfile.id, {
+          allergenIds: dedupedAllergenIds,
+        });
+        await loadProfiles();
+      } finally {
+        setIsRemovingAllergen(false);
+      }
+    },
+    [activeProfile, isRemovingAllergen, loadProfiles],
+  );
+
+  const handleSaveAllergens = React.useCallback(
+    async (allergenIds: string[]) => {
+      if (!activeProfile?.id || isRemovingAllergen) {
+        return;
+      }
+
+      const dedupedAllergenIds = Array.from(new Set(allergenIds));
+
+      try {
+        setIsRemovingAllergen(true);
+        await profileService.updateProfile(activeProfile.id, {
+          allergenIds: dedupedAllergenIds,
+        });
+        await loadProfiles();
+      } finally {
+        setIsRemovingAllergen(false);
+      }
+    },
+    [activeProfile?.id, isRemovingAllergen, loadProfiles],
+  );
 
   return (
     <Box style={styles.screen}>
@@ -187,43 +249,37 @@ export default function LandingScreen() {
             })
           }
         />
-
+        {/* remember to delete this once the navbar takes up the proper space */}
+        <Box>
+          <AllConditions
+            conditionNames={activeProfileConditions}
+            profileFirstName={activeProfile?.first_name}
+            onPressEdit={() => {
+              // Can navigate to dedicated conditions editor when available.
+            }}
+          />
+        </Box>
         <AllAllergens
           profileFirstName={activeProfile?.first_name}
-          allergens={activeProfile?.allergens?.map((item) => ({ id: item.id, name: item.name }))}
-          onPressEdit={() => {
-            const fullName = [
-              activeProfile?.first_name?.trim(),
-              activeProfile?.last_name?.trim(),
-            ]
-              .filter(Boolean)
-              .join(" ");
-
-            navigation.navigate("EditProfileScreen", {
-              profileId: activeProfile?.id,
-              profileName: fullName || activeProfile?.first_name || undefined,
-              profileImageUri: activeProfile?.profile_image ?? undefined,
-              profilePreferenceNames:
-                activeProfile?.preferences?.map((item) => item.name) ?? [],
-              profileAge: activeProfile?.age?.toString()?.trim() || undefined,
-              profileIsMain: activeProfile?.main_profile ?? false,
-            });
+          allergens={activeProfile?.allergens?.map((item) => ({
+            id: item.id,
+            name: item.name,
+          }))}
+          availableAllergens={availableAllergens}
+          onRemoveAllergen={handleRemoveAllergen}
+          onSaveAllergens={handleSaveAllergens}
+          isRemovingAllergen={isRemovingAllergen}
+          isEditMode={isAllergenEditMode}
+          onToggleEditMode={() => {
+            setIsAllergenEditMode((previous) => !previous);
           }}
         />
-		{/* remember to delete this once the navbar takes up the proper space */}
-<Box> 
-        <AllConditions
-          conditionNames={activeProfileConditions}
-          profileFirstName={activeProfile?.first_name}
-          onPressEdit={() => {
-            // Can navigate to dedicated conditions editor when available.
-          }}
-        /></Box>
       </ScrollView>
 
       {/* Sticky bottom navigation */}
       <NavBarBottom
         activeTab="home"
+        historyProfileId={profileId ?? activeProfile?.id}
         avatarSource={
           activeProfile?.profile_image
             ? { uri: activeProfile.profile_image }

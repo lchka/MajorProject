@@ -1,8 +1,10 @@
 import React from "react";
 import { ImageSourcePropType, ScrollView } from "react-native";
-import { AddIcon, Box, Icon, Image, Text } from "@gluestack-ui/themed";
+import { AddIcon, Box, Icon, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CurrentProfile from "../general/CurrentProfileName";
 import EditButton from "../Buttons/EditButton";
+import RemoveIconTag from "../general/RemoveIconTag";
+import AddAllergen from "./AddAllergen";
 
 type AllergenItem = {
 	id: string;
@@ -12,7 +14,12 @@ type AllergenItem = {
 type AllAllergensProps = {
 	profileFirstName?: string;
 	allergens?: AllergenItem[];
-	onPressEdit?: () => void;
+	availableAllergens?: AllergenItem[];
+	onRemoveAllergen?: (allergenId: string) => Promise<void> | void;
+	onSaveAllergens?: (allergenIds: string[]) => Promise<void> | void;
+	isRemovingAllergen?: boolean;
+	isEditMode?: boolean;
+	onToggleEditMode?: () => void;
 };
 
 type AllergenVisual = {
@@ -100,17 +107,47 @@ const resolveVisual = (name: string): AllergenVisual => {
 	};
 };
 
-export default function AllAllergens({ profileFirstName, allergens, onPressEdit }: AllAllergensProps) {
+export default function AllAllergens({
+	profileFirstName,
+	allergens,
+	availableAllergens,
+	onRemoveAllergen,
+	onSaveAllergens,
+	isRemovingAllergen = false,
+	isEditMode = false,
+	onToggleEditMode,
+}: AllAllergensProps) {
+	const [removingId, setRemovingId] = React.useState<string | null>(null);
+	const [isAddAllergenOpen, setIsAddAllergenOpen] = React.useState(false);
+
 	// Enrich profile allergens with UI metadata once per allergens input change.
 	const allergenItems = React.useMemo(() => {
-		return (allergens ?? []).map((item) => ({
+		const uniqueById = Array.from(new Map((allergens ?? []).map((item) => [item.id, item])).values());
+		return uniqueById.map((item) => ({
 			...item,
 			visual: resolveVisual(item.name),
 		}));
 	}, [allergens]);
 
+	const handleDeleteAllergen = React.useCallback(
+		async (allergenId: string) => {
+			if (!onRemoveAllergen || isRemovingAllergen || removingId) {
+				return;
+			}
+
+			try {
+				setRemovingId(allergenId);
+				await onRemoveAllergen(allergenId);
+			} finally {
+				setRemovingId(null);
+			}
+		},
+		[onRemoveAllergen, isRemovingAllergen, removingId]
+	);
+
 	return (
-		<Box my="$6">
+		<Box mb="$9" pb="$9">
+			<Box my="$6">
 			<Box
 				px="$1"
 				pr="$2"
@@ -132,9 +169,9 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 
 				<Box style={{ marginTop: -4 }}>
 					<EditButton
-						onPress={onPressEdit}
+						onPress={onToggleEditMode}
 						width={72}
-						label="Edit"
+						label={isEditMode ? "Done" : "Edit"}
 						borderColor="#9ed5f2"
 						textColor="#499bc7"
 						style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
@@ -147,26 +184,42 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 				// Horizontal-only row to match the swipe interaction from the design.
 				<ScrollView
 					horizontal
+					nestedScrollEnabled
+					directionalLockEnabled
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
 				>
 					<Box flexDirection="row" alignItems="flex-start" gap={16}>
 						{allergenItems.map((item) => (
 							<Box key={item.id} alignItems="center" width={122}>
-								<Box
-									width={100}
-									height={100}
-									borderRadius={50}
-									bg={item.visual.color}
-									alignItems="center"
-									justifyContent="center"
-								>
-									<Image
-										source={item.visual.icon}
-										alt={item.visual.label}
-										resizeMode="contain"
-										style={{ width: 56, height: 56 }}
-									/>
+								<Box position="relative">
+									<Box
+										width={100}
+										height={100}
+										borderRadius={50}
+										bg={item.visual.color}
+										alignItems="center"
+										justifyContent="center"
+									>
+										<Image
+											source={item.visual.icon}
+											alt={item.visual.label}
+											resizeMode="contain"
+											style={{ width: 56, height: 56 }}
+										/>
+									</Box>
+
+									{isEditMode ? (
+										<RemoveIconTag
+											onDelete={() => {
+												void handleDeleteAllergen(item.id);
+											}}
+											disabled={isRemovingAllergen || removingId === item.id}
+											size={22}
+											position={{ top: 2, right: 2 }}
+											accessibilityLabel={`Remove ${item.visual.label}`}
+										/>
+									) : null}
 								</Box>
 
 								<Text
@@ -183,8 +236,12 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 							</Box>
 						))}
 
-						{/* Visual "add more" affordance, intentionally non-interactive on landing. */}
-						<Box alignItems="center" width={92}>
+						<Pressable
+							alignItems="center"
+							width={92}
+							onPress={() => setIsAddAllergenOpen(true)}
+							disabled={!onSaveAllergens || isRemovingAllergen}
+						>
 							<Box
 								width={64}
 								height={64}
@@ -195,6 +252,7 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 								alignItems="center"
 								justifyContent="center"
 								mt="$5"
+								opacity={!onSaveAllergens || isRemovingAllergen ? 0.55 : 1}
 							>
 								<Icon as={AddIcon} size="xl" color="#58CCED" />
 							</Box>
@@ -206,9 +264,9 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 								fontFamily="RobotoBold"
 								color="#111111"
 							>
-								ADD more
+								ADD MORE
 							</Text>
-						</Box>
+						</Pressable>
 					</Box>
 				</ScrollView>
 			) : (
@@ -225,6 +283,20 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 					</Text>
 				</Box>
 			)}
-		</Box>
+
+				<AddAllergen
+					isOpen={isAddAllergenOpen}
+					onClose={() => setIsAddAllergenOpen(false)}
+					availableAllergens={availableAllergens ?? []}
+					selectedAllergenIds={(allergens ?? []).map((item) => item.id)}
+					onSave={async (allergenIds) => {
+						if (!onSaveAllergens) {
+							return;
+						}
+						await onSaveAllergens(Array.from(new Set(allergenIds)));
+					}}
+				/>
+			</Box>
+			</Box>
 	);
 }

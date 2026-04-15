@@ -29,7 +29,11 @@ export type AuthStackParamList = {
   AnalyseScreen: undefined;
   AccountSettingsScreen: undefined;
   CameraScreen: undefined;
-  HistoryScreen: undefined;
+  HistoryScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
   EvaluationResultScreen: {
     evaluationContextId: string;
   };
