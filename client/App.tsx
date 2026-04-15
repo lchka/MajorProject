@@ -1,11 +1,9 @@
 import "react-native-reanimated";
-import "react-native-gesture-handler";
-import AnalyseScreen from "./src/screens/AnalyseScreen";
 import LandingScreen from "./src/screens/general/LandingScreen";
 import PreferenceScreen from "./src/screens/PreferenceScreen";
-import AllergenScreen from "./src/components/allergens/AddAllergen";
-import ConditionScreen from "./src/components/conditions/AddCondition";
-import WelcomeScreen from "./src/screens/WelcomeScreen";
+import AllergenScreen from "./src/screens/AllergenScreen";
+import ConditionScreen from "./src/screens/Conditions/AddConditionScreen";
+import WelcomeScreen from "./src/screens/general/WelcomeScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import CreateProfile from "./src/screens/Profile/createProfile";
 import EditProfileScreen from "./src/screens/Profile/EditProfile";
@@ -93,7 +91,6 @@ export default function App() {
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
               <Stack.Screen name="ProfileScreen" component={CreateProfile} />
               <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
-              <Stack.Screen name="AnalyseScreen" component={AnalyseScreen} />
               <Stack.Screen name="AccountSettingsScreen" component={AccountSettings} />
               <Stack.Screen name="CameraScreen" component={CameraScreen} />
               <Stack.Screen name="HistoryScreen" component={HistoryScreen} />

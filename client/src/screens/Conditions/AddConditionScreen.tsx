@@ -10,7 +10,7 @@ import {
   ScrollView,
   Text,
 } from "@gluestack-ui/themed";
-import BackButton from "../Buttons/BackButton";
+import BackButton from "../../components/Buttons/BackButton";
 import profileApiService, { Profile } from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
 
