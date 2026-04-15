@@ -6,23 +6,23 @@ import {
 } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView } from "@gluestack-ui/themed";
-import NavBarBottom from "../components/general/NavBarBottom";
-import NavBarTop from "../components/general/NavBarTop";
-import SystemErrorModal from "../components/banners/SystemError";
-import SwitchProfile from "../components/profile/SwitchProfile";
-import PastAnalysis from "../components/evaluations/PastAnalysis";
-import { UvIndexCard } from "../components/general/UvIndexWidget";
-import PreferencesOverview from "../components/preferences/AllPreferences";
-import AllConditions from "../components/conditions/AllConditions";
-import SingleCondition from "../components/conditions/SingleCondition";
-import AllAllergens from "../components/allergens/AllAllergens";
-import profileApiService, { Profile } from "../services/profileService";
+import NavBarBottom from "../../components/general/NavBarBottom";
+import NavBarTop from "../../components/general/NavBarTop";
+import SystemErrorModal from "../../components/banners/SystemError";
+import SwitchProfile from "../../components/profile/SwitchProfile";
+import PastAnalysis from "../../components/evaluations/PastAnalysis";
+import { UvIndexCard } from "../../components/general/UvIndexWidget";
+import PreferencesOverview from "../../components/preferences/AllPreferences";
+import AllConditions from "../../components/conditions/AllConditions";
+import SingleCondition from "../../components/conditions/SingleCondition";
+import AllAllergens from "../../components/allergens/AllAllergens";
+import profileApiService, { Profile } from "../../services/profileService";
 import {
   consumePendingSystemErrorEvent,
   subscribeSystemErrorEvents,
-} from "../config/api";
-import { AuthStackParamList } from "../types/navigation";
-import { styles } from "../style/LandingPageStyle";
+} from "../../config/api";
+import { AuthStackParamList } from "../../types/navigation";
+import { styles } from "../../style/LandingPageStyle";
 
 const AUTH_TOKEN_KEY = "authToken";
 

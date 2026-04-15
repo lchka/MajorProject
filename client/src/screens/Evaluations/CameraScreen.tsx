@@ -9,7 +9,7 @@ import {
 } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
-import CreateEvaluations from "../ShowEvaluation";
+import CreateEvaluations from "./ShowEvaluation";
 import EvaluationLoading from "./EvaluationLoading";
 import { evaluationContextService, productService, profileService } from "../../services";
 import { isGeminiSystemFailure } from "../../config/api";
