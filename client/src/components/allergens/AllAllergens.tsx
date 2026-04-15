@@ -113,6 +113,7 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 		<Box my="$6">
 			<Box
 				px="$1"
+				pr="$2"
 				style={{
 					flexDirection: "row",
 					alignItems: "center",
@@ -122,8 +123,8 @@ export default function AllAllergens({ profileFirstName, allergens, onPressEdit 
 			>
 				<Box>
 					<Box flexDirection="row" alignItems="center" gap={6}>
-						<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={24} color="#1dd2d8" />
-						<Text fontSize={22} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+						<CurrentProfile firstName={profileFirstName} fontSize={24} lineHeight={24} color="#1dd2d8" />
+						<Text fontSize={24} lineHeight={24} fontFamily="RobotoMedium" color="$black">
 							Allergens
 						</Text>
 					</Box>

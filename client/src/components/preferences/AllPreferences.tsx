@@ -135,9 +135,10 @@ export default function AllPreferences({
 	const preferences = resolvePreferenceItems(profilePreferenceNames);
 
 	return (
-		<>
+		<Box my="$6" >
 			{/* This is the Preferences section title */}
-			<Box
+			<Box 
+				pr="$2"
 				style={{
 					...styles.sectionHeader,
 					flexDirection: "row",
@@ -148,8 +149,8 @@ export default function AllPreferences({
 			>
 				<Box>
 					<HStack alignItems="center" pl="$2" gap={6}>
-						<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={24} color="#1dd2d8" />
-						<Text fontSize={22} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+						<CurrentProfile firstName={profileFirstName} fontSize={24} lineHeight={24} color="#1dd2d8" />
+						<Text fontSize={24} lineHeight={24} fontFamily="RobotoMedium" color="$black">
 							Preferences
 						</Text>
 					</HStack>
@@ -231,6 +232,6 @@ export default function AllPreferences({
 					</Pressable>
 				</Box>
 			</ScrollView>
-		</>
+		</Box>
 	);
 }

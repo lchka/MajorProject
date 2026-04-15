@@ -121,16 +121,12 @@ export default function AllConditions({
 	);
 
 	return (
-		<Box
+		<Box my="$6"
 			style={{
 				marginHorizontal: -4,
 				borderRadius: 22,
-				padding: 16,
-				shadowColor: "#0B2033",
-				shadowOpacity: 0.08,
-				shadowRadius: 14,
-				shadowOffset: { width: 0, height: 8 },
-				elevation: 4,
+					padding: 16,
+					backgroundColor: "transparent",
 			}}
 		>
 			{/* Subtle top highlight used across landing sections for visual consistency. */}
@@ -157,8 +153,8 @@ export default function AllConditions({
 			>
 				<Box>
 					<HStack alignItems="center" pl="$1" gap={6}>
-						<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={24} color="#1dd2d8" />
-						<Text fontSize={22} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+						<CurrentProfile firstName={profileFirstName} fontSize={24} lineHeight={24} color="#1dd2d8" />
+						<Text fontSize={24} lineHeight={24} fontFamily="RobotoMedium" color="$black">
 							Conditions
 						</Text>
 					</HStack>
