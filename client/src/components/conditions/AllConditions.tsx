@@ -48,7 +48,7 @@ export default function AllConditions({
 	onPressEdit,
 	onPressCondition,
 }: AllConditionsProps) {
-	const conditions = conditionNames ?? [];
+	const conditions = React.useMemo(() => conditionNames ?? [], [conditionNames]);
 	const horizontalColumnWidth = 330;
 	// Switch to horizontal paging once cards exceed two visible stacked rows.
 	const useHorizontalScroller = conditions.length > 2;

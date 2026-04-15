@@ -10,31 +10,31 @@ import {
   ScrollView,
   Text,
 } from "@gluestack-ui/themed";
-import BackButton from "../Buttons/BackButton";
-import profileApiService, { Profile } from "../../services/profileService";
-import { AuthStackParamList } from "../../types/navigation";
+import BackButton from "../components/Buttons/BackButton";
+import profileService, { Profile } from "../services/profileService";
+import { AuthStackParamList } from "../types/navigation";
 
 type AllergenOption = {
   id: string;
   name: string;
 };
 
-const uniqueIds = (ids: string[]) => Array.from(new Set(ids));
-
 const allergenImageByKey: Record<string, number> = {
-  balsam: require("../../../assets/allergens/balsam.png"),
-  cocamidopropylbetaine: require("../../../assets/allergens/Cocamidopropyl-Betaine.png"),
-  formaldehyde: require("../../../assets/allergens/formaldehyde.png"),
-  fragrance: require("../../../assets/allergens/fragrance.png"),
-  lanolin: require("../../../assets/allergens/lanolin.png"),
-  nickel: require("../../../assets/allergens/nickel.png"),
-  paraben: require("../../../assets/allergens/paraben.png"),
-  ppd: require("../../../assets/allergens/ppd.png"),
-  phenylenediamine: require("../../../assets/allergens/ppd.png"),
-  preservative: require("../../../assets/allergens/preservative.png"),
-  mcimi: require("../../../assets/allergens/preservative.png"),
-  propyleneglycol: require("../../../assets/allergens/Propylene Glycol.png"),
+  balsam: require("../../assets/allergens/balsam.png"),
+  cocamidopropylbetaine: require("../../assets/allergens/Cocamidopropyl-Betaine.png"),
+  formaldehyde: require("../../assets/allergens/formaldehyde.png"),
+  fragrance: require("../../assets/allergens/fragrance.png"),
+  lanolin: require("../../assets/allergens/lanolin.png"),
+  nickel: require("../../assets/allergens/nickel.png"),
+  paraben: require("../../assets/allergens/paraben.png"),
+  ppd: require("../../assets/allergens/ppd.png"),
+  phenylenediamine: require("../../assets/allergens/ppd.png"),
+  preservative: require("../../assets/allergens/preservative.png"),
+  mcimi: require("../../assets/allergens/preservative.png"),
+  propyleneglycol: require("../../assets/allergens/Propylene Glycol.png"),
 };
+
+const uniqueIds = (ids: string[]) => Array.from(new Set(ids));
 
 function normalizeName(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
@@ -49,10 +49,10 @@ function getAllergenImageSource(name: string) {
     }
   }
 
-  return require("../../../assets/allergens/fragrance.png");
+  return require("../../assets/allergens/fragrance.png");
 }
 
-export default function AddAllergen() {
+export default function AllergenScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "AllergenScreen">>();
   const routeProfileId = route.params?.profileId;
@@ -81,8 +81,8 @@ export default function AddAllergen() {
       try {
         setIsLoading(true);
         const [fetchedProfiles, fetchedAllergens] = await Promise.all([
-          profileApiService.getMyProfile(),
-          profileApiService.getAllAllergens(),
+          profileService.getMyProfile(),
+          profileService.getAllAllergens(),
         ]);
 
         if (!isMounted) {
@@ -135,7 +135,7 @@ export default function AddAllergen() {
 
     try {
       setIsSaving(true);
-      await profileApiService.updateProfile(activeProfileId, {
+      await profileService.updateProfile(activeProfileId, {
         allergenIds: uniqueIds(draftSelectedIds),
       });
       navigation.goBack();

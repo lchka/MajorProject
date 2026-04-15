@@ -4,7 +4,6 @@ import { AddIcon, Box, Icon, Image, Pressable, Text } from "@gluestack-ui/themed
 import CurrentProfile from "../general/CurrentProfileName";
 import EditButton from "../Buttons/EditButton";
 import RemoveIconTag from "../general/RemoveIconTag";
-import AddAllergen from "./AddAllergen";
 
 type AllergenItem = {
 	id: string;
@@ -15,11 +14,13 @@ type AllAllergensProps = {
 	profileFirstName?: string;
 	allergens?: AllergenItem[];
 	availableAllergens?: AllergenItem[];
-	onRemoveAllergen?: (allergenId: string) => Promise<void> | void;
 	onSaveAllergens?: (allergenIds: string[]) => Promise<void> | void;
+	onRemoveAllergen?: (allergenId: string) => Promise<void> | void;
+	onOpenAddAllergen?: () => void;
 	isRemovingAllergen?: boolean;
 	isEditMode?: boolean;
 	onToggleEditMode?: () => void;
+	onCloseEditMode?: () => void;
 };
 
 type AllergenVisual = {
@@ -110,15 +111,15 @@ const resolveVisual = (name: string): AllergenVisual => {
 export default function AllAllergens({
 	profileFirstName,
 	allergens,
-	availableAllergens,
 	onRemoveAllergen,
-	onSaveAllergens,
+	onOpenAddAllergen,
 	isRemovingAllergen = false,
 	isEditMode = false,
 	onToggleEditMode,
+	onCloseEditMode,
 }: AllAllergensProps) {
 	const [removingId, setRemovingId] = React.useState<string | null>(null);
-	const [isAddAllergenOpen, setIsAddAllergenOpen] = React.useState(false);
+	const inactivityTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	// Enrich profile allergens with UI metadata once per allergens input change.
 	const allergenItems = React.useMemo(() => {
@@ -145,8 +146,51 @@ export default function AllAllergens({
 		[onRemoveAllergen, isRemovingAllergen, removingId]
 	);
 
+	const closeEditMode = React.useCallback(() => {
+		if (!isEditMode) {
+			return;
+		}
+
+		if (onCloseEditMode) {
+			onCloseEditMode();
+			return;
+		}
+
+		onToggleEditMode?.();
+	}, [isEditMode, onCloseEditMode, onToggleEditMode]);
+
+	const resetInactivityTimer = React.useCallback(() => {
+		if (!isEditMode) {
+			return;
+		}
+
+		if (inactivityTimeoutRef.current) {
+			clearTimeout(inactivityTimeoutRef.current);
+		}
+
+		inactivityTimeoutRef.current = setTimeout(() => {
+			closeEditMode();
+		}, 25000);
+	}, [isEditMode, closeEditMode]);
+
+	React.useEffect(() => {
+		if (isEditMode) {
+			resetInactivityTimer();
+		} else if (inactivityTimeoutRef.current) {
+			clearTimeout(inactivityTimeoutRef.current);
+			inactivityTimeoutRef.current = null;
+		}
+
+		return () => {
+			if (inactivityTimeoutRef.current) {
+				clearTimeout(inactivityTimeoutRef.current);
+				inactivityTimeoutRef.current = null;
+			}
+		};
+	}, [isEditMode, resetInactivityTimer]);
+
 	return (
-		<Box mb="$9" pb="$9">
+		<Box mb="$9" pb="$9" onTouchStart={resetInactivityTimer}>
 			<Box my="$6">
 			<Box
 				px="$1"
@@ -169,7 +213,10 @@ export default function AllAllergens({
 
 				<Box style={{ marginTop: -4 }}>
 					<EditButton
-						onPress={onToggleEditMode}
+						onPress={() => {
+							resetInactivityTimer();
+							onToggleEditMode?.();
+						}}
 						width={72}
 						label={isEditMode ? "Done" : "Edit"}
 						borderColor="#9ed5f2"
@@ -186,6 +233,7 @@ export default function AllAllergens({
 					horizontal
 					nestedScrollEnabled
 					directionalLockEnabled
+					onScrollBeginDrag={resetInactivityTimer}
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
 				>
@@ -212,6 +260,7 @@ export default function AllAllergens({
 									{isEditMode ? (
 										<RemoveIconTag
 											onDelete={() => {
+													resetInactivityTimer();
 												void handleDeleteAllergen(item.id);
 											}}
 											disabled={isRemovingAllergen || removingId === item.id}
@@ -239,8 +288,11 @@ export default function AllAllergens({
 						<Pressable
 							alignItems="center"
 							width={92}
-							onPress={() => setIsAddAllergenOpen(true)}
-							disabled={!onSaveAllergens || isRemovingAllergen}
+							onPress={() => {
+								resetInactivityTimer();
+								onOpenAddAllergen?.();
+							}}
+							disabled={!onOpenAddAllergen || isRemovingAllergen}
 						>
 							<Box
 								width={64}
@@ -252,7 +304,7 @@ export default function AllAllergens({
 								alignItems="center"
 								justifyContent="center"
 								mt="$5"
-								opacity={!onSaveAllergens || isRemovingAllergen ? 0.55 : 1}
+								opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
 							>
 								<Icon as={AddIcon} size="xl" color="#58CCED" />
 							</Box>
@@ -277,25 +329,42 @@ export default function AllAllergens({
 					borderRadius={14}
 					px="$4"
 					py="$4"
+					alignItems="center"
 				>
-					<Text fontSize={14} lineHeight={18} fontFamily="Roboto" color="#64748B">
-						No allergens selected for this profile.
-					</Text>
+					<Pressable
+						alignItems="center"
+						onPress={() => {
+							resetInactivityTimer();
+							onOpenAddAllergen?.();
+						}}
+						disabled={!onOpenAddAllergen || isRemovingAllergen}
+					>
+						<Box
+							width={64}
+							height={64}
+							borderRadius={32}
+							borderWidth={2}
+							borderColor="#58CCED"
+							bg="#FFFFFF"
+							alignItems="center"
+							justifyContent="center"
+							opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
+						>
+							<Icon as={AddIcon} size="xl" color="#58CCED" />
+						</Box>
+						<Text
+							mt="$2"
+							textAlign="center"
+							fontSize={13}
+							lineHeight={15}
+							fontFamily="RobotoBold"
+							color="#111111"
+						>
+							ADD MORE
+						</Text>
+					</Pressable>
 				</Box>
 			)}
-
-				<AddAllergen
-					isOpen={isAddAllergenOpen}
-					onClose={() => setIsAddAllergenOpen(false)}
-					availableAllergens={availableAllergens ?? []}
-					selectedAllergenIds={(allergens ?? []).map((item) => item.id)}
-					onSave={async (allergenIds) => {
-						if (!onSaveAllergens) {
-							return;
-						}
-						await onSaveAllergens(Array.from(new Set(allergenIds)));
-					}}
-				/>
 			</Box>
 			</Box>
 	);

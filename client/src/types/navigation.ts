@@ -6,6 +6,11 @@ export type AuthStackParamList = {
         profileId?: string;
       }
     | undefined;
+  AllergenScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
   LoginScreen: undefined;
   RegisterScreen: undefined;
   ProfileScreen:

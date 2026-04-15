@@ -5,7 +5,7 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Box, ScrollView, Text } from "@gluestack-ui/themed";
+import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../components/general/NavBarBottom";
 import NavBarTop from "../components/general/NavBarTop";
 import SwitchProfile from "../components/profile/SwitchProfile";
@@ -13,7 +13,7 @@ import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
 import AllConditions from "../components/conditions/AllConditions";
 import AllAllergens from "../components/allergens/AllAllergens";
-import profileService, { Profile } from "../services/profileService";
+import profileApiService, { Profile } from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
 
@@ -24,17 +24,17 @@ export default function LandingScreen() {
   const [profileId, setProfileId] = React.useState<string | null>(null);
   const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
   const [availableAllergens, setAvailableAllergens] = React.useState<
-    Array<{ id: string; name: string }>
+    { id: string; name: string }[]
   >([]);
   const [isRemovingAllergen, setIsRemovingAllergen] = React.useState(false);
   const [isAllergenEditMode, setIsAllergenEditMode] = React.useState(false);
   const [profiles, setProfiles] = React.useState<
-    Array<{ id: string; name: string; avatarUri?: string; isMain: boolean }>
+    { id: string; name: string; avatarUri?: string; isMain: boolean }[]
   >([]);
 
   const loadProfiles = React.useCallback(async () => {
     try {
-      const fetchedProfiles = await profileService.getMyProfile();
+      const fetchedProfiles = await profileApiService.getMyProfile();
       const fallbackProfile =
         fetchedProfiles.find((item) => item.main_profile) ?? fetchedProfiles[0];
 
@@ -69,7 +69,7 @@ export default function LandingScreen() {
     React.useCallback(() => {
       void loadProfiles();
 
-      void profileService
+      void profileApiService
         .getAllAllergens()
         .then((items) => {
           setAvailableAllergens(
@@ -110,23 +110,42 @@ export default function LandingScreen() {
         return;
       }
 
+      const previousProfileDetails = profileDetails;
+
       const nextAllergenIds =
         activeProfile.allergens
           ?.filter((item) => item.id !== allergenId)
           .map((item) => item.id) ?? [];
       const dedupedAllergenIds = Array.from(new Set(nextAllergenIds));
 
+      // Optimistic UI update so removal feels immediate.
+      setProfileDetails((previous) =>
+        previous.map((profile) => {
+          if (profile.id !== activeProfile.id) {
+            return profile;
+          }
+
+          return {
+            ...profile,
+            allergens:
+              profile.allergens?.filter((item) => item.id !== allergenId) ?? [],
+          };
+        }),
+      );
+
       try {
         setIsRemovingAllergen(true);
-        await profileService.updateProfile(activeProfile.id, {
+        await profileApiService.updateProfile(activeProfile.id, {
           allergenIds: dedupedAllergenIds,
         });
-        await loadProfiles();
+        void loadProfiles();
+      } catch {
+        setProfileDetails(previousProfileDetails);
       } finally {
         setIsRemovingAllergen(false);
       }
     },
-    [activeProfile, isRemovingAllergen, loadProfiles],
+    [activeProfile, isRemovingAllergen, loadProfiles, profileDetails],
   );
 
   const handleSaveAllergens = React.useCallback(
@@ -139,7 +158,7 @@ export default function LandingScreen() {
 
       try {
         setIsRemovingAllergen(true);
-        await profileService.updateProfile(activeProfile.id, {
+        await profileApiService.updateProfile(activeProfile.id, {
           allergenIds: dedupedAllergenIds,
         });
         await loadProfiles();
@@ -268,10 +287,18 @@ export default function LandingScreen() {
           availableAllergens={availableAllergens}
           onRemoveAllergen={handleRemoveAllergen}
           onSaveAllergens={handleSaveAllergens}
+          onOpenAddAllergen={() => {
+            navigation.navigate("AllergenScreen", {
+              profileId: profileId ?? undefined,
+            });
+          }}
           isRemovingAllergen={isRemovingAllergen}
           isEditMode={isAllergenEditMode}
           onToggleEditMode={() => {
             setIsAllergenEditMode((previous) => !previous);
+          }}
+          onCloseEditMode={() => {
+            setIsAllergenEditMode(false);
           }}
         />
       </ScrollView>
