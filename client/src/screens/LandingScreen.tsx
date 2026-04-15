@@ -86,6 +86,7 @@ export default function LandingScreen() {
         .catch(() => {
           setAvailableAllergens([]);
         });
+
     }, [loadProfiles]),
   );
 
@@ -346,9 +347,11 @@ export default function LandingScreen() {
                 description: matchedCondition?.description,
               });
             }}
-            onPressEdit={() => {
-              // Can navigate to dedicated conditions editor when available.
-            }}
+            onPressEdit={() =>
+              navigation.navigate("ConditionScreen", {
+                profileId: profileId ?? undefined,
+              })
+            }
           />
         </Box>
         <AllAllergens

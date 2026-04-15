@@ -11,6 +11,11 @@ export type AuthStackParamList = {
         profileId?: string;
       }
     | undefined;
+  ConditionScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
   LoginScreen: undefined;
   RegisterScreen: undefined;
   ProfileScreen:

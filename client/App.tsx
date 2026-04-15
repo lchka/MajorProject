@@ -4,6 +4,7 @@ import AnalyseScreen from "./src/screens/AnalyseScreen";
 import LandingScreen from "./src/screens/LandingScreen";
 import PreferenceScreen from "./src/screens/PreferenceScreen";
 import AllergenScreen from "./src/components/allergens/AddAllergen";
+import ConditionScreen from "./src/components/conditions/AddCondition";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import CreateProfile from "./src/screens/Profile/createProfile";
@@ -79,6 +80,7 @@ export default function App() {
               <Stack.Screen name="LandingScreen" component={LandingScreen} />
               <Stack.Screen name="PreferenceScreen" component={PreferenceScreen} />
               <Stack.Screen name="AllergenScreen" component={AllergenScreen} />
+              <Stack.Screen name="ConditionScreen" component={ConditionScreen} />
               <Stack.Screen name="LoginScreen" component={LoginScreen} />
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
               <Stack.Screen name="ProfileScreen" component={CreateProfile} />

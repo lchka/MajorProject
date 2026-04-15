@@ -138,7 +138,7 @@ export default function SingleCondition({
 									<ScrollView style={{ maxHeight: 110 }} showsVerticalScrollIndicator={false}>
 										{soothing.map((item: IngredientInfo, idx: number) => (
 											<HStack key={item.name} alignItems="flex-start" space="sm" mb={idx === soothing.length - 1 ? 0 : "$1"}>
-												<Feather name={"leaf" as any} size={16} color="#2E7D32" style={{ marginTop: 2 }} />
+												<Feather name={"droplet" as any} size={16} color="#2E7D32" style={{ marginTop: 2 }} />
 												<Box flex={1}>
 													<Text fontSize={13} color="#2E7D32" fontFamily="RobotoMedium">
 														{item.name}
