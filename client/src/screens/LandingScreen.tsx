@@ -12,6 +12,7 @@ import SwitchProfile from "../components/profile/SwitchProfile";
 import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
 import AllConditions from "../components/conditions/AllConditions";
+import SingleCondition from "../components/conditions/SingleCondition";
 import AllAllergens from "../components/allergens/AllAllergens";
 import profileApiService, { Profile } from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
@@ -30,6 +31,10 @@ export default function LandingScreen() {
   const [isPreferenceEditMode, setIsPreferenceEditMode] = React.useState(false);
   const [isRemovingAllergen, setIsRemovingAllergen] = React.useState(false);
   const [isAllergenEditMode, setIsAllergenEditMode] = React.useState(false);
+  const [selectedCondition, setSelectedCondition] = React.useState<{
+    name: string;
+    description?: string;
+  } | null>(null);
   const [profiles, setProfiles] = React.useState<
     { id: string; name: string; avatarUri?: string; isMain: boolean }[]
   >([]);
@@ -104,6 +109,10 @@ export default function LandingScreen() {
 
   const activeProfileConditions = React.useMemo(() => {
     return activeProfile?.conditions?.map((item) => item.name) ?? [];
+  }, [activeProfile]);
+
+  const activeProfileConditionDetails = React.useMemo(() => {
+    return activeProfile?.conditions ?? [];
   }, [activeProfile]);
 
   const handleRemoveAllergen = React.useCallback(
@@ -327,6 +336,16 @@ export default function LandingScreen() {
           <AllConditions
             conditionNames={activeProfileConditions}
             profileFirstName={activeProfile?.first_name}
+            onPressCondition={(conditionName) => {
+              const matchedCondition = activeProfileConditionDetails.find(
+                (item) => item.name === conditionName,
+              );
+
+              setSelectedCondition({
+                name: conditionName,
+                description: matchedCondition?.description,
+              });
+            }}
             onPressEdit={() => {
               // Can navigate to dedicated conditions editor when available.
             }}
@@ -356,6 +375,15 @@ export default function LandingScreen() {
           }}
         />
       </ScrollView>
+
+      <SingleCondition
+        isOpen={Boolean(selectedCondition)}
+        conditionName={selectedCondition?.name}
+        conditionDescription={selectedCondition?.description}
+        onClose={() => {
+          setSelectedCondition(null);
+        }}
+      />
 
       {/* Sticky bottom navigation */}
       <NavBarBottom
