@@ -18,5 +18,9 @@ export type {
   CreateProfileInput,
   UpdateProfileInput,
 } from './profileService';
-export type { EvaluationContext } from './evaluationContextService';
-export type { Product } from './productService';
+export type {
+  EvaluationContext,
+  EvaluationResultJson,
+  EvaluateProductInput,
+} from './evaluationContextService';
+export type { Product, ProductImageUploadFile } from './productService';

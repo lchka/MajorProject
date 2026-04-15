@@ -126,6 +126,14 @@ export const profileService = {
   },
 
   /**
+   * Get profile by profile id
+   */
+  getProfileById: async (id: string): Promise<Profile> => {
+    const response = await api.get(`/profiles/${id}`);
+    return response.data;
+  },
+
+  /**
    * Create profile
    */
   createProfile: async (data: CreateProfileInput): Promise<Profile> => {

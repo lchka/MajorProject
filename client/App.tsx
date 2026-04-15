@@ -9,6 +9,8 @@ import CreateProfile from "./src/screens/Profile/createProfile";
 import EditProfileScreen from "./src/screens/Profile/EditProfile";
 import AccountSettings from "./src/screens/general/AccountSettings";
 import CameraScreen from "./src/screens/general/CameraScreen";
+import EvaluationResultScreen from "./src/screens/general/EvaluationResultScreen";
+import HistoryScreen from "./src/screens/general/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
@@ -82,6 +84,8 @@ export default function App() {
               <Stack.Screen name="AnalyseScreen" component={AnalyseScreen} />
               <Stack.Screen name="AccountSettingsScreen" component={AccountSettings} />
               <Stack.Screen name="CameraScreen" component={CameraScreen} />
+              <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
+              <Stack.Screen name="EvaluationResultScreen" component={EvaluationResultScreen} />
             </Stack.Navigator>
           </NavigationContainer>
         </SafeAreaProvider>

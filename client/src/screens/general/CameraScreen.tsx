@@ -3,10 +3,50 @@ import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
+import CreateEvaluations from "../../components/evaluations/ShowEvaluations";
+import { evaluationContextService, productService, profileService } from "../../services";
+import type { EvaluationContext } from "../../services/evaluationContextService";
+import type { Product } from "../../services/productService";
+import type { Profile } from "../../services/profileService";
 
 export default function CameraScreen() {
 	const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 	const [isOpeningCamera, setIsOpeningCamera] = React.useState(false);
+	const [isProcessingEvaluation, setIsProcessingEvaluation] = React.useState(false);
+	const [activeProfile, setActiveProfile] = React.useState<Profile | null>(null);
+	const [evaluatedProduct, setEvaluatedProduct] = React.useState<Product | null>(null);
+	const [evaluationContext, setEvaluationContext] = React.useState<EvaluationContext | null>(null);
+
+	const processCapturedPhoto = React.useCallback(async (uri: string) => {
+		setIsProcessingEvaluation(true);
+
+		try {
+			const profiles = await profileService.getMyProfile();
+			const selectedProfile =
+				profiles.find((profile) => profile.main_profile) ?? profiles[0] ?? null;
+
+			if (!selectedProfile) {
+				Alert.alert("Profile required", "Please create a profile before running evaluation.");
+				return;
+			}
+
+			setActiveProfile(selectedProfile);
+
+			const scannedProduct = await productService.scanProductImage({ uri });
+			setEvaluatedProduct(scannedProduct);
+
+			const evaluatedContext = await evaluationContextService.evaluateProduct({
+				productId: scannedProduct.id,
+				profileId: selectedProfile.id,
+			});
+
+			setEvaluationContext(evaluatedContext);
+		} catch {
+			Alert.alert("Evaluation failed", "Could not finish this scan. Please try again.");
+		} finally {
+			setIsProcessingEvaluation(false);
+		}
+	}, []);
 
 	const handleSnapPhoto = React.useCallback(async () => {
 		if (isOpeningCamera) {
@@ -30,14 +70,37 @@ export default function CameraScreen() {
 			});
 
 			if (!result.canceled && result.assets.length > 0) {
-				setCapturedUri(result.assets[0].uri);
+				const imageUri = result.assets[0].uri;
+				setCapturedUri(imageUri);
+				setEvaluatedProduct(null);
+				setEvaluationContext(null);
+				void processCapturedPhoto(imageUri);
 			}
 		} catch {
 			Alert.alert("Camera unavailable", "Could not open camera right now. Please try again.");
 		} finally {
 			setIsOpeningCamera(false);
 		}
-	}, [isOpeningCamera]);
+	}, [isOpeningCamera, processCapturedPhoto]);
+
+	if (capturedUri) {
+		return (
+			<CreateEvaluations
+				imageUri={capturedUri}
+				productName={evaluatedProduct?.name ?? "Analyzing Product"}
+				isProcessing={isProcessingEvaluation}
+				resultJson={evaluationContext?.resultJson}
+				greetingName={activeProfile?.first_name?.trim() || "Lili"}
+				profileImageUri={activeProfile?.profile_image}
+				onRetake={() => {
+					setCapturedUri(null);
+					setEvaluationContext(null);
+					setEvaluatedProduct(null);
+					setActiveProfile(null);
+				}}
+			/>
+		);
+	}
 
 	return (
 		<Box flex={1} bg="#F2F6FA" alignItems="center" justifyContent="center" px="$5">

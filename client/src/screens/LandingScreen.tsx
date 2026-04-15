@@ -9,7 +9,7 @@ import { Box, ScrollView, Text } from "@gluestack-ui/themed";
 import NavBarBottom from "../components/general/NavBarBottom";
 import NavBarTop from "../components/general/NavBarTop";
 import SwitchProfile from "../components/profile/SwitchProfile";
-import PastAnalysisLanding from "../components/evaluations/PastAnalysisLanding";
+import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
 import AllConditions from "../components/conditions/AllConditions";
 import profileService, { Profile } from "../services/profileService";
@@ -170,7 +170,7 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <PastAnalysisLanding profileId={profileId} />
+        <PastAnalysis profileId={profileId} />
 
         <PreferencesOverview
           profilePreferenceNames={activeProfilePreferences}

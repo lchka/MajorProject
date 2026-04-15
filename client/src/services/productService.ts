@@ -1,5 +1,11 @@
 import api from "../config/api";
 
+export interface ProductImageUploadFile {
+  uri: string;
+  name?: string;
+  type?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -14,6 +20,25 @@ export interface Product {
 export const productService = {
   getProductById: async (id: string): Promise<Product> => {
     const response = await api.get(`/products/${id}`);
+    return response.data;
+  },
+  scanProductImage: async (file: ProductImageUploadFile): Promise<Product> => {
+    const formData = new FormData();
+    formData.append(
+      "product_image",
+      {
+        uri: file.uri,
+        name: file.name ?? `product-${Date.now()}.jpg`,
+        type: file.type ?? "image/jpeg",
+      } as unknown as Blob,
+    );
+
+    const response = await api.post(`/products/scan`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
     return response.data;
   },
 };
