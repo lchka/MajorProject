@@ -8,13 +8,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../components/general/NavBarBottom";
 import NavBarTop from "../components/general/NavBarTop";
+import SystemErrorModal from "../components/banners/SystemError";
 import SwitchProfile from "../components/profile/SwitchProfile";
 import PastAnalysis from "../components/evaluations/PastAnalysis";
+import { UvIndexCard } from "../components/general/UvIndexWidget";
 import PreferencesOverview from "../components/preferences/AllPreferences";
 import AllConditions from "../components/conditions/AllConditions";
 import SingleCondition from "../components/conditions/SingleCondition";
 import AllAllergens from "../components/allergens/AllAllergens";
 import profileApiService, { Profile } from "../services/profileService";
+import {
+  consumePendingSystemErrorEvent,
+  subscribeSystemErrorEvents,
+} from "../config/api";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
 
@@ -34,6 +40,10 @@ export default function LandingScreen() {
   const [selectedCondition, setSelectedCondition] = React.useState<{
     name: string;
     description?: string;
+  } | null>(null);
+  const [systemErrorOverlay, setSystemErrorOverlay] = React.useState<{
+    title: string;
+    message: string;
   } | null>(null);
   const [profiles, setProfiles] = React.useState<
     { id: string; name: string; avatarUri?: string; isMain: boolean }[]
@@ -74,6 +84,14 @@ export default function LandingScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
+      const pendingSystemError = consumePendingSystemErrorEvent();
+      if (pendingSystemError) {
+        setSystemErrorOverlay({
+          title: pendingSystemError.title,
+          message: pendingSystemError.message,
+        });
+      }
+
       void loadProfiles();
 
       void profileApiService
@@ -89,6 +107,15 @@ export default function LandingScreen() {
 
     }, [loadProfiles]),
   );
+
+  React.useEffect(() => {
+    return subscribeSystemErrorEvents((event) => {
+      setSystemErrorOverlay({
+        title: event.title,
+        message: event.message,
+      });
+    });
+  }, []);
 
   // Clears local auth state and routes back to the login flow.
   const handleSignOut = async () => {
@@ -252,7 +279,7 @@ export default function LandingScreen() {
         showsVerticalScrollIndicator={false}
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
-        <Box mt="$4">
+        <Box mt="$7" mb="$3">
           <SwitchProfile
             profiles={profiles.map((profile) => ({
               id: profile.id,
@@ -308,32 +335,39 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <PastAnalysis profileId={profileId} />
+        <Box px="$2" my="$4">
+          <PastAnalysis profileId={profileId} />
+        </Box>
+        <Box px="$2" my="$8">
+          <UvIndexCard uvIndex={6.4} />
+        </Box>
 
-        <PreferencesOverview
-          profilePreferenceNames={activeProfilePreferences}
-          preferences={activeProfile?.preferences?.map((item) => ({
-            id: item.id,
-            name: item.name,
-          }))}
-          profileFirstName={activeProfile?.first_name}
-          onRemovePreference={handleRemovePreference}
-          isRemovingPreference={isRemovingPreference}
-          isEditMode={isPreferenceEditMode}
-          onToggleEditMode={() => {
-            setIsPreferenceEditMode((previous) => !previous);
-          }}
-          onCloseEditMode={() => {
-            setIsPreferenceEditMode(false);
-          }}
-          onAddPreference={() =>
-            navigation.navigate("PreferenceScreen", {
-              profileId: profileId ?? undefined,
-            })
-          }
-        />
+        <Box px="$2" my="$4">
+          <PreferencesOverview
+            profilePreferenceNames={activeProfilePreferences}
+            preferences={activeProfile?.preferences?.map((item) => ({
+              id: item.id,
+              name: item.name,
+            }))}
+            profileFirstName={activeProfile?.first_name}
+            onRemovePreference={handleRemovePreference}
+            isRemovingPreference={isRemovingPreference}
+            isEditMode={isPreferenceEditMode}
+            onToggleEditMode={() => {
+              setIsPreferenceEditMode((previous) => !previous);
+            }}
+            onCloseEditMode={() => {
+              setIsPreferenceEditMode(false);
+            }}
+            onAddPreference={() =>
+              navigation.navigate("PreferenceScreen", {
+                profileId: profileId ?? undefined,
+              })
+            }
+          />
+        </Box>
         {/* remember to delete this once the navbar takes up the proper space */}
-        <Box>
+        <Box px="$2" my="$4">
           <AllConditions
             conditionNames={activeProfileConditions}
             profileFirstName={activeProfile?.first_name}
@@ -354,29 +388,31 @@ export default function LandingScreen() {
             }
           />
         </Box>
-        <AllAllergens
-          profileFirstName={activeProfile?.first_name}
-          allergens={activeProfile?.allergens?.map((item) => ({
-            id: item.id,
-            name: item.name,
-          }))}
-          availableAllergens={availableAllergens}
-          onRemoveAllergen={handleRemoveAllergen}
-          onSaveAllergens={handleSaveAllergens}
-          onOpenAddAllergen={() => {
-            navigation.navigate("AllergenScreen", {
-              profileId: profileId ?? undefined,
-            });
-          }}
-          isRemovingAllergen={isRemovingAllergen}
-          isEditMode={isAllergenEditMode}
-          onToggleEditMode={() => {
-            setIsAllergenEditMode((previous) => !previous);
-          }}
-          onCloseEditMode={() => {
-            setIsAllergenEditMode(false);
-          }}
-        />
+        <Box px="$2" my="$4">
+          <AllAllergens
+            profileFirstName={activeProfile?.first_name}
+            allergens={activeProfile?.allergens?.map((item) => ({
+              id: item.id,
+              name: item.name,
+            }))}
+            availableAllergens={availableAllergens}
+            onRemoveAllergen={handleRemoveAllergen}
+            onSaveAllergens={handleSaveAllergens}
+            onOpenAddAllergen={() => {
+              navigation.navigate("AllergenScreen", {
+                profileId: profileId ?? undefined,
+              });
+            }}
+            isRemovingAllergen={isRemovingAllergen}
+            isEditMode={isAllergenEditMode}
+            onToggleEditMode={() => {
+              setIsAllergenEditMode((previous) => !previous);
+            }}
+            onCloseEditMode={() => {
+              setIsAllergenEditMode(false);
+            }}
+          />
+        </Box>
       </ScrollView>
 
       <SingleCondition
@@ -385,6 +421,22 @@ export default function LandingScreen() {
         conditionDescription={selectedCondition?.description}
         onClose={() => {
           setSelectedCondition(null);
+        }}
+      />
+
+      <SystemErrorModal
+        isOpen={Boolean(systemErrorOverlay)}
+        title={systemErrorOverlay?.title}
+        message={systemErrorOverlay?.message}
+        onClose={() => {
+          setSystemErrorOverlay(null);
+        }}
+        onRetry={() => {
+          setSystemErrorOverlay(null);
+          void loadProfiles();
+        }}
+        onReport={() => {
+          setSystemErrorOverlay(null);
         }}
       />
 

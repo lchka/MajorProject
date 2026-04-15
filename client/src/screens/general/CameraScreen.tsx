@@ -1,15 +1,19 @@
 import React from "react";
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CreateEvaluations from "../../components/evaluations/ShowEvaluations";
 import { evaluationContextService, productService, profileService } from "../../services";
+import { isGeminiSystemFailure } from "../../config/api";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
+import type { AuthStackParamList } from "../../types/navigation";
 
 export default function CameraScreen() {
+	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 	const [isOpeningCamera, setIsOpeningCamera] = React.useState(false);
 	const [isProcessingEvaluation, setIsProcessingEvaluation] = React.useState(false);
@@ -41,12 +45,17 @@ export default function CameraScreen() {
 			});
 
 			setEvaluationContext(evaluatedContext);
-		} catch {
+		} catch (error) {
+			if (isGeminiSystemFailure(error)) {
+				navigation.navigate("LandingScreen");
+				return;
+			}
+
 			Alert.alert("Evaluation failed", "Could not finish this scan. Please try again.");
 		} finally {
 			setIsProcessingEvaluation(false);
 		}
-	}, []);
+	}, [navigation]);
 
 	const handleSnapPhoto = React.useCallback(async () => {
 		if (isOpeningCamera) {
