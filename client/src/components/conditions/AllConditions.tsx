@@ -12,6 +12,7 @@ type AllConditionsProps = {
 	onPressCondition?: (conditionName: string) => void;
 };
 
+// Maps condition names to quick visual accents so cards are easy to scan.
 function conditionAccent(name: string) {
 	const normalized = name.trim().toLowerCase();
 
@@ -51,6 +52,7 @@ export default function AllConditions({
 	const horizontalColumnWidth = 330;
 	// Switch to horizontal paging once cards exceed two visible stacked rows.
 	const useHorizontalScroller = conditions.length > 2;
+	// Build two-card columns for the horizontal layout.
 	const conditionColumns = React.useMemo(() => {
 		if (!useHorizontalScroller) {
 			return [] as string[][];
@@ -120,7 +122,6 @@ export default function AllConditions({
 
 	return (
 		<Box
-			my="$9"
 			style={{
 				marginHorizontal: -4,
 				borderRadius: 22,
@@ -132,6 +133,7 @@ export default function AllConditions({
 				elevation: 4,
 			}}
 		>
+			{/* Subtle top highlight used across landing sections for visual consistency. */}
 			<Box
 				style={{
 					position: "absolute",
@@ -144,6 +146,7 @@ export default function AllConditions({
 				}}
 			/>
 
+			{/* Section header with profile badge and shared edit control style. */}
 			<Box
 				style={{
 					flexDirection: "row",
@@ -177,6 +180,7 @@ export default function AllConditions({
 
 			{conditions.length ? (
 				useHorizontalScroller ? (
+					// Long lists become swipeable columns to avoid overly tall cards stack.
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 6 }}>
 						<Box style={{ flexDirection: "row", gap: 12 }}>
 							{conditionColumns.map((column, columnIndex) => (

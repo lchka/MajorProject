@@ -1,6 +1,7 @@
 import React from "react";
 import { AddIcon, Box, HStack, Icon, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import CurrentProfile from "../general/CurrentProfileName";
+import EditButton from "../Buttons/EditButton";
 import { styles } from "../../style/LandingPageStyle";
 
 type PreferenceItem = {
@@ -85,10 +86,11 @@ const defaultPreferences: PreferenceItem[] = [
 	},
 ];
 
-type PreferencesOverviewProps = {
+type AllPreferencesProps = {
 	profilePreferenceNames?: string[];
 	profileFirstName?: string;
 	onAddPreference?: () => void;
+	onPressEdit?: () => void;
 };
 
 // This normalizes preference text so matching works even with different spacing/hyphens.
@@ -123,24 +125,47 @@ function resolvePreferenceItems(profilePreferenceNames?: string[]) {
 	return resolved;
 }
 
-export default function PreferencesOverview({
+export default function AllPreferences({
 	profilePreferenceNames,
 	profileFirstName,
 	onAddPreference,
-}: PreferencesOverviewProps) {
+	onPressEdit,
+}: AllPreferencesProps) {
 	// Recompute on each render so mutated arrays or deep value changes are reflected immediately.
 	const preferences = resolvePreferenceItems(profilePreferenceNames);
 
 	return (
 		<>
 			{/* This is the Preferences section title */}
-			<Box style={styles.sectionHeader}>
-				<HStack alignItems="center" pl="$2" gap={6}>
-					<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={22} color="#1dd2d8" />
-					<Text fontSize={22} lineHeight={22} fontFamily="RobotoMedium" color="#151515">
-						Preferences
-					</Text>
-				</HStack>
+			<Box
+				style={{
+					...styles.sectionHeader,
+					flexDirection: "row",
+					alignItems: "center",
+					justifyContent: "space-between",
+					marginBottom: 14,
+				}}
+			>
+				<Box>
+					<HStack alignItems="center" pl="$2" gap={6}>
+						<CurrentProfile firstName={profileFirstName} fontSize={22} lineHeight={24} color="#1dd2d8" />
+						<Text fontSize={22} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+							Preferences
+						</Text>
+					</HStack>
+				</Box>
+
+				<Box style={{ marginTop: -4 }}>
+					<EditButton
+						onPress={onPressEdit}
+						width={72}
+						label="Edit"
+						borderColor="#9ed5f2"
+						textColor="#499bc7"
+						style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
+						textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none" }}
+					/>
+				</Box>
 			</Box>
 
 			{/* This is the horizontal preferences row */}

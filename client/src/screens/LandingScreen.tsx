@@ -12,6 +12,7 @@ import SwitchProfile from "../components/profile/SwitchProfile";
 import PastAnalysis from "../components/evaluations/PastAnalysis";
 import PreferencesOverview from "../components/preferences/AllPreferences";
 import AllConditions from "../components/conditions/AllConditions";
+import AllAllergens from "../components/allergens/AllAllergens";
 import profileService, { Profile } from "../services/profileService";
 import { AuthStackParamList } from "../types/navigation";
 import { styles } from "../style/LandingPageStyle";
@@ -180,9 +181,37 @@ export default function LandingScreen() {
               profileId: profileId ?? undefined,
             })
           }
+          onPressEdit={() =>
+            navigation.navigate("PreferenceScreen", {
+              profileId: profileId ?? undefined,
+            })
+          }
+        />
+
+        <AllAllergens
+          profileFirstName={activeProfile?.first_name}
+          allergens={activeProfile?.allergens?.map((item) => ({ id: item.id, name: item.name }))}
+          onPressEdit={() => {
+            const fullName = [
+              activeProfile?.first_name?.trim(),
+              activeProfile?.last_name?.trim(),
+            ]
+              .filter(Boolean)
+              .join(" ");
+
+            navigation.navigate("EditProfileScreen", {
+              profileId: activeProfile?.id,
+              profileName: fullName || activeProfile?.first_name || undefined,
+              profileImageUri: activeProfile?.profile_image ?? undefined,
+              profilePreferenceNames:
+                activeProfile?.preferences?.map((item) => item.name) ?? [],
+              profileAge: activeProfile?.age?.toString()?.trim() || undefined,
+              profileIsMain: activeProfile?.main_profile ?? false,
+            });
+          }}
         />
 		{/* remember to delete this once the navbar takes up the proper space */}
-<Box  mb="$10"> 
+<Box> 
         <AllConditions
           conditionNames={activeProfileConditions}
           profileFirstName={activeProfile?.first_name}
