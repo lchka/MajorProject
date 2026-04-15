@@ -6,11 +6,10 @@ import {
 } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView, Text } from "@gluestack-ui/themed";
-import Feather from "@expo/vector-icons/Feather";
 import NavBarBottom from "../components/general/NavBarBottom";
 import NavBarTop from "../components/general/NavBarTop";
 import SwitchProfile from "../components/profile/SwitchProfile";
-import PastAnalysis from "../components/evaluations/PastAnalysis";
+import PastAnalysisLanding from "../components/evaluations/PastAnalysisLanding";
 import PreferencesOverview from "../components/preferences/AllPreferences";
 import AllConditions from "../components/conditions/AllConditions";
 import profileService, { Profile } from "../services/profileService";
@@ -171,21 +170,7 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        {/* Past analysis cards */}
-        <Box my="$2" style={styles.sectionHeader}>
-          <Text
-            fontSize={22}
-            pt="$2"
-            lineHeight={22}
-            fontFamily="RobotoMedium"
-            color="#151515"
-          >
-            Past Analysis
-          </Text>
-          <EntypoDots />
-        </Box>
-
-        <PastAnalysis profileId={profileId} />
+        <PastAnalysisLanding profileId={profileId} />
 
         <PreferencesOverview
           profilePreferenceNames={activeProfilePreferences}
@@ -234,33 +219,6 @@ export default function LandingScreen() {
           });
         }}
       />
-    </Box>
-  );
-}
-
-function EntypoDots() {
-  // Keeps section-header action icon usage consistent across sections.
-  return <Feather name="more-horizontal" size={28} color="#111111" />;
-}
-
-function PageDots({
-  total,
-  activeIndex,
-}: {
-  total: number;
-  activeIndex: number;
-}) {
-  return (
-    <Box style={styles.pageDotsRow}>
-      {Array.from({ length: total }).map((_, index) => (
-        <Box
-          key={`page-dot-${index}`}
-          style={[
-            styles.pageDot,
-            index === activeIndex ? styles.pageDotActive : null,
-          ]}
-        />
-      ))}
     </Box>
   );
 }

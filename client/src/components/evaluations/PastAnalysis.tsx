@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { evaluationContextService, productService } from "../../services";
-import profileService from "../../services/profileService";
+import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
 
 type AnalysisCard = {
@@ -23,6 +23,10 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
   const [analysisLoading, setAnalysisLoading] = React.useState(true);
 
   React.useEffect(() => {
+    setAnalysisPage(0);
+  }, [profileId]);
+
+  React.useEffect(() => {
     let isMounted = true;
 
     const loadPastAnalysis = async () => {
@@ -37,18 +41,7 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
       setAnalysisLoading(true);
 
       try {
-        const profiles = await profileService.getMyProfile();
-        const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
-
-        if (!activeProfile || activeProfile.id !== profileId) {
-          if (isMounted) {
-            setAnalysisCards([]);
-            setAnalysisLoading(false);
-          }
-          return;
-        }
-
-        const contexts = await evaluationContextService.getMyContexts();
+        const contexts = await evaluationContextService.getByProfileId(profileId);
         const productIds = Array.from(new Set(contexts.map((context) => context.productId)));
         const products = await Promise.all(
           productIds.map(async (productId) => {
@@ -71,7 +64,7 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
           return {
             id: context.id,
             title: product?.name ?? "Unknown product",
-            image: product?.product_image ?? null,
+            image: resolveMediaUrl(product?.product_image) ?? null,
           } satisfies AnalysisCard;
         });
 
@@ -164,6 +157,9 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
                         style={styles.analysisImage}
                         resizeMode="cover"
                         alt={item.title || "Past analysis product"}
+                        onError={() => {
+                          console.warn("[PastAnalysis] Failed to load image", item.image);
+                        }}
                       />
                     )}
                   </Box>

@@ -1,10 +1,16 @@
 import { NextFunction, Request, Response } from "express";
-import crypto from "node:crypto";
 import geminiService from "../services/gemini.service.js";
 import { ProductService } from "../services/product.service.js";
 import { CreateProductDto, UpdateProductDto } from "../types/product.dto.js";
 import { uploadProductImageToS3 } from "../lib/s3.js";
-import { BAD_REQUEST, CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/HttpError.js";
+import {
+	BAD_REQUEST,
+	CREATED_SUCCESS,
+	HttpError,
+	INTERNAL_SERVER_ERROR,
+	SUCCESS_RES,
+	UNAUTHORISED,
+} from "../utils/HttpError.js";
 
 const productService = new ProductService();
 
@@ -17,22 +23,6 @@ type ProductScanBody = {
 };
 
 export class ProductController {
-	private buildFallbackProductImageUrl(file: Express.Multer.File): string {
-		const extensionMap: Record<string, string> = {
-			"image/jpeg": "jpg",
-			"image/jpg": "jpg",
-			"image/png": "png",
-			"image/webp": "webp",
-			"image/gif": "gif",
-			"image/svg+xml": "svg",
-		};
-
-		const ext = extensionMap[file.mimetype] ?? "jpg";
-		const baseUrl = process.env.APP_BASE_URL ?? "http://localhost:3000";
-		const normalizedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-		return `${normalizedBase}/uploads/fallback/${crypto.randomUUID()}.${ext}`;
-	}
-
 	async createProduct(
 		req: Request<Record<string, never>, Record<string, never>, CreateProductDto>,
 		res: Response,
@@ -70,8 +60,12 @@ export class ProductController {
 			try {
 				productImageUrl = await uploadProductImageToS3(userId, req.file);
 			} catch {
-				productImageUrl = this.buildFallbackProductImageUrl(req.file);
+				throw new HttpError(
+					INTERNAL_SERVER_ERROR,
+					"Unable to upload product image to S3. Check AWS_S3_BUCKET and AWS credentials.",
+				);
 			}
+
 			const parsed = await geminiService.extractProductFromImage(req.file);
 
 			const product = await productService.createProductFromScan(userId, {

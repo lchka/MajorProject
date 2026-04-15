@@ -87,6 +87,75 @@ const API_URL = normalizeAndroidLocalhost(
   ensureApiBasePath(envApiUrl || buildDefaultApiUrl()),
 );
 
+const getHostAndPort = (url: string): { host: string; port: string } | null => {
+  const normalized = url.includes('://') ? url : `http://${url}`;
+  const withoutProtocol = normalized.split('://')[1] || '';
+  const hostAndPath = withoutProtocol.split('/')[0] || '';
+  if (!hostAndPath) {
+    return null;
+  }
+
+  const [host, port = ''] = hostAndPath.split(':');
+  if (!host) {
+    return null;
+  }
+
+  return { host, port };
+};
+
+const getApiOrigin = (): string | null => {
+  const match = API_URL.match(/^(https?:\/\/[^/]+)/i);
+  return match?.[1] ?? null;
+};
+
+export const resolveMediaUrl = (value?: string | null): string | null => {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  const apiOrigin = getApiOrigin();
+  if (trimmed.startsWith('/')) {
+    return apiOrigin ? `${apiOrigin}${trimmed}` : trimmed;
+  }
+
+  const currentHostAndPort = getHostAndPort(trimmed);
+  const apiHostAndPort = getHostAndPort(API_URL);
+
+  if (currentHostAndPort && apiHostAndPort) {
+    const isLoopbackHost =
+      currentHostAndPort.host === 'localhost' ||
+      currentHostAndPort.host === '127.0.0.1' ||
+      currentHostAndPort.host === '10.0.2.2';
+
+    if (isLoopbackHost && currentHostAndPort.host !== apiHostAndPort.host) {
+      const targetPort = apiHostAndPort.port || currentHostAndPort.port;
+      const hostWithPort = targetPort
+        ? `${apiHostAndPort.host}:${targetPort}`
+        : apiHostAndPort.host;
+
+      return trimmed.replace(
+        /^([a-z]+:\/\/)([^/]+)/i,
+        `$1${hostWithPort}`,
+      );
+    }
+  }
+
+  if (trimmed.startsWith('uploads/')) {
+    return apiOrigin ? `${apiOrigin}/${trimmed}` : `/${trimmed}`;
+  }
+
+  return trimmed;
+};
+
 console.log('[API] Using base URL:', API_URL);
 
 // Create axios instance with default configuration
