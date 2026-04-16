@@ -13,3 +13,17 @@
 ### Development Dependencies
 
 - **nodemon** (^3.1.11) - Auto-restart during development
+
+## Weather UV Endpoint
+
+- Route: `GET /api/weather/uv?lat=<latitude>&lon=<longitude>`
+- Auth: Requires `Authorization: Bearer <token>`
+- UV Provider: Open-Meteo (free, no API key required)
+- Optional Env: `OPENWEATHERMAP_API_KEY` (used only to enrich temperature/condition fields)
+
+Example:
+
+```bash
+curl "http://localhost:3000/api/weather/uv?lat=53.3498&lon=-6.2603" \
+	-H "Authorization: Bearer <token>"
+```

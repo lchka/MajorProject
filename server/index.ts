@@ -11,6 +11,7 @@ import profileRoutes from "./routes/profile.routes.js"
 import promptRoutes from "./routes/prompt.routes.js"
 import productRoutes from "./routes/product.routes.js"
 import evaluationContextRoutes from "./routes/evaluationContext.routes.js"
+import weatherRoutes from "./routes/weather.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 
 dotenv.config();
@@ -42,6 +43,7 @@ app.use("/api/profiles", profileRoutes)
 app.use("/api/prompts", promptRoutes)
 app.use("/api/products", productRoutes)
 app.use("/api/evaluation-contexts", evaluationContextRoutes)
+app.use("/api/weather", weatherRoutes)
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
