@@ -204,10 +204,10 @@ export class ProductService {
 
 	async getOfficialImageByProductId(id: string): Promise<{
 		productId: string;
-		product_image_official: string;
+		product_image_official: string | null;
 		product_image_user: string;
 		product_image: string;
-		source: "cached" | "serpapi";
+		source: "cached" | "serpapi" | "fallback";
 	}> {
 		const product = (await this.productRuntime.findUnique({
 			where: { id },
@@ -240,32 +240,43 @@ export class ProductService {
 			};
 		}
 
-		const officialAsset = await serpApiImageService.fetchOfficialImageAsset({
-			name: product.name,
-			brand: product.brand,
-		});
+		try {
+			const officialAsset = await serpApiImageService.fetchOfficialImageAsset({
+				name: product.name,
+				brand: product.brand,
+			});
 
-		const officialKey = buildOfficialProductImageKey(product.id);
-		const officialImageUrl = await uploadBufferToS3({
-			key: officialKey,
-			buffer: officialAsset.buffer,
-			contentType: officialAsset.contentType,
-		});
+			const officialKey = buildOfficialProductImageKey(product.id);
+			const officialImageUrl = await uploadBufferToS3({
+				key: officialKey,
+				buffer: officialAsset.buffer,
+				contentType: officialAsset.contentType,
+			});
 
-		await this.productRuntime.update({
-			where: { id: product.id },
-			data: {
+			await this.productRuntime.update({
+				where: { id: product.id },
+				data: {
+					product_image_official: officialImageUrl,
+				},
+			});
+
+			return {
+				productId: product.id,
 				product_image_official: officialImageUrl,
-			},
-		});
-
-		return {
-			productId: product.id,
-			product_image_official: officialImageUrl,
-			product_image_user: product.product_image_user,
-			product_image: officialImageUrl,
-			source: "serpapi",
-		};
+				product_image_user: product.product_image_user,
+				product_image: officialImageUrl,
+				source: "serpapi",
+			};
+		} catch {
+			// SerpAPI misses should not break product confirmation/evaluation flow.
+			return {
+				productId: product.id,
+				product_image_official: null,
+				product_image_user: product.product_image_user,
+				product_image: product.product_image_user,
+				source: "fallback",
+			};
+		}
 	}
 
 	async deleteProduct(id: string): Promise<{ message: string }> {

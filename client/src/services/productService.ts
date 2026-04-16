@@ -23,8 +23,8 @@ export interface ProductOfficialImagePayload {
   productId: string;
   product_image: string;
   product_image_user: string;
-  product_image_official: string;
-  source: "cached" | "serpapi";
+  product_image_official: string | null;
+  source: "cached" | "serpapi" | "fallback";
 }
 
 export const productService = {
@@ -51,10 +51,16 @@ export const productService = {
 
     return response.data;
   },
-  getOfficialImageByProductId: async (productId: string): Promise<ProductOfficialImagePayload> => {
-    const response = await api.get(`/product-image`, {
+  getOfficialImageByProductId: async (productId: string): Promise<ProductOfficialImagePayload | null> => {
+    const response = await api.get<ProductOfficialImagePayload>(`/product-image`, {
       params: { productId },
+      validateStatus: (status) => status === 404 || (status >= 200 && status < 300),
     });
+
+    if (response.status === 404) {
+      return null;
+    }
+
     return response.data;
   },
 };

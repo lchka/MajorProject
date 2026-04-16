@@ -59,12 +59,14 @@ export default function CameraScreen() {
 			let displayProduct: Product = scannedProduct;
 			try {
 				const officialImagePayload = await productService.getOfficialImageByProductId(scannedProduct.id);
-				displayProduct = {
-					...scannedProduct,
-					product_image: officialImagePayload.product_image,
-					product_image_user: officialImagePayload.product_image_user,
-					product_image_official: officialImagePayload.product_image_official,
-				};
+				if (officialImagePayload) {
+					displayProduct = {
+						...scannedProduct,
+						product_image: officialImagePayload.product_image,
+						product_image_user: officialImagePayload.product_image_user,
+						product_image_official: officialImagePayload.product_image_official,
+					};
+				}
 			} catch {
 				// Keep the scanned image when official lookup fails.
 			}
