@@ -13,6 +13,7 @@ import { Box, Pressable, Text } from "@gluestack-ui/themed";
 import CreateEvaluations from "./ShowEvaluation";
 import ShowProduct from "./ShowProduct";
 import LoadingScreen from "../../components/general/loadingScreen";
+import SimpleLoadingScreen from "../../components/general/SimpleLoadingScreen";
 import {
 evaluationContextService,
 productService,
@@ -33,6 +34,7 @@ const routeImageUri = route.params?.imageUri;
 
 const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 const cameraRef = React.useRef<CameraView | null>(null);
+const [cameraFacing, setCameraFacing] = React.useState<"back" | "front">("back");
 
 const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 const [isCapturingPhoto, setIsCapturingPhoto] = React.useState(false);
@@ -157,8 +159,8 @@ return;
 try {
 setIsCapturingPhoto(true);
 const photo = await cameraRef.current.takePictureAsync({
-quality: 0.9,
-skipProcessing: true,
+quality: 1,
+skipProcessing: false,
 });
 
 if (!photo?.uri) {
@@ -190,9 +192,8 @@ return;
 
 const picked = await ImagePicker.launchImageLibraryAsync({
 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-allowsEditing: true,
-aspect: [3, 4],
-quality: 0.9,
+allowsEditing: false,
+quality: 1,
 });
 
 if (picked.canceled || picked.assets.length === 0) {
@@ -237,7 +238,7 @@ clearTimeout(timer);
 
 if (capturedUri && evaluationContext) {
 if (isProcessingEvaluation) {
-return <LoadingScreen staged />;
+return <SimpleLoadingScreen message="Preparing evaluation..." />;
 }
 
 return (
@@ -261,8 +262,12 @@ setActiveProfile(null);
 );
 }
 
-if (capturedUri && (isResolvingProduct || isProcessingEvaluation)) {
-return <LoadingScreen staged />;
+if (capturedUri && isResolvingProduct) {
+return <SimpleLoadingScreen message="Extracting ingredients..." />;
+}
+
+if (capturedUri && isProcessingEvaluation) {
+return <SimpleLoadingScreen message="Preparing evaluation..." />;
 }
 
 if (capturedUri && resolvedProduct) {
@@ -356,31 +361,63 @@ return (
 <Box flex={1} bg="#000000">
 <CameraView
 ref={cameraRef}
-facing="back"
+facing={cameraFacing}
+autofocus="on"
 style={{ flex: 1 }}
 onCameraReady={() => {
 setIsCameraReady(true);
 }}
 />
 
-<Box position="absolute" top={56} left={16} right={16}>
+<Box
+position="absolute"
+top={0}
+left={0}
+right={0}
+height="14%"
+bg="rgba(0,0,0,0.92)"
+/>
+
+<Box
+position="absolute"
+left={0}
+right={0}
+bottom={0}
+height="19%"
+bg="rgba(0,0,0,0.94)"
+/>
+
+<Box position="absolute" top={50} left={16} right={16}>
+<Box
+flexDirection="row"
+alignItems="center"
+justifyContent="space-between"
+bg="rgba(7,12,18,0.45)"
+borderRadius="$full"
+px="$3"
+py="$2"
+>
 <Pressable
 onPress={() => {
 navigation.goBack();
 }}
-alignSelf="flex-start"
 p="$2"
 borderRadius="$full"
-bg="rgba(9,15,20,0.55)"
 >
-<Feather name="x" size={22} color="#FFFFFF" />
+<Feather name="x" size={20} color="#FFFFFF" />
 </Pressable>
 
-<Text mt="$4" fontSize={18} lineHeight={22} color="#FFFFFF" fontFamily="RobotoMedium">
-Align the product label
+<Text color="#FFFFFF" fontFamily="RobotoMedium" fontSize={16}>
+PHOTO
 </Text>
-<Text mt="$1" fontSize={12} lineHeight={18} color="#D5E3F2">
-Keep brand and product name inside the green frame for best detail extraction.
+
+<Box width={36} alignItems="flex-end">
+<Feather name="aperture" size={18} color="#FFFFFF" />
+</Box>
+</Box>
+
+<Text mt="$3" fontSize={15} lineHeight={20} color="#FFFFFF" fontFamily="RobotoMedium" textAlign="center">
+Center the product name and ingredients in the guide.
 </Text>
 </Box>
 
@@ -390,8 +427,8 @@ top="11%"
 left="5%"
 right="5%"
 bottom="10%"
-borderWidth={4}
-borderColor="rgba(255,102,102,0.42)"
+borderWidth={2}
+borderColor="rgba(255,255,255,0.2)"
 borderRadius={18}
 />
 
@@ -406,33 +443,44 @@ borderColor={isFramingReady ? "#56D32F" : "#E76767"}
 borderRadius={16}
 />
 
-<Box position="absolute" left={0} right={0} bottom={30} px="$6">
-<Box flexDirection="row" alignItems="center" justifyContent="space-between" mb="$3">
-<Pressable
-onPress={() => {
-void openGallery();
-}}
-px="$3"
-py="$2"
-borderRadius="$full"
-bg="rgba(16,30,42,0.62)"
->
-<Text fontSize={12} color="#E8F1FB" fontFamily="RobotoMedium">
-Gallery
-</Text>
-</Pressable>
-
+<Box position="absolute" left={0} right={0} bottom={26} px="$5">
+<Box alignItems="center" mb="$3">
 <Box
 px="$3"
 py="$2"
 borderRadius="$full"
-bg={isFramingReady ? "rgba(35,126,55,0.74)" : "rgba(138,37,37,0.74)"}
+bg={isFramingReady ? "rgba(39,132,64,0.82)" : "rgba(151,54,54,0.82)"}
 >
-<Text fontSize={12} color="#FFFFFF" fontFamily="RobotoMedium">
-{isFramingReady ? "In range" : "Move product into frame"}
+<Text fontSize={15} lineHeight={20} color="#FFFFFF" fontFamily="RobotoMedium">
+{isFramingReady ? "Ready" : "Move product into frame"}
 </Text>
 </Box>
 </Box>
+
+<Box
+flexDirection="row"
+alignItems="center"
+justifyContent="space-between"
+bg="rgba(6,11,16,0.42)"
+borderRadius={30}
+px="$4"
+py="$3"
+>
+<Pressable
+onPress={() => {
+void openGallery();
+}}
+width={50}
+height={50}
+borderRadius={12}
+bg="rgba(255,255,255,0.18)"
+borderWidth={1}
+borderColor="rgba(255,255,255,0.28)"
+alignItems="center"
+justifyContent="center"
+>
+<Feather name="image" size={20} color="#FFFFFF" />
+</Pressable>
 
 <Pressable
 onPress={() => {
@@ -440,17 +488,39 @@ void capturePhoto();
 }}
 disabled={isCapturingPhoto || isResolvingProduct || isProcessingEvaluation}
 alignSelf="center"
-width={84}
-height={84}
-borderRadius={42}
-borderWidth={4}
+width={88}
+height={88}
+borderRadius={44}
+borderWidth={5}
 borderColor="#FFFFFF"
-bg={isCapturingPhoto || isResolvingProduct ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.22)"}
+bg="rgba(255,255,255,0.1)"
 alignItems="center"
 justifyContent="center"
 >
-<Box width={58} height={58} borderRadius={29} bg="#FFFFFF" />
+<Box
+width={68}
+height={68}
+borderRadius={34}
+bg={isCapturingPhoto || isResolvingProduct ? "#D5DAE2" : "#FFFFFF"}
+/>
 </Pressable>
+
+<Pressable
+onPress={() => {
+setCameraFacing((currentFacing) => (currentFacing === "back" ? "front" : "back"));
+}}
+width={50}
+height={50}
+borderRadius={12}
+bg="rgba(255,255,255,0.18)"
+borderWidth={1}
+borderColor="rgba(255,255,255,0.28)"
+alignItems="center"
+justifyContent="center"
+>
+<Feather name="refresh-ccw" size={20} color="#FFFFFF" />
+</Pressable>
+</Box>
 </Box>
 </Box>
 );

@@ -4,6 +4,7 @@
     "jsx": "react-native",
     "target": "esnext",
     "module": "esnext",
+    "ignoreDeprecations": "6.0",
     "lib": ["esnext"],
     "allowJs": true,
     "skipLibCheck": true,

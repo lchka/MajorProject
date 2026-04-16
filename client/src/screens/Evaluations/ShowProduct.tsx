@@ -28,6 +28,7 @@ export default function ShowProduct({
   onContinue,
   onRetake,
 }: ShowProductProps) {
+  const [isIngredientsExpanded, setIsIngredientsExpanded] = React.useState(true);
   const [isEditingIngredients, setIsEditingIngredients] = React.useState(false);
   const [ingredientsText, setIngredientsText] = React.useState("");
 
@@ -122,21 +123,43 @@ export default function ShowProduct({
                 Pulled Ingredients
               </Text>
 
-              <Pressable
-                onPress={() => {
-                  setIsEditingIngredients((previous) => !previous);
-                }}
-                p="$1.5"
-                borderRadius="$full"
-                bg={isEditingIngredients ? "#DFF0FF" : "#EEF2F7"}
-                borderWidth={1}
-                borderColor={isEditingIngredients ? "#8EC5F0" : "#D6DEE8"}
-              >
-                <Feather name="edit-2" size={14} color={isEditingIngredients ? "#2E96CB" : "#5B6B7A"} />
-              </Pressable>
+              <HStack space="xs" alignItems="center">
+                <Pressable
+                  onPress={() => {
+                    setIsIngredientsExpanded((previous) => !previous);
+                  }}
+                  p="$1.5"
+                  borderRadius="$full"
+                  bg="#EEF2F7"
+                  borderWidth={1}
+                  borderColor="#D6DEE8"
+                >
+                  <Feather
+                    name={isIngredientsExpanded ? "chevron-up" : "chevron-down"}
+                    size={15}
+                    color="#5B6B7A"
+                  />
+                </Pressable>
+
+                <Pressable
+                  onPress={() => {
+                    setIsEditingIngredients((previous) => !previous);
+                    if (!isIngredientsExpanded) {
+                      setIsIngredientsExpanded(true);
+                    }
+                  }}
+                  p="$1.5"
+                  borderRadius="$full"
+                  bg={isEditingIngredients ? "#DFF0FF" : "#EEF2F7"}
+                  borderWidth={1}
+                  borderColor={isEditingIngredients ? "#8EC5F0" : "#D6DEE8"}
+                >
+                  <Feather name="edit-2" size={14} color={isEditingIngredients ? "#2E96CB" : "#5B6B7A"} />
+                </Pressable>
+              </HStack>
             </HStack>
 
-            {isEditingIngredients ? (
+            {isIngredientsExpanded ? (isEditingIngredients ? (
               <Box borderWidth={1} borderColor="#CBD5E1" borderRadius={12} bg="#FFFFFF" px="$3" py="$2">
                 <TextInput
                   value={ingredientsText}
@@ -161,7 +184,7 @@ export default function ShowProduct({
                     : "No ingredients were detected. Tap the pencil to add them."}
                 </Text>
               </Box>
-            )}
+            )) : null}
           </Box>
         </VStack>
           </Box>
