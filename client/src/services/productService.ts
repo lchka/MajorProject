@@ -27,13 +27,6 @@ export interface ProductOfficialImagePayload {
   source: "cached" | "serpapi" | "fallback";
 }
 
-export interface ProductTextVisibilityProbe {
-  hasVisibleText: boolean;
-  name: string;
-  brand: string;
-  signal: string;
-}
-
 export interface UpdateProductInput {
   name?: string;
   brand?: string;
@@ -58,25 +51,6 @@ export const productService = {
     );
 
     const response = await api.post(`/products/scan`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return response.data;
-  },
-  detectTextVisibility: async (file: ProductImageUploadFile): Promise<ProductTextVisibilityProbe> => {
-    const formData = new FormData();
-    formData.append(
-      "product_image",
-      {
-        uri: file.uri,
-        name: file.name ?? `probe-${Date.now()}.jpg`,
-        type: file.type ?? "image/jpeg",
-      } as unknown as Blob,
-    );
-
-    const response = await api.post(`/products/scan/visibility`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

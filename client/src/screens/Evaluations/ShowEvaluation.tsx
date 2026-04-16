@@ -383,6 +383,9 @@ export default function CreateEvaluations({
 						matchedAllergens={toStringArray(resultJson?.matched_allergens)}
 						matchedConditions={toStringArray(resultJson?.matched_conditions)}
 						matchedPreferences={toStringArray(resultJson?.matched_preferences)}
+						profileAllergens={currentProfileAllergens}
+						profileConditions={currentProfileConditions}
+						profilePreferences={currentProfilePreferences}
 						index={4}
 					/>
 

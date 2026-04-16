@@ -82,28 +82,6 @@ export class ProductController {
 		}
 	}
 
-	async detectScanTextVisibility(
-		req: Request,
-		res: Response,
-		next: NextFunction,
-	): Promise<void> {
-		try {
-			const userId = req.userId ?? req.user?.id;
-			if (!userId) {
-				throw new HttpError(UNAUTHORISED, "User is not authenticated");
-			}
-
-			if (!req.file) {
-				throw new HttpError(BAD_REQUEST, "Product image is required for text visibility detection");
-			}
-
-			const visibility = await geminiService.detectTextVisibility(req.file);
-			res.status(SUCCESS_RES).json(visibility);
-		} catch (error) {
-			next(error);
-		}
-	}
-
 	async getAllProducts(
 		req: Request,
 		res: Response,

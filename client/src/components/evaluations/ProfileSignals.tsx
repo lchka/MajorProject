@@ -10,6 +10,9 @@ type ProfileSignalsProps = {
   matchedAllergens: string[];
   matchedConditions: string[];
   matchedPreferences: string[];
+  profileAllergens?: string[];
+  profileConditions?: string[];
+  profilePreferences?: string[];
   index?: number;
 };
 
@@ -18,12 +21,16 @@ type SignalType = "allergen" | "condition" | "preference";
 function SignalGroup({
   title,
   items,
+  profileItems,
   type,
 }: {
   title: string;
   items: string[];
+  profileItems?: string[];
   type: SignalType;
 }) {
+  const hasProfileSetup = Array.isArray(profileItems) && profileItems.length > 0;
+
   const renderPreferences = () => (
     <AllPreferences
       preferences={items.map((name) => ({ name }))}
@@ -80,7 +87,9 @@ function SignalGroup({
             color="#7A838D"
             fontFamily="Roboto"
           >
-            None
+            {hasProfileSetup
+              ? "No matches for this scan"
+              : `No ${title.toLowerCase()} set in this profile yet`}
           </Text>
         </Box>
       )}
@@ -92,8 +101,16 @@ export default function ProfileSignals({
   matchedAllergens,
   matchedConditions,
   matchedPreferences,
+  profileAllergens,
+  profileConditions,
+  profilePreferences,
   index = 4,
 }: ProfileSignalsProps) {
+  const hasAnyProfileSignals =
+    (profileAllergens?.length ?? 0) > 0 ||
+    (profileConditions?.length ?? 0) > 0 ||
+    (profilePreferences?.length ?? 0) > 0;
+
   return (
     <MotiView
       from={{ opacity: 0, translateY: 8 }}
@@ -120,20 +137,40 @@ export default function ProfileSignals({
           </Text>
         </Box>
 
+        {!hasAnyProfileSignals ? (
+          <Box
+            mb="$3"
+            bg="#F5F9FF"
+            borderWidth={1}
+            borderColor="#D9E7F6"
+            borderRadius={12}
+            px="$3"
+            py="$3"
+          >
+            <Text fontSize={12} lineHeight={18} color="#3C556F" fontFamily="Roboto">
+              This profile has no allergens, conditions, or preferences selected yet.
+              Add them in Profile settings for more personalized scan results.
+            </Text>
+          </Box>
+        ) : null}
+
         <Box style={{ gap: 12 }}>
           <SignalGroup
             title="Allergens"
             items={matchedAllergens}
+            profileItems={profileAllergens}
             type="allergen"
           />
           <SignalGroup
             title="Conditions"
             items={matchedConditions}
+            profileItems={profileConditions}
             type="condition"
           />
           <SignalGroup
             title="Preferences"
             items={matchedPreferences}
+            profileItems={profilePreferences}
             type="preference"
           />
         </Box>
