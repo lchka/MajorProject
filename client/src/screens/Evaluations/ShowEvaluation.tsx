@@ -355,7 +355,7 @@ export default function CreateEvaluations({
 
 					{score !== null ? (
 						<SectionCard
-							title="Confidence Score"
+							title="AI Confidence Score"
 							icon={<Feather name="bar-chart-2" size={16} color="#42586F" />}
 							index={0}
 						>

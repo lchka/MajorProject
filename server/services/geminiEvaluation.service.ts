@@ -57,7 +57,7 @@ Return ONLY valid JSON with this exact shape:
 Rules:
 - status must be one of: safe, caution, avoid.
 - score must be a number from 0 to 100, be reasonable.
-- If any allergen match is present, status should usually be avoid.
+- If any allergen match is present, status should usually be avoid, unless most ingredients are classed 'low risk'.
 - Do not include markdown or extra keys.
 - Summary should be objective and not mention the user.
 - all_ingredients must include every ingredient from input product.ingredients.
@@ -205,6 +205,7 @@ const normalizeIngredient = (value: string): string =>
 		.trim();
 
 const clampDangerLevel = (value: number): number => Math.max(0, Math.min(10, value));
+const clampScore = (value: number): number => Math.max(0, Math.min(100, Math.round(value)));
 
 export class GeminiEvaluationService {
 	private model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
@@ -333,13 +334,50 @@ export class GeminiEvaluationService {
 			(a, b) => b.danger_level - a.danger_level,
 		);
 
+		const matchedAllergens = result.matched_allergens ?? [];
+		const matchedConditions = result.matched_conditions ?? [];
+		const matchedPreferences = result.matched_preferences ?? [];
+		const highestDangerLevel = dangerousIngredients[0]?.danger_level ?? 0;
+		const severeDangerCount = dangerousIngredients.filter((item) => item.danger_level >= 8).length;
+		const moderateDangerCount = dangerousIngredients.filter((item) => item.danger_level >= 5).length;
+
+		// Calibrate model output to avoid overly harsh status jumps when risk signals are limited.
+		let calibratedStatus: EvaluationResultJsonDto["status"] = result.status ?? "caution";
+		if (matchedAllergens.length > 0 || highestDangerLevel >= 9 || severeDangerCount >= 2) {
+			calibratedStatus = "avoid";
+		} else if (highestDangerLevel >= 5 || moderateDangerCount > 0 || matchedConditions.length > 0) {
+			calibratedStatus = "caution";
+		} else {
+			calibratedStatus = "safe";
+		}
+
+		const baseScore = typeof result.score === "number" ? result.score : 50;
+		let calibratedScore = clampScore(baseScore);
+
+		if (calibratedStatus === "safe") {
+			calibratedScore = Math.max(65, calibratedScore);
+		}
+
+		if (calibratedStatus === "caution") {
+			calibratedScore = Math.min(74, Math.max(40, calibratedScore));
+		}
+
+		if (calibratedStatus === "avoid") {
+			calibratedScore = Math.min(49, calibratedScore);
+		}
+
 		return {
 			...result,
+			status: calibratedStatus,
+			score: calibratedScore,
 			reasons: sanitizedReasons.length > 0 ? sanitizedReasons : [fallbackReason],
 			summary:
 				cleanedSummary.length > 0 && !referenceRegex.test(cleanedSummary)
 					? cleanedSummary
 					: fallbackSummary,
+			matched_allergens: matchedAllergens,
+			matched_conditions: matchedConditions,
+			matched_preferences: matchedPreferences,
 			all_ingredients: allIngredients,
 			dangerous_ingredients: dangerousIngredients,
 			citations: limitedCitationSources.map((source) => {
