@@ -3,13 +3,16 @@ import { TextInput } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, ScrollView, Text, VStack, HStack } from "@gluestack-ui/themed";
 import NavBarTop from "../../components/general/NavBarTop";
+import EvaluationProfile, { type EvaluationProfileItem } from "../../components/profile/EvaluationProfile";
 import type { Product } from "../../services/productService";
 
 type ShowProductProps = {
   product: Product;
   capturedUri: string;
   isProcessing: boolean;
-  onContinue: (ingredients: string[]) => void;
+  evaluationProfiles: EvaluationProfileItem[];
+  defaultProfileId?: string;
+  onContinue: (ingredients: string[], profileIds: string[]) => void;
   onRetake: () => void;
 };
 
@@ -25,11 +28,14 @@ export default function ShowProduct({
   product,
   capturedUri,
   isProcessing,
+  evaluationProfiles,
+  defaultProfileId,
   onContinue,
   onRetake,
 }: ShowProductProps) {
   const [isIngredientsExpanded, setIsIngredientsExpanded] = React.useState(true);
   const [isEditingIngredients, setIsEditingIngredients] = React.useState(false);
+  const [isEvaluationProfileOpen, setIsEvaluationProfileOpen] = React.useState(false);
   const [ingredientsText, setIngredientsText] = React.useState("");
 
   React.useEffect(() => {
@@ -193,7 +199,7 @@ export default function ShowProduct({
           <VStack mt="$6" space="sm">
             <Pressable
               onPress={() => {
-                onContinue(parsedIngredients);
+                setIsEvaluationProfileOpen(true);
               }}
               disabled={isProcessing}
               style={{
@@ -229,6 +235,19 @@ export default function ShowProduct({
           </VStack>
         </Box>
       </ScrollView>
+
+      <EvaluationProfile
+        isOpen={isEvaluationProfileOpen}
+        onClose={() => {
+          setIsEvaluationProfileOpen(false);
+        }}
+        profiles={evaluationProfiles}
+        defaultProfileId={defaultProfileId}
+        onSubmit={(selectedProfileIds) => {
+          setIsEvaluationProfileOpen(false);
+          onContinue(parsedIngredients, selectedProfileIds);
+        }}
+      />
     </Box>
   );
 }

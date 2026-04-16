@@ -171,12 +171,8 @@ export default function DifferentProfile({
 					onSelectProfile?.(selectedProfileId);
 					requestClose();
 				}}
-				onAddProfile={() => {
-					onAddProfile?.();
-					requestClose();
-				}}
-				onEditProfile={onEditProfile}
 				title={title}
+				showProfileManagementActions={false}
 			/>
 		</>
 	);

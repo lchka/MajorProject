@@ -5,7 +5,7 @@ import NavBarBottom from "../../components/general/NavBarBottom";
 import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
   EvaluationHistoryCard,
-} from "../../components/evaluations/all-evaluations";
+} from "../../components/evaluations/AllEvaluations";
 import { evaluationContextService, productService, profileService } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
 import type { EvaluationContext } from "../../services/evaluationContextService";

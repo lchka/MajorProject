@@ -96,6 +96,8 @@ export default function AllConditions({
 	onPressCondition,
 	variant = "visual",
 }: AllConditionsProps) {
+	const [conditionViewportWidth, setConditionViewportWidth] = React.useState(0);
+	const [conditionPage, setConditionPage] = React.useState(0);
 	const resolvedConditions = React.useMemo(
 		() => resolveConditionItems(conditionNames, conditions),
 		[conditionNames, conditions],
@@ -121,6 +123,28 @@ export default function AllConditions({
 
 		return columns;
 	}, [conditionLabels, useHorizontalScroller]);
+
+	const pagedColumnWidth = conditionViewportWidth > 0
+		? Math.max(240, conditionViewportWidth - 10)
+		: horizontalColumnWidth;
+
+	const showConditionDots = useHorizontalScroller && conditionColumns.length > 1;
+
+	React.useEffect(() => {
+		setConditionPage(0);
+	}, [conditionLabels.length, useHorizontalScroller]);
+
+	const handleConditionHorizontalScroll = React.useCallback(
+		(offsetX: number) => {
+			if (!conditionViewportWidth) {
+				return;
+			}
+
+			const pageIndex = Math.round(offsetX / conditionViewportWidth);
+			setConditionPage((previous) => (previous === pageIndex ? previous : pageIndex));
+		},
+		[conditionViewportWidth],
+	);
 
 	const renderConditionCard = React.useCallback(
 		(conditionName: string) => {
@@ -270,16 +294,51 @@ export default function AllConditions({
 				variant === "chips" ? (
 					renderChips()
 				) : useHorizontalScroller ? (
-					// Long lists become swipeable columns to avoid overly tall cards stack.
-					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 6 }}>
-						<Box style={{ flexDirection: "row", gap: 12 }}>
-							{conditionColumns.map((column, columnIndex) => (
-								<Box key={`condition-column-${columnIndex}`} style={{ width: horizontalColumnWidth, gap: 12 }}>
-									{column.map((conditionName) => renderConditionCard(conditionName))}
-								</Box>
-							))}
-						</Box>
-					</ScrollView>
+					<Box
+						onLayout={(event) => {
+							setConditionViewportWidth(event.nativeEvent.layout.width);
+						}}
+					>
+						{/* Long lists become swipeable pages with dots, matching past-analysis paging affordance. */}
+						<ScrollView
+							horizontal
+							pagingEnabled
+							scrollEventThrottle={16}
+							onScroll={(event) => {
+								handleConditionHorizontalScroll(event.nativeEvent.contentOffset.x);
+							}}
+							onMomentumScrollEnd={(event) => {
+								handleConditionHorizontalScroll(event.nativeEvent.contentOffset.x);
+							}}
+							showsHorizontalScrollIndicator={false}
+							contentContainerStyle={{ paddingRight: 6 }}
+						>
+							<Box style={{ flexDirection: "row", gap: 12 }}>
+								{conditionColumns.map((column, columnIndex) => (
+									<Box key={`condition-column-${columnIndex}`} style={{ width: pagedColumnWidth, gap: 12 }}>
+										{column.map((conditionName) => renderConditionCard(conditionName))}
+									</Box>
+								))}
+							</Box>
+						</ScrollView>
+
+						{showConditionDots ? (
+							<Box style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 8 }}>
+								{conditionColumns.map((_, index) => (
+									<Box
+										key={`condition-page-dot-${index}`}
+										style={{
+											width: index === conditionPage ? 14 : 6,
+											height: 6,
+											borderRadius: 999,
+											backgroundColor: index === conditionPage ? "#556575" : "#B8C3CC",
+											opacity: index === conditionPage ? 1 : 0.7,
+										}}
+									/>
+								))}
+							</Box>
+						) : null}
+					</Box>
 				) : (
 					<Box style={{ gap: 12 }}>
 						{conditionLabels.map((conditionName) => renderConditionCard(conditionName))}

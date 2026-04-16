@@ -318,14 +318,15 @@ export default function AllPreferences({
 						</Box>
 					</Box>
 
-					{/* This is the horizontal preferences row */}
-					<ScrollView
-						horizontal
-						onScrollBeginDrag={resetInactivityTimer}
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
-					>
-						<Box flexDirection="row" alignItems="flex-start" gap={12}>
+					<Box>
+						{/* This is the horizontal preferences row with pagination dots like Past Analysis. */}
+						<ScrollView
+							horizontal
+							onScrollBeginDrag={resetInactivityTimer}
+							showsHorizontalScrollIndicator={false}
+							contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
+						>
+							<Box flexDirection="row" alignItems="flex-start" gap={12}>
 							{/* These are the existing preference icons + labels */}
 							{resolvedPreferences.map((preference) => (
 								<Box key={preference.runtimeId} alignItems="center" width={94}>
@@ -366,7 +367,7 @@ export default function AllPreferences({
 							))}
 
 							{/* This is the Add More button that opens preference management */}
-							<Pressable
+								<Pressable
 								alignItems="center"
 								width={94}
 								onPress={() => {
@@ -398,9 +399,10 @@ export default function AllPreferences({
 								>
 									ADD MORE
 								</Text>
-							</Pressable>
-						</Box>
-					</ScrollView>
+								</Pressable>
+							</Box>
+						</ScrollView>
+					</Box>
 				</>
 			) : (
 				renderChips()

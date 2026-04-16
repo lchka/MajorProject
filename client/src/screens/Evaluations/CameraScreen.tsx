@@ -14,17 +14,24 @@ import CreateEvaluations from "./ShowEvaluation";
 import ShowProduct from "./ShowProduct";
 import LoadingScreen from "../../components/general/loadingScreen";
 import SimpleLoadingScreen from "../../components/general/SimpleLoadingScreen";
+import { type EvaluationProfileItem } from "../../components/profile/EvaluationProfile";
+import { type DifferentProfileItem } from "../../components/profile/DifferentProfile";
 import {
 evaluationContextService,
 productService,
 profileService,
 saveEvaluation,
 } from "../../services";
-import { isGeminiSystemFailure } from "../../config/api";
+import { isGeminiSystemFailure, resolveMediaUrl } from "../../config/api";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
 import type { AuthStackParamList } from "../../types/navigation";
+
+type EvaluationVariant = {
+profile: Profile;
+context: EvaluationContext;
+};
 
 export default function CameraScreen() {
 const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -43,11 +50,15 @@ const [isFramingReady, setIsFramingReady] = React.useState(false);
 const [isResolvingProduct, setIsResolvingProduct] = React.useState(false);
 const [isProcessingEvaluation, setIsProcessingEvaluation] = React.useState(false);
 const [activeProfile, setActiveProfile] = React.useState<Profile | null>(null);
+const [allProfiles, setAllProfiles] = React.useState<Profile[]>([]);
 const [resolvedProduct, setResolvedProduct] = React.useState<Product | null>(null);
 const [evaluationContext, setEvaluationContext] = React.useState<EvaluationContext | null>(null);
+const [evaluationVariants, setEvaluationVariants] = React.useState<EvaluationVariant[]>([]);
+const [activeEvaluationProfileId, setActiveEvaluationProfileId] = React.useState<string | undefined>(undefined);
 
 const loadActiveProfile = React.useCallback(async (): Promise<Profile | null> => {
 const profiles = await profileService.getMyProfile();
+setAllProfiles(profiles);
 const selectedProfile =
 (routeProfileId
 ? profiles.find((profile) => profile.id === routeProfileId)
@@ -64,6 +75,15 @@ return null;
 setActiveProfile(selectedProfile);
 return selectedProfile;
 }, [routeProfileId]);
+
+const getProfileDisplayName = React.useCallback((profile: Profile) => {
+const name = profile.first_name?.trim();
+if (!name) {
+return "Profile";
+}
+
+return name;
+}, []);
 
 const resolveProductFromPhoto = React.useCallback(async (uri: string) => {
 setIsResolvingProduct(true);
@@ -108,22 +128,38 @@ setIsResolvingProduct(false);
 }
 }, [loadActiveProfile, navigation]);
 
-const runEvaluation = React.useCallback(async () => {
-if (!resolvedProduct) {
+const runEvaluation = React.useCallback(async (product: Product, selectedProfileIds?: string[]) => {
+if (!product) {
 return;
 }
 
 setIsProcessingEvaluation(true);
 
 try {
-const selectedProfile = activeProfile ?? (await loadActiveProfile());
-if (!selectedProfile) {
+const defaultProfile = activeProfile ?? (await loadActiveProfile());
+if (!defaultProfile) {
 return;
 }
 
+const profiles = allProfiles.length > 0 ? allProfiles : await profileService.getMyProfile();
+if (allProfiles.length === 0) {
+setAllProfiles(profiles);
+}
+
+const dedupedRequestedIds = Array.from(
+new Set((selectedProfileIds?.length ? selectedProfileIds : [defaultProfile.id]).filter(Boolean)),
+).slice(0, 3);
+
+const selectedProfiles = dedupedRequestedIds
+.map((profileId) => profiles.find((profile) => profile.id === profileId))
+.filter((profile): profile is Profile => Boolean(profile));
+
+const profilesToEvaluate = selectedProfiles.length > 0 ? selectedProfiles : [defaultProfile];
+
+const evaluationJobs = profilesToEvaluate.map(async (profile) => {
 const evaluatedContext = await evaluationContextService.evaluateProduct({
-productId: resolvedProduct.id,
-profileId: selectedProfile.id,
+productId: product.id,
+profileId: profile.id,
 });
 
 await saveEvaluation({
@@ -132,13 +168,47 @@ profileId: evaluatedContext.profileId,
 productId: evaluatedContext.productId,
 promptId: evaluatedContext.promptId,
 resultJson: evaluatedContext.resultJson,
-productName: resolvedProduct.name,
-profileName: selectedProfile.first_name?.trim() || "Profile",
-imageUri: resolvedProduct.product_image ?? capturedUri ?? null,
+productName: product.name,
+profileName: getProfileDisplayName(profile),
+imageUri: product.product_image ?? capturedUri ?? null,
 createdAt: evaluatedContext.createdAt,
 });
 
-setEvaluationContext(evaluatedContext);
+return {
+profile,
+context: evaluatedContext,
+};
+});
+
+const settled = await Promise.allSettled(evaluationJobs);
+const successful = settled
+.filter(
+(item): item is PromiseFulfilledResult<{ profile: Profile; context: EvaluationContext }> =>
+item.status === "fulfilled",
+)
+.map((item) => item.value);
+
+if (successful.length === 0) {
+throw new Error("All evaluation requests failed.");
+}
+
+const primaryProfileId = profilesToEvaluate[0]?.id;
+const primaryResult =
+successful.find((item) => item.profile.id === primaryProfileId) ?? successful[0];
+
+setEvaluationVariants(successful);
+setActiveEvaluationProfileId(primaryResult.profile.id);
+setActiveProfile(primaryResult.profile);
+setEvaluationContext(primaryResult.context);
+setResolvedProduct(product);
+
+const failedCount = settled.length - successful.length;
+if (failedCount > 0) {
+Alert.alert(
+"Partial success",
+`Saved ${successful.length} evaluation${successful.length === 1 ? "" : "s"}. ${failedCount} failed.`,
+);
+}
 } catch (error) {
 if (isGeminiSystemFailure(error)) {
 navigation.navigate("LandingScreen");
@@ -149,7 +219,7 @@ Alert.alert("Evaluation failed", "Could not finish this evaluation. Please try a
 } finally {
 setIsProcessingEvaluation(false);
 }
-}, [activeProfile, capturedUri, loadActiveProfile, navigation, resolvedProduct]);
+}, [activeProfile, allProfiles, capturedUri, getProfileDisplayName, loadActiveProfile, navigation]);
 
 const capturePhoto = React.useCallback(async () => {
 if (!cameraRef.current || isCapturingPhoto || isResolvingProduct || isProcessingEvaluation) {
@@ -170,6 +240,8 @@ throw new Error("No photo URI");
 setCapturedUri(photo.uri);
 setResolvedProduct(null);
 setEvaluationContext(null);
+setEvaluationVariants([]);
+setActiveEvaluationProfileId(undefined);
 void resolveProductFromPhoto(photo.uri);
 } catch {
 Alert.alert("Capture failed", "Could not capture this image. Please try again.");
@@ -204,6 +276,8 @@ const imageUri = picked.assets[0].uri;
 setCapturedUri(imageUri);
 setResolvedProduct(null);
 setEvaluationContext(null);
+setEvaluationVariants([]);
+setActiveEvaluationProfileId(undefined);
 void resolveProductFromPhoto(imageUri);
 } catch {
 Alert.alert("Upload failed", "Could not open your gallery right now. Please try again.");
@@ -218,8 +292,19 @@ return;
 setCapturedUri(routeImageUri);
 setResolvedProduct(null);
 setEvaluationContext(null);
+setEvaluationVariants([]);
+setActiveEvaluationProfileId(undefined);
 void resolveProductFromPhoto(routeImageUri);
 }, [resolveProductFromPhoto, routeImageUri]);
+
+const evaluationProfileItems = React.useMemo<EvaluationProfileItem[]>(() => {
+return allProfiles.map((profile) => ({
+id: profile.id,
+name: profile.first_name?.trim() || "Profile",
+avatarSource: profile.profile_image ? { uri: profile.profile_image } : undefined,
+isMain: profile.main_profile,
+}));
+}, [allProfiles]);
 
 React.useEffect(() => {
 if (!isCameraReady || capturedUri) {
@@ -238,24 +323,54 @@ clearTimeout(timer);
 
 if (capturedUri && evaluationContext) {
 if (isProcessingEvaluation) {
-return <SimpleLoadingScreen message="Preparing evaluation..." />;
+return <LoadingScreen />;
 }
+
+const resolvedActiveVariant =
+evaluationVariants.find((variant) => variant.profile.id === activeEvaluationProfileId) ??
+evaluationVariants[0] ??
+null;
+const displayedProfile = resolvedActiveVariant?.profile ?? activeProfile;
+const displayedContext = resolvedActiveVariant?.context ?? evaluationContext;
+const differentProfiles = evaluationVariants.map<DifferentProfileItem>(({ profile }) => {
+const avatarUri = resolveMediaUrl(profile.profile_image);
+return {
+id: profile.id,
+name: profile.first_name?.trim() || "Profile",
+avatarSource: avatarUri ? { uri: avatarUri } : undefined,
+isMain: profile.main_profile,
+};
+});
 
 return (
 <CreateEvaluations
 imageUri={resolvedProduct?.product_image ?? capturedUri}
 productName={resolvedProduct?.name ?? "Analyzing Product"}
 isProcessing={false}
-resultJson={evaluationContext?.resultJson}
-greetingName={activeProfile?.first_name?.trim() || "Lili"}
-profileImageUri={activeProfile?.profile_image}
-currentProfileAllergens={activeProfile?.allergens?.map((item) => item.name) ?? []}
-currentProfileConditions={activeProfile?.conditions?.map((item) => item.name) ?? []}
-currentProfilePreferences={activeProfile?.preferences?.map((item) => item.name) ?? []}
+resultJson={displayedContext?.resultJson}
+greetingName={displayedProfile?.first_name?.trim() || "Lili"}
+profileImageUri={displayedProfile?.profile_image}
+differentProfiles={differentProfiles}
+activeDifferentProfileId={displayedProfile?.id}
+onSelectDifferentProfile={(selectedProfileId) => {
+setActiveEvaluationProfileId(selectedProfileId);
+const selectedVariant = evaluationVariants.find(
+(variant) => variant.profile.id === selectedProfileId,
+);
+if (selectedVariant) {
+setActiveProfile(selectedVariant.profile);
+setEvaluationContext(selectedVariant.context);
+}
+}}
+currentProfileAllergens={displayedProfile?.allergens?.map((item) => item.name) ?? []}
+currentProfileConditions={displayedProfile?.conditions?.map((item) => item.name) ?? []}
+currentProfilePreferences={displayedProfile?.preferences?.map((item) => item.name) ?? []}
 onRetake={() => {
 setCapturedUri(null);
 setEvaluationContext(null);
 setResolvedProduct(null);
+setEvaluationVariants([]);
+setActiveEvaluationProfileId(undefined);
 setActiveProfile(null);
 }}
 />
@@ -267,16 +382,19 @@ return <SimpleLoadingScreen message="Extracting ingredients..." />;
 }
 
 if (capturedUri && isProcessingEvaluation) {
-return <SimpleLoadingScreen message="Preparing evaluation..." />;
+return <LoadingScreen />;
 }
 
 if (capturedUri && resolvedProduct) {
 return (
+<>
 <ShowProduct
 product={resolvedProduct}
 capturedUri={capturedUri}
 isProcessing={isProcessingEvaluation}
-onContinue={(ingredients) => {
+evaluationProfiles={evaluationProfileItems}
+defaultProfileId={activeProfile?.id}
+onContinue={(ingredients, selectedProfileIds) => {
 void (async () => {
 if (!resolvedProduct) {
 return;
@@ -313,15 +431,18 @@ Alert.alert(
 }
 
 setResolvedProduct(productForEvaluation);
-void runEvaluation();
+void runEvaluation(productForEvaluation, selectedProfileIds);
 })();
 }}
 onRetake={() => {
 setCapturedUri(null);
 setResolvedProduct(null);
 setEvaluationContext(null);
+setEvaluationVariants([]);
+setActiveEvaluationProfileId(undefined);
 }}
 />
+</>
 );
 }
 
@@ -434,10 +555,10 @@ borderRadius={18}
 
 <Box
 position="absolute"
-top="26%"
-left="22%"
-right="22%"
-height="46%"
+top="19%"
+left="12%"
+right="12%"
+height="58%"
 borderWidth={6}
 borderColor={isFramingReady ? "#56D32F" : "#E76767"}
 borderRadius={16}

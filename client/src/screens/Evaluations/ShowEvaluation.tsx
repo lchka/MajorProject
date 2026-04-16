@@ -6,6 +6,7 @@ import NavBarTop from "../../components/general/NavBarTop";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import ProfileRetakeBanner from "../../components/banners/ProfileRetakeBanner";
 import DeleteButton from "../../components/Buttons/DeleteButton";
+import ReEvaluateButton from "../../components/Buttons/Re-EvaluateButton";
 import Citations from "../../components/evaluations/Citations";
 import ProdouctInfo from "../../components/conditions/ProductInfo";
 import AllIngredients from "../../components/evaluations/AllIngredients";
@@ -41,6 +42,7 @@ type CreateEvaluationsProps = {
 	resultJson?: EvaluationResultJson | null;
 	onRetake?: () => void;
 	onDelete?: () => void;
+	onPressProfile?: () => void;
 };
 
 const defaultIngredients: IngredientRow[] = [
@@ -178,6 +180,7 @@ export default function CreateEvaluations({
 	resultJson,
 	onRetake,
 	onDelete,
+	onPressProfile,
 }: CreateEvaluationsProps) {
 	const ingredients = React.useMemo<IngredientRow[]>(() => {
 		if (!resultJson) {
@@ -331,11 +334,16 @@ export default function CreateEvaluations({
 				/>
 
 				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-					<Box mb="$2">
+					<Box mb="$2" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
 						<DeleteButton
 							label="Delete"
 							onPress={onDelete}
 							disabled={!onDelete}
+						/>
+						<ReEvaluateButton
+							onPress={onRetake}
+							disabled={!onRetake}
+							width={128}
 						/>
 					</Box>
 
@@ -419,6 +427,7 @@ export default function CreateEvaluations({
 				activeTab="history"
 				avatarSource={avatarSource}
 				onPressUpload={onRetake}
+				onPressProfile={onPressProfile}
 			/>
 		</Box>
 	);

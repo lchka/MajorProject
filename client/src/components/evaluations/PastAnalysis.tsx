@@ -1,4 +1,5 @@
 import React from "react";
+import { useWindowDimensions } from "react-native";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
@@ -35,6 +36,27 @@ const getSkinConcernKey = (evaluation: LocalEvaluation): string => {
   return (matchedConditions[0] ?? profileConditions[0] ?? "").toLowerCase();
 };
 
+const getRiskRank = (evaluation: LocalEvaluation): number => {
+  const normalizedStatus =
+    typeof evaluation.resultJson.status === "string"
+      ? evaluation.resultJson.status.trim().toLowerCase()
+      : "";
+
+  if (normalizedStatus === "safe" || normalizedStatus === "low risk" || normalizedStatus === "low-risk") {
+    return 0;
+  }
+
+  if (normalizedStatus === "caution" || normalizedStatus === "medium risk" || normalizedStatus === "moderate risk") {
+    return 1;
+  }
+
+  if (normalizedStatus === "avoid" || normalizedStatus === "high risk" || normalizedStatus === "high-risk") {
+    return 2;
+  }
+
+  return 3;
+};
+
 const isMissingHistory = (evaluation: LocalEvaluation): boolean => {
   const hasSummary = typeof evaluation.resultJson.summary === "string" && evaluation.resultJson.summary.trim().length > 0;
   const hasConditionSignals =
@@ -68,6 +90,11 @@ const sortEvaluations = (
 
   if (sortOption === "Skin Concern") {
     return entries.sort((a, b) => {
+      const riskCompare = getRiskRank(a) - getRiskRank(b);
+      if (riskCompare !== 0) {
+        return riskCompare;
+      }
+
       const concernCompare = getSkinConcernKey(a).localeCompare(getSkinConcernKey(b));
       if (concernCompare !== 0) {
         return concernCompare;
@@ -99,6 +126,7 @@ type AnalysisCard = {
   image?: string | null;
   status?: string | null;
   isPlaceholder?: boolean;
+  isLoadingPlaceholder?: boolean;
 };
 
 type PastAnalysisProps = {
@@ -113,6 +141,7 @@ export default function PastAnalysis({
   refreshIntervalMs = 3500,
 }: PastAnalysisProps) {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+  const { width: windowWidth } = useWindowDimensions();
   const [analysisPage, setAnalysisPage] = React.useState(0);
   const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
   const [analysisCards, setAnalysisCards] = React.useState<AnalysisCard[]>([]);
@@ -185,6 +214,18 @@ export default function PastAnalysis({
 
   const analysisPages = React.useMemo(() => {
     const pageSize = 9;
+
+    if (analysisLoading) {
+      const loadingItems: AnalysisCard[] = Array.from({ length: pageSize }).map((_, index) => ({
+        id: `loading-${index}`,
+        title: "",
+        image: null,
+        isLoadingPlaceholder: true,
+      }));
+
+      return [loadingItems];
+    }
+
     const pageCount = Math.max(1, Math.ceil(analysisCards.length / pageSize));
 
     return Array.from({ length: pageCount }, (_, pageIndex) => {
@@ -201,19 +242,36 @@ export default function PastAnalysis({
 
       return [...pageItems, ...placeholders];
     });
-  }, [analysisCards]);
+  }, [analysisCards, analysisLoading]);
 
   const updateAnalysisPageFromOffset = React.useCallback((offsetX: number) => {
-    if (!analysisViewportWidth) {
+    const effectiveViewportWidth = analysisViewportWidth || windowWidth;
+    if (!effectiveViewportWidth) {
       return;
     }
 
-    const pageIndex = Math.round(offsetX / analysisViewportWidth);
+    const pageIndex = Math.round(offsetX / effectiveViewportWidth);
     setAnalysisPage((previous) => (previous === pageIndex ? previous : pageIndex));
-  }, [analysisViewportWidth]);
+  }, [analysisViewportWidth, windowWidth]);
+
+  const effectivePageWidth = analysisViewportWidth || windowWidth;
 
   return (
-    <>
+    <Box position="relative">
+      {isSortOpen ? (
+        <Pressable
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          zIndex={90}
+          onPress={() => {
+            setIsSortOpen(false);
+          }}
+        />
+      ) : null}
+
       <Box my="$2" style={styles.sectionHeader} position="relative">
         <Text
           fontSize={22}
@@ -271,7 +329,7 @@ export default function PastAnalysis({
               key={`analysis-page-${pageIndex}`}
               style={[
                 styles.analysisPage,
-                analysisViewportWidth ? { width: analysisViewportWidth } : null,
+                { width: effectivePageWidth },
               ]}
             >
               <Box style={styles.grid}>
@@ -284,6 +342,10 @@ export default function PastAnalysis({
                     ]}
                     onPress={() => {
                       setIsSortOpen(false);
+
+                      if (item.isLoadingPlaceholder) {
+                        return;
+                      }
 
                       if (item.isPlaceholder) {
                         navigation.navigate(
@@ -298,69 +360,84 @@ export default function PastAnalysis({
                       });
                     }}
                   >
-                    <Box style={styles.analysisImageWrap}>
-                      {item.isPlaceholder ? (
-                        <Box style={styles.analysisImagePlaceholderPromptWrap}>
-                          <Box style={styles.analysisPlaceholderIconWrap}>
-                            <Feather name="camera" size={14} color="#FFFFFF" />
-                          </Box>
-                          <Text
-                            textAlign="center"
-                            fontSize={14}
-                            lineHeight={18}
-                            fontFamily="RobotoMedium"
-                            color="#4A86C6"
-                            mt="$1"
-                          >
-                            Scan product
-                          </Text>
-                          <Text
-                            textAlign="center"
-                            fontSize={11}
-                            lineHeight={14}
-                            fontFamily="Roboto"
-                            color="#5F7FA5"
-                            mt="$1"
-                          >
-                            Tap to analyse{"\n"}skincare
-                          </Text>
-                        </Box>
-                      ) : !item.image ? (
-                        <Box style={styles.analysisImagePlaceholder} />
-                      ) : (
-                        <Image
-                          source={{ uri: item.image }}
-                          style={styles.analysisImage}
-                          resizeMode="cover"
-                          alt={item.title || "Past analysis product"}
-                          onError={() => {
-                            console.warn("[PastAnalysis] Failed to load image", item.image);
-                          }}
-                        />
-                      )}
+                    {item.isLoadingPlaceholder ? (
+                      <MotiView
+                        from={{ opacity: 0.45 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ type: "timing", duration: 700, loop: true, repeatReverse: true }}
+                        style={{
+                          flex: 1,
+                          borderRadius: 14,
+                          backgroundColor: "#DCE3EA",
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <Box style={styles.analysisImageWrap}>
+                          {item.isPlaceholder ? (
+                            <Box style={styles.analysisImagePlaceholderPromptWrap}>
+                              <Box style={styles.analysisPlaceholderIconWrap}>
+                                <Feather name="camera" size={14} color="#FFFFFF" />
+                              </Box>
+                              <Text
+                                textAlign="center"
+                                fontSize={14}
+                                lineHeight={18}
+                                fontFamily="RobotoMedium"
+                                color="#4A86C6"
+                                mt="$1"
+                              >
+                                Scan product
+                              </Text>
+                              <Text
+                                textAlign="center"
+                                fontSize={11}
+                                lineHeight={14}
+                                fontFamily="Roboto"
+                                color="#5F7FA5"
+                                mt="$1"
+                              >
+                                Tap to analyse{"\n"}skincare
+                              </Text>
+                            </Box>
+                          ) : !item.image ? (
+                            <Box style={styles.analysisImagePlaceholder} />
+                          ) : (
+                            <Image
+                              source={{ uri: item.image }}
+                              style={styles.analysisImage}
+                              resizeMode="cover"
+                              alt={item.title || "Past analysis product"}
+                              onError={() => {
+                                console.warn("[PastAnalysis] Failed to load image", item.image);
+                              }}
+                            />
+                          )}
 
-                      {!item.isPlaceholder ? (
-                        <Box position="absolute" left={12} bottom={8}>
-                          <WarningChip status={item.status} />
+                          {!item.isPlaceholder ? (
+                            <Box position="absolute" left={12} bottom={8}>
+                              <WarningChip status={item.status} />
+                            </Box>
+                          ) : null}
                         </Box>
-                      ) : null}
-                    </Box>
-                    {item.isPlaceholder ? null : (
-                      <Box style={styles.cardFooter}>
-                        <Text
-                          numberOfLines={1}
-                          style={styles.cardTitle}
-                          pt="$1"
-                          fontWeight={600}
-                          fontSize={14}
-                          lineHeight={12}
-                          fontFamily="Roboto"
-                          color="#121212"
-                        >
-                          {item.title}
-                        </Text>
-                        <AntDesign name="right" size={14} color="#111111" />
-                      </Box>
+                        {item.isPlaceholder ? null : (
+                          <Box style={styles.cardFooter}>
+                            <Text
+                              numberOfLines={1}
+                              style={styles.cardTitle}
+                              pt="$1"
+                              fontWeight={600}
+                              fontSize={14}
+                              lineHeight={12}
+                              fontFamily="Roboto"
+                              color="#121212"
+                            >
+                              {item.title}
+                            </Text>
+                            <AntDesign name="right" size={14} color="#111111" />
+                          </Box>
+                        )}
+                      </>
                     )}
                   </Pressable>
                 ))}
@@ -372,7 +449,7 @@ export default function PastAnalysis({
           <PageDots total={analysisPages.length} activeIndex={analysisPage} />
         )}
       </Box>
-    </>
+    </Box>
   );
 }
 

@@ -44,6 +44,7 @@ type ProfileChoiceProps = {
 	onAddProfile?: () => void;
 	onEditProfile?: (profileId?: string) => void;
 	title?: string;
+	showProfileManagementActions?: boolean;
 };
 
 function getInitials(name: string) {
@@ -60,7 +61,7 @@ function getInitials(name: string) {
 
 	return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
 }
-
+ 
 export default function ProfileChoice({
 	isOpen,
 	isClosing,
@@ -72,6 +73,7 @@ export default function ProfileChoice({
 	onAddProfile,
 	onEditProfile,
 	title = "Change Profile",
+	showProfileManagementActions = true,
 }: ProfileChoiceProps) {
 	const { width: screenWidth } = useWindowDimensions();
 	const swipeStartYRef = React.useRef(0);
@@ -264,21 +266,23 @@ export default function ProfileChoice({
 					</View>
 
 					{/* Floating warning toast layered above modal content. */}
-					<Box
-						style={{
-							position: "absolute",
-							top: 54,
-							left: 14,
-							right: 14,
-							zIndex: 40,
-							elevation: 20,
-						}}
-					>
-						<ProfileWarning
-							visible={showProfileLimitWarning}
-							message="You can only have up to 3 profiles."
-						/>
-					</Box>
+					{showProfileManagementActions ? (
+						<Box
+							style={{
+								position: "absolute",
+								top: 54,
+								left: 14,
+								right: 14,
+								zIndex: 40,
+								elevation: 20,
+							}}
+						>
+							<ProfileWarning
+								visible={showProfileLimitWarning}
+								message="You can only have up to 3 profiles."
+							/>
+						</Box>
+					) : null}
 
 					{/* Header row: title + X close button */}
 					<ModalHeader alignItems="center" justifyContent="space-between" px="$1" py="$1">
@@ -286,16 +290,17 @@ export default function ProfileChoice({
 							{title}
 						</Heading>
 						<Box style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-							{/* Edit toggles visual edit affordances on profile avatars. */}
-							<EditButton
-								onPress={toggleEditMode}
-								label={isEditMode ? "Done" : "Edit"}
-								width={72}
-								borderColor="#79C6EE"
-								textColor="#2E96CB"
-								style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
-								textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none"}}
-							/>
+							{showProfileManagementActions ? (
+								<EditButton
+									onPress={toggleEditMode}
+									label={isEditMode ? "Done" : "Edit"}
+									width={72}
+									borderColor="#79C6EE"
+									textColor="#2E96CB"
+									style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
+									textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none"}}
+								/>
+							) : null}
 						</Box>
 					</ModalHeader>
 
@@ -363,7 +368,7 @@ export default function ProfileChoice({
 										) : null}
 
 										{/* Pencil badge appears only in edit mode. */}
-										{isEditMode ? (
+										{showProfileManagementActions && isEditMode ? (
 											<ProfileEditBadge sizePreset="large" style={{ position: "absolute", bottom: 8, right: 8 }} />
 										) : null}
 
@@ -447,14 +452,14 @@ export default function ProfileChoice({
 														)}
 													</Box>
 													{/* Secondary cards show the same edit affordance for consistency. */}
-													{isEditMode ? (
+													{showProfileManagementActions && isEditMode ? (
 														<ProfileEditBadge sizePreset="small" style={{ position: "absolute", bottom: 20, right: -5 }} />
 													) : null}
 													<Text mt="$2" fontSize={17} lineHeight={19} color="#1A1A1A" fontFamily="Roboto">
 														{profile.name}
 													</Text>
 												</Pressable>
-											) : (
+											) : showProfileManagementActions ? (
 												<Box
 													width={secondaryCircleSize}
 													height={secondaryCircleSize}
@@ -467,47 +472,49 @@ export default function ProfileChoice({
 												>
 													<Feather name="plus" size={24} color="#9DB6C8" />
 												</Box>
-											)}
+											) : null}
 										</Box>
 									))}
 								</Box>
 							</Box>
 
-							<Box mt="$3.5" style={{ paddingTop: 10 }}>
-								<Box style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
-									{/* Add action remains tappable to trigger warning when disabled. */}
-									<Pressable
-										onPress={handleAddProfile}
-										style={{
-											width: "100%",
-											height: 56,
-											borderRadius: 20,
-											backgroundColor: isAddDisabled ? "#E5E7EB" : "#F1F3F7",
-											flexDirection: "row",
-											alignItems: "center",
-											justifyContent: "center",
-											gap: 8,
-											opacity: isAddDisabled ? 0.85 : 1,
-										}}
-									>
-										<Box
+							{showProfileManagementActions ? (
+								<Box mt="$3.5" style={{ paddingTop: 10 }}>
+									<Box style={{ flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+										{/* Add action remains tappable to trigger warning when disabled. */}
+										<Pressable
+											onPress={handleAddProfile}
 											style={{
-												width: 28,
-												height: 28,
-												borderRadius: 14,
-												backgroundColor: isAddDisabled ? "#B9BEC8" : "#7EC6EF",
+												width: "100%",
+												height: 56,
+												borderRadius: 20,
+												backgroundColor: isAddDisabled ? "#E5E7EB" : "#F1F3F7",
+												flexDirection: "row",
 												alignItems: "center",
 												justifyContent: "center",
+												gap: 8,
+												opacity: isAddDisabled ? 0.85 : 1,
 											}}
 										>
-											<Feather name="plus" size={16} color="#FFFFFF" />
-										</Box>
-										<Text fontSize={17} lineHeight={19} color={isAddDisabled ? "#6B7280" : "#1A1A1A"} fontFamily="RobotoMedium" numberOfLines={1}>
-											Add Profile
-										</Text>
-									</Pressable>
+											<Box
+												style={{
+													width: 28,
+													height: 28,
+													borderRadius: 14,
+													backgroundColor: isAddDisabled ? "#B9BEC8" : "#7EC6EF",
+													alignItems: "center",
+													justifyContent: "center",
+												}}
+											>
+												<Feather name="plus" size={16} color="#FFFFFF" />
+											</Box>
+											<Text fontSize={17} lineHeight={19} color={isAddDisabled ? "#6B7280" : "#1A1A1A"} fontFamily="RobotoMedium" numberOfLines={1}>
+												Add Profile
+											</Text>
+										</Pressable>
+									</Box>
 								</Box>
-							</Box>
+							) : null}
 						</Box>
 					</ModalBody>
 				</ModalContent>
