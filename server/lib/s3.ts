@@ -73,6 +73,10 @@ export const buildProductImageKey = (userId: string, file: Express.Multer.File):
     return `product/${userId}/${Date.now()}-${uniqueSuffix}-${baseName}${extension}`;
 };
 
+export const buildOfficialProductImageKey = (productId: string): string => {
+    return `products/${productId}/official.jpg`;
+};
+
 export const getPublicS3Url = (key: string): string => {
     if (!awsS3Bucket) {
         throw new Error("S3 bucket is not configured");
@@ -112,4 +116,24 @@ export const uploadProductImageToS3 = async (userId: string, file: Express.Multe
 
     await s3Client.send(command);
     return getPublicS3Url(key);
+};
+
+export const uploadBufferToS3 = async (params: {
+    key: string;
+    buffer: Buffer;
+    contentType: string;
+}): Promise<string> => {
+    if (!s3Client || !awsS3Bucket) {
+        throw new Error("S3 uploads are not configured. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_S3_BUCKET.");
+    }
+
+    const command = new PutObjectCommand({
+        Bucket: awsS3Bucket,
+        Key: params.key,
+        Body: params.buffer,
+        ContentType: params.contentType,
+    });
+
+    await s3Client.send(command);
+    return getPublicS3Url(params.key);
 };
