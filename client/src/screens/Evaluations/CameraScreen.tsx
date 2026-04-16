@@ -55,7 +55,21 @@ export default function CameraScreen() {
 			setActiveProfile(selectedProfile);
 
 			const scannedProduct = await productService.scanProductImage({ uri });
-			setEvaluatedProduct(scannedProduct);
+
+			let displayProduct: Product = scannedProduct;
+			try {
+				const officialImagePayload = await productService.getOfficialImageByProductId(scannedProduct.id);
+				displayProduct = {
+					...scannedProduct,
+					product_image: officialImagePayload.product_image,
+					product_image_user: officialImagePayload.product_image_user,
+					product_image_official: officialImagePayload.product_image_official,
+				};
+			} catch {
+				// Keep the scanned image when official lookup fails.
+			}
+
+			setEvaluatedProduct(displayProduct);
 
 			const evaluatedContext = await evaluationContextService.evaluateProduct({
 				productId: scannedProduct.id,
@@ -68,9 +82,9 @@ export default function CameraScreen() {
 				productId: evaluatedContext.productId,
 				promptId: evaluatedContext.promptId,
 				resultJson: evaluatedContext.resultJson,
-				productName: scannedProduct.name,
+				productName: displayProduct.name,
 				profileName: selectedProfile.first_name?.trim() || "Profile",
-				imageUri: scannedProduct.product_image ?? null,
+				imageUri: displayProduct.product_image ?? null,
 				createdAt: evaluatedContext.createdAt,
 			});
 
@@ -129,7 +143,7 @@ export default function CameraScreen() {
 
 		return (
 			<CreateEvaluations
-				imageUri={capturedUri}
+				imageUri={evaluatedProduct?.product_image ?? capturedUri}
 				productName={evaluatedProduct?.name ?? "Analyzing Product"}
 				isProcessing={false}
 				resultJson={evaluationContext?.resultJson}

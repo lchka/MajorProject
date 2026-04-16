@@ -10,6 +10,7 @@ export {
   getLocalEvaluations,
   setLocalEvaluations,
   saveEvaluation,
+  removeLocalEvaluationById,
 } from './localEvaluationStorage';
 
 // Re-export types

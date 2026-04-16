@@ -10,11 +10,21 @@ export interface Product {
   id: string;
   name: string;
   product_image?: string | null;
+  product_image_user?: string | null;
+  product_image_official?: string | null;
   brand?: string;
   ingredients?: string[] | unknown;
   category?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProductOfficialImagePayload {
+  productId: string;
+  product_image: string;
+  product_image_user: string;
+  product_image_official: string;
+  source: "cached" | "serpapi";
 }
 
 export const productService = {
@@ -39,6 +49,12 @@ export const productService = {
       },
     });
 
+    return response.data;
+  },
+  getOfficialImageByProductId: async (productId: string): Promise<ProductOfficialImagePayload> => {
+    const response = await api.get(`/product-image`, {
+      params: { productId },
+    });
     return response.data;
   },
 };

@@ -22,7 +22,7 @@ const STAGES: LoadingStage[] = [
 	},
 	{
 		key: "hourglass",
-		message: "Finalizing your results",
+		message: "Finalising your results",
 		durationMs: null,
 	},
 ];

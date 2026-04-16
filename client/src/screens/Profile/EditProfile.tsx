@@ -13,10 +13,12 @@ import { Box, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import BackButton from "../../components/Buttons/BackButton";
 import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
-import ProfileEditBadge from "../../components/profile/ProfileEditBadge";
+import ProfileEditBadgeComponent from "../../components/profile/ProfileEditBadge";
+import AllConditions from "../../components/conditions/AllConditions";
+import AllAllergens from "../../components/allergens/AllAllergens";
 import AllPreferences from "../../components/preferences/AllPreferences";
 import RedBanner from "../../components/banners/RedBanner";
-import profileService, { ProfileImageUploadFile } from "../../services/profileService";
+import profileApiService, { ProfileImageUploadFile } from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
 
 export default function EditProfileScreen() {
@@ -31,6 +33,8 @@ export default function EditProfileScreen() {
   const [livePreferenceNames, setLivePreferenceNames] = React.useState<string[]>(
     profilePreferenceNames ?? [],
   );
+  const [liveConditionNames, setLiveConditionNames] = React.useState<string[]>([]);
+  const [liveAllergenNames, setLiveAllergenNames] = React.useState<string[]>([]);
   const [profileImageUri, setProfileImageUri] = React.useState(initialProfileImageUri);
   const [originalNameValue, setOriginalNameValue] = React.useState(profileName);
   const [nameValue, setNameValue] = React.useState(profileName);
@@ -93,30 +97,36 @@ export default function EditProfileScreen() {
     React.useCallback(() => {
       let isMounted = true;
 
-      const refreshPreferences = async () => {
+      const refreshProfileOptions = async () => {
         if (!profileId) {
           if (isMounted) {
             setLivePreferenceNames(profilePreferenceNames ?? []);
+            setLiveConditionNames([]);
+            setLiveAllergenNames([]);
           }
           return;
         }
 
         try {
-          const profiles = await profileService.getMyProfile();
+          const profiles = await profileApiService.getMyProfile();
           if (!isMounted) {
             return;
           }
 
           const activeProfile = profiles.find((item) => item.id === profileId);
           setLivePreferenceNames(activeProfile?.preferences?.map((item) => item.name) ?? []);
+          setLiveConditionNames(activeProfile?.conditions?.map((item) => item.name) ?? []);
+          setLiveAllergenNames(activeProfile?.allergens?.map((item) => item.name) ?? []);
         } catch {
           if (isMounted) {
             setLivePreferenceNames(profilePreferenceNames ?? []);
+            setLiveConditionNames([]);
+            setLiveAllergenNames([]);
           }
         }
       };
 
-      void refreshPreferences();
+      void refreshProfileOptions();
 
       return () => {
         isMounted = false;
@@ -147,7 +157,7 @@ export default function EditProfileScreen() {
 
     try {
       setIsSaving(true);
-      const updatedProfile = await profileService.updateProfile(profileId, {
+      const updatedProfile = await profileApiService.updateProfile(profileId, {
         ...(profileImage ? { profile_image: profileImage } : {}),
         ...(hasNameChanges
           ? {
@@ -202,7 +212,7 @@ export default function EditProfileScreen() {
           onPress: async () => {
             try {
               setIsDeleting(true);
-              await profileService.deleteProfile(profileId);
+              await profileApiService.deleteProfile(profileId);
               Alert.alert("Profile removed", "The profile has been deleted.", [
                 {
                   text: "OK",
@@ -248,7 +258,7 @@ export default function EditProfileScreen() {
           onPress: async () => {
             try {
               setIsUpdatingMain(true);
-              await profileService.updateProfile(profileId, { main_profile: true });
+              await profileApiService.updateProfile(profileId, { main_profile: true });
               setIsMainStatus(true);
               navigation.setParams({ profileIsMain: true });
             } catch {
@@ -282,7 +292,6 @@ export default function EditProfileScreen() {
         style={{
           position: "absolute",
           top: 86,
-          left: 16,
           right: 16,
           zIndex: 50,
           elevation: 30,
@@ -368,7 +377,7 @@ export default function EditProfileScreen() {
               />
             ) : null}
 
-            <ProfileEditBadge
+            <ProfileEditBadgeComponent
               sizePreset="large"
               style={{
                 position: "absolute",
@@ -402,7 +411,7 @@ export default function EditProfileScreen() {
                 paddingVertical: 8,
               }}
             />
-            <ProfileEditBadge sizePreset="small" />
+            <ProfileEditBadgeComponent sizePreset="small" />
           </Box>
 
           <Box style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 }}>
@@ -429,7 +438,7 @@ export default function EditProfileScreen() {
                 paddingVertical: 8,
               }}
             />
-            <ProfileEditBadge sizePreset="small" />
+            <ProfileEditBadgeComponent sizePreset="small" />
           </Box>
 
           <Box w="$full" mt="$4" px="$2">
@@ -484,63 +493,63 @@ export default function EditProfileScreen() {
               </Text>
             </Box>
           </Pressable>
-<Text fontSize={24} py="$6" color="black" fontWeight={600}>Profile Analysis Options</Text>
-          <Pressable
-            onPress={() => {
-              // Conditions editor can be connected here.
-            }}
+          <Text fontSize={24} py="$6" color="black" fontWeight={600}>
+            Profile Analysis Options
+          </Text>
+
+          <Box
             style={{
-              paddingVertical: 14,
-              paddingHorizontal: 16,
               backgroundColor: "#FFFFFF",
               borderRadius: 16,
               borderWidth: 1,
               borderColor: "#E4ECF3",
-              marginBottom: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
+              paddingHorizontal: 14,
+              paddingVertical: 12,
             }}
           >
-            <Text fontSize={28} lineHeight={31} color="#111111" fontFamily="RobotoMedium">
-              Conditions
-            </Text>
-            <Feather name="chevron-right" size={22} color="#7B8794" />
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              // Allergens editor can be connected here.
-            }}
-            style={{
-              paddingVertical: 14,
-              paddingHorizontal: 16,
-              backgroundColor: "#FFFFFF",
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: "#E4ECF3",
-              marginBottom: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Text fontSize={28} lineHeight={31} color="#111111" fontFamily="RobotoMedium">
-              Allergens
-            </Text>
-            <Feather name="chevron-right" size={22} color="#7B8794" />
-          </Pressable>
-
-          <Box style={{ marginTop: 8, marginBottom: 10 }}>
-            <AllPreferences
-              profilePreferenceNames={livePreferenceNames}
+            <AllConditions
+              conditionNames={liveConditionNames}
               profileFirstName={profileFirstName}
-              onAddPreference={() =>
-                navigation.navigate("PreferenceScreen", {
+              variant="visual"
+              onPressEdit={() =>
+                navigation.navigate("ConditionScreen", {
+                  profileId: route.params?.profileId,
+                })
+              }
+              onPressCondition={() =>
+                navigation.navigate("ConditionScreen", {
                   profileId: route.params?.profileId,
                 })
               }
             />
+
+            <AllAllergens
+              allergenNames={liveAllergenNames}
+              profileFirstName={profileFirstName}
+              variant="visual"
+              onToggleEditMode={() =>
+                navigation.navigate("AllergenScreen", {
+                  profileId: route.params?.profileId,
+                })
+              }
+              onOpenAddAllergen={() =>
+                navigation.navigate("AllergenScreen", {
+                  profileId: route.params?.profileId,
+                })
+              }
+            />
+
+            <Box style={{ marginTop: 4 }}>
+              <AllPreferences
+                profilePreferenceNames={livePreferenceNames}
+                profileFirstName={profileFirstName}
+                onAddPreference={() =>
+                  navigation.navigate("PreferenceScreen", {
+                    profileId: route.params?.profileId,
+                  })
+                }
+              />
+            </Box>
           </Box>
         </Box>
       </ScrollView>

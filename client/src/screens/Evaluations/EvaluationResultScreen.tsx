@@ -1,8 +1,14 @@
 import React from "react";
+import { Alert } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import CreateEvaluations from "./ShowEvaluation";
-import { evaluationContextService, productService, profileService } from "../../services";
+import {
+  evaluationContextService,
+  productService,
+  profileService,
+  removeLocalEvaluationById,
+} from "../../services";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
@@ -84,6 +90,33 @@ export default function EvaluationResultScreen() {
     );
   }
 
+  const handleDelete = async () => {
+    if (!context) {
+      return;
+    }
+
+    Alert.alert(
+      "Delete Evaluation",
+      "Are you sure you want to delete this evaluation?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await evaluationContextService.deleteById(context.id);
+              await removeLocalEvaluationById(context.id);
+              navigation.navigate("HistoryScreen", { profileId: context.profileId });
+            } catch {
+              Alert.alert("Delete failed", "Could not delete this evaluation right now.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <CreateEvaluations
       imageUri={product?.product_image ?? undefined}
@@ -94,6 +127,7 @@ export default function EvaluationResultScreen() {
       currentProfileConditions={profile?.conditions?.map((item) => item.name) ?? []}
       currentProfilePreferences={profile?.preferences?.map((item) => item.name) ?? []}
       resultJson={context.resultJson}
+      onDelete={handleDelete}
       onRetake={() => {
         navigation.navigate("CameraScreen", {
           profileId: context.profileId,

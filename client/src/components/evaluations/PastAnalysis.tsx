@@ -18,63 +18,79 @@ type AnalysisCard = {
 type PastAnalysisProps = {
   profileId?: string | null;
   title?: string;
+  refreshIntervalMs?: number;
 };
 
 export default function PastAnalysis({
   profileId,
   title = "Past Analysis",
+  refreshIntervalMs = 3500,
 }: PastAnalysisProps) {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const [analysisPage, setAnalysisPage] = React.useState(0);
   const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
   const [analysisCards, setAnalysisCards] = React.useState<AnalysisCard[]>([]);
   const [analysisLoading, setAnalysisLoading] = React.useState(true);
+  const cardsSignatureRef = React.useRef<string>("");
 
   React.useEffect(() => {
     setAnalysisPage(0);
   }, [profileId]);
 
+  React.useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil(analysisCards.length / 9));
+    if (analysisPage > pageCount - 1) {
+      setAnalysisPage(Math.max(0, pageCount - 1));
+    }
+  }, [analysisCards.length, analysisPage]);
+
+  const loadPastAnalysis = React.useCallback(async () => {
+    try {
+      const localEvaluations = await getLocalEvaluations();
+      const scopedEvaluations = profileId
+        ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
+        : localEvaluations;
+
+      const cards = scopedEvaluations.map((evaluation) => {
+        return {
+          id: evaluation.evaluationContextId,
+          title: evaluation.productName || "Unknown product",
+          image: resolveMediaUrl(evaluation.imageUri) ?? null,
+        } satisfies AnalysisCard;
+      });
+
+      const nextSignature = JSON.stringify(
+        cards.map((card) => ({ id: card.id, title: card.title, image: card.image })),
+      );
+
+      if (nextSignature !== cardsSignatureRef.current) {
+        cardsSignatureRef.current = nextSignature;
+        setAnalysisCards(cards);
+      }
+    } catch {
+      if (cardsSignatureRef.current !== "[]") {
+        cardsSignatureRef.current = "[]";
+        setAnalysisCards([]);
+      }
+    }
+  }, [profileId]);
+
   useFocusEffect(
     React.useCallback(() => {
-    let isMounted = true;
-
-    const loadPastAnalysis = async () => {
       setAnalysisLoading(true);
 
-      try {
-        const localEvaluations = await getLocalEvaluations();
-        const scopedEvaluations = profileId
-          ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
-          : localEvaluations;
+      void loadPastAnalysis().finally(() => {
+        setAnalysisLoading(false);
+      });
 
-        const cards = scopedEvaluations.map((evaluation) => {
-          return {
-            id: evaluation.evaluationContextId,
-            title: evaluation.productName || "Unknown product",
-            image: resolveMediaUrl(evaluation.imageUri) ?? null,
-          } satisfies AnalysisCard;
-        });
+      const intervalId = setInterval(() => {
+        void loadPastAnalysis();
+      }, refreshIntervalMs);
 
-        if (isMounted) {
-          setAnalysisCards(cards);
-        }
-      } catch {
-        if (isMounted) {
-          setAnalysisCards([]);
-        }
-      } finally {
-        if (isMounted) {
-          setAnalysisLoading(false);
-        }
-      }
-    };
-
-    void loadPastAnalysis();
-
-    return () => {
-      isMounted = false;
-    };
-    }, [profileId]),
+      return () => {
+        clearInterval(intervalId);
+      };
+    }, [loadPastAnalysis, refreshIntervalMs]),
   );
 
   const analysisPages = React.useMemo(() => {

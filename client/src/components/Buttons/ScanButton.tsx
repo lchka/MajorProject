@@ -6,7 +6,7 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { Box, Pressable } from "@gluestack-ui/themed";
 import { AuthStackParamList } from "../../types/navigation";
 
-type ScanButton = {
+type ScanButtonProps = {
 	onPress?: () => void;
 	iconColor?: string;
 	iconSize?: number;
@@ -16,16 +16,12 @@ type ScanButton = {
 export default function ScanButton
 ({
 	onPress,
-	iconColor = "#4A5562",
 	iconSize = 32,
 	disabled = false,
-}: ScanButton) {
+}: ScanButtonProps) {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
-	const animationRef = React.useRef<LottieView>(null);
 
 	const handlePress = React.useCallback(() => {
-		animationRef.current?.reset();
-		animationRef.current?.play();
 		if (onPress) {
 			onPress();
 			return;
@@ -48,10 +44,9 @@ export default function ScanButton
 			>
 				<Pressable style={styles.button} onPress={handlePress} disabled={disabled}>
 					<LottieView
-						ref={animationRef}
 						source={require("../../../assets/animations/scansmaller.json")}
-						autoPlay={false}
-						loop={false}
+						autoPlay
+						loop
 						style={{ width: iconSize + 18, height: iconSize + 18 }}
 					/>
 				</Pressable>

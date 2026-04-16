@@ -156,3 +156,22 @@ export const saveEvaluation = async (newEvaluation: LocalEvaluation): Promise<vo
 
   await setLocalEvaluations([newEvaluation, ...remaining]);
 };
+
+export const removeLocalEvaluationById = async (evaluationContextId: string): Promise<void> => {
+  const [currentLocal, currentPending] = await Promise.all([
+    getLocalEvaluations(),
+    getPendingArchive(),
+  ]);
+
+  const nextLocal = currentLocal.filter(
+    (item) => item.evaluationContextId !== evaluationContextId,
+  );
+  const nextPending = currentPending.filter(
+    (item) => item.evaluationContextId !== evaluationContextId,
+  );
+
+  await Promise.all([
+    setLocalEvaluations(nextLocal),
+    setPendingArchive(nextPending),
+  ]);
+};

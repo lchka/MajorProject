@@ -5,6 +5,7 @@ import { Box, ScrollView, Text } from "@gluestack-ui/themed";
 import NavBarTop from "../../components/general/NavBarTop";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import ProfileRetakeBanner from "../../components/banners/ProfileRetakeBanner";
+import DeleteButton from "../../components/Buttons/DeleteButton";
 import Citations from "../../components/evaluations/Citations";
 import ProdouctInfo from "../../components/conditions/ProductInfo";
 import AllIngredients from "../../components/evaluations/AllIngredients";
@@ -39,6 +40,7 @@ type CreateEvaluationsProps = {
 	currentProfilePreferences?: string[];
 	resultJson?: EvaluationResultJson | null;
 	onRetake?: () => void;
+	onDelete?: () => void;
 };
 
 const defaultIngredients: IngredientRow[] = [
@@ -175,6 +177,7 @@ export default function CreateEvaluations({
 	currentProfilePreferences,
 	resultJson,
 	onRetake,
+	onDelete,
 }: CreateEvaluationsProps) {
 	const ingredients = React.useMemo<IngredientRow[]>(() => {
 		if (!resultJson) {
@@ -328,6 +331,14 @@ export default function CreateEvaluations({
 				/>
 
 				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+					<Box mb="$2">
+						<DeleteButton
+							label="Delete"
+							onPress={onDelete}
+							disabled={!onDelete}
+						/>
+					</Box>
+
 					<ImageEvaluation imageUri={imageUri} />
 
 					<ProdouctInfo

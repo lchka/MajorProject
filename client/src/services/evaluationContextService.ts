@@ -79,6 +79,9 @@ export const evaluationContextService = {
     const response = await api.get(`/evaluation-contexts/${id}`);
     return response.data;
   },
+  deleteById: async (id: string): Promise<void> => {
+    await api.delete(`/evaluation-contexts/${id}`);
+  },
 };
 
 export default evaluationContextService;
