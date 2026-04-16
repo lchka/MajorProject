@@ -147,6 +147,35 @@ export class ProductController {
 		}
 	}
 
+	async getProductImage(
+		req: Request<Record<string, never>, Record<string, never>, Record<string, never>, { productId?: string }>,
+		res: Response,
+		next: NextFunction,
+	): Promise<void> {
+		try {
+			const userId = req.userId ?? req.user?.id;
+			const userRole = req.user?.role?.name;
+
+			if (!userId || !userRole) {
+				throw new HttpError(UNAUTHORISED, "User is not authenticated");
+			}
+
+			const productId = typeof req.query.productId === "string" ? req.query.productId : "";
+			if (!productId) {
+				throw new HttpError(BAD_REQUEST, "Query param productId is required");
+			}
+
+			if (userRole === "user") {
+				await productService.assertUserOwnsProduct(productId, userId);
+			}
+
+			const imagePayload = await productService.getOfficialImageByProductId(productId);
+			res.status(SUCCESS_RES).json(imagePayload);
+		} catch (error) {
+			next(error);
+		}
+	}
+
 	async deleteProduct(
 		req: Request<{ id: string }>,
 		res: Response,

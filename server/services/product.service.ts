@@ -9,6 +9,8 @@ import {
 	productResponseSchema,
 } from "../types/product.dto.js";
 import { categoryEnum } from "../types/prompt.dto.js";
+import { buildOfficialProductImageKey, uploadBufferToS3 } from "../lib/s3.js";
+import serpApiImageService from "./serpApiImage.service.js";
 import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError.js";
 
 type ProductScanInput = {
@@ -67,9 +69,33 @@ export class ProductService {
 			product: {
 				create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
 				findMany: (args?: Record<string, unknown>) => Promise<unknown[]>;
-				findUnique: (args: { where: { id: string }; select?: Record<string, boolean> }) => Promise<unknown | null>;
+				findUnique: (args: { where: { id: string }; select?: Record<string, boolean | Record<string, unknown>> }) => Promise<unknown | null>;
+				update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
+				delete: (args: { where: { id: string } }) => Promise<unknown>;
 			};
 		}).product;
+	}
+
+	private toProductResponse(product: unknown): ProductResponseDto {
+		const candidate = product as Record<string, unknown>;
+		const userImage =
+			typeof candidate.product_image_user === "string"
+				? candidate.product_image_user
+				: typeof candidate.product_image === "string"
+					? candidate.product_image
+					: "";
+
+		const officialImage =
+			typeof candidate.product_image_official === "string"
+				? candidate.product_image_official
+				: null;
+
+		return productResponseSchema.parse({
+			...candidate,
+			product_image_user: userImage,
+			product_image_official: officialImage,
+			product_image: officialImage ?? userImage,
+		});
 	}
 
 	async getAllProductsByUserId(userId: string): Promise<ProductResponseDto[]> {
@@ -78,7 +104,7 @@ export class ProductService {
 			orderBy: { createdAt: "desc" },
 		});
 
-		return productResponseSchema.array().parse(products);
+		return products.map((product) => this.toProductResponse(product));
 	}
 
 	async assertUserOwnsProduct(id: string, userId: string): Promise<void> {
@@ -97,18 +123,21 @@ export class ProductService {
 	}
 
 	async createProduct(userId: string, data: CreateProductDto): Promise<ProductResponseDto> {
+		const userImage = data.product_image_user ?? data.product_image;
+
 		const product = await this.productRuntime.create({
 			data: {
 				userId,
 				name: data.name,
-				product_image: data.product_image,
+				product_image_user: userImage,
+				product_image_official: null,
 				brand: data.brand,
 				ingredients: data.ingredients as Prisma.InputJsonValue,
 				category: data.category,
 			},
 		});
 
-		return productResponseSchema.parse(product);
+		return this.toProductResponse(product);
 	}
 
 	async createProductFromScan(userId: string, input: ProductScanInput): Promise<ProductResponseDto> {
@@ -139,7 +168,7 @@ export class ProductService {
 			throw new HttpError(NOT_FOUND, `Product with id '${id}' not found`);
 		}
 
-		return productResponseSchema.parse(product);
+		return this.toProductResponse(product);
 	}
 
 	async getAllProducts(): Promise<ProductResponseDto[]> {
@@ -147,14 +176,18 @@ export class ProductService {
 			orderBy: { createdAt: "desc" },
 		});
 
-		return productResponseSchema.array().parse(products);
+		return products.map((product) => this.toProductResponse(product));
 	}
 
 	async updateProduct(id: string, data: UpdateProductDto): Promise<ProductResponseDto> {
 		await this.assertProductExists(id);
 
-		const updateData: Prisma.ProductUpdateInput = {
-			...data,
+		const updateData: Record<string, unknown> = {
+			name: data.name,
+			brand: data.brand,
+			category: data.category,
+			product_image_user: data.product_image_user ?? data.product_image,
+			product_image_official: data.product_image_official,
 			ingredients:
 				data.ingredients !== undefined
 					? (data.ingredients as Prisma.InputJsonValue)
@@ -163,10 +196,76 @@ export class ProductService {
 
 		const updatedProduct = await prisma.product.update({
 			where: { id },
-			data: updateData,
+			data: updateData as Prisma.ProductUpdateInput,
 		});
 
-		return productResponseSchema.parse(updatedProduct);
+		return this.toProductResponse(updatedProduct);
+	}
+
+	async getOfficialImageByProductId(id: string): Promise<{
+		productId: string;
+		product_image_official: string;
+		product_image_user: string;
+		product_image: string;
+		source: "cached" | "serpapi";
+	}> {
+		const product = (await this.productRuntime.findUnique({
+			where: { id },
+			select: {
+				id: true,
+				name: true,
+				brand: true,
+				product_image_user: true,
+				product_image_official: true,
+			},
+		})) as {
+			id: string;
+			name: string;
+			brand: string;
+			product_image_user: string;
+			product_image_official?: string | null;
+		} | null;
+
+		if (!product) {
+			throw new HttpError(NOT_FOUND, `Product with id '${id}' not found`);
+		}
+
+		if (product.product_image_official) {
+			return {
+				productId: product.id,
+				product_image_official: product.product_image_official,
+				product_image_user: product.product_image_user,
+				product_image: product.product_image_official,
+				source: "cached",
+			};
+		}
+
+		const officialAsset = await serpApiImageService.fetchOfficialImageAsset({
+			name: product.name,
+			brand: product.brand,
+		});
+
+		const officialKey = buildOfficialProductImageKey(product.id);
+		const officialImageUrl = await uploadBufferToS3({
+			key: officialKey,
+			buffer: officialAsset.buffer,
+			contentType: officialAsset.contentType,
+		});
+
+		await this.productRuntime.update({
+			where: { id: product.id },
+			data: {
+				product_image_official: officialImageUrl,
+			},
+		});
+
+		return {
+			productId: product.id,
+			product_image_official: officialImageUrl,
+			product_image_user: product.product_image_user,
+			product_image: officialImageUrl,
+			source: "serpapi",
+		};
 	}
 
 	async deleteProduct(id: string): Promise<{ message: string }> {

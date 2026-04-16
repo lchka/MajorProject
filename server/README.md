@@ -45,3 +45,15 @@ Expected body:
 	"resultJson": {}
 }
 ```
+
+## Official Product Image Endpoint
+
+- Route: `GET /api/product-image?productId=<uuid>`
+- Auth: Requires `Authorization: Bearer <token>`
+- Behavior:
+	- Returns cached `product_image_official` when it exists.
+	- If missing, backend fetches first Google image via SerpAPI, uploads to S3 at `products/{productId}/official.jpg`, stores `product_image_official`, and returns it.
+
+Required environment variable:
+
+- `SERPAPI_API_KEY`

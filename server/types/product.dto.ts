@@ -12,7 +12,9 @@ export const ingredientsJsonSchema = z.json().refine(
 export const productResponseSchema = z.object({
 	id: z.string().uuid("Product id must be a valid UUID"),
 	name: z.string().min(1, "Product name is required"),
-	product_image: imageValid,
+    product_image: imageValid,
+    product_image_user: imageValid.optional(),
+    product_image_official: imageValid.nullable().optional(),
 	brand: z.string().min(1, "Brand name is required"),
 	ingredients: ingredientsJsonSchema,
     category:categoryEnum,
@@ -23,6 +25,7 @@ export const productResponseSchema = z.object({
 export const createProductSchema  =z.object({
     name:z.string().min(2,"Product name must be atleast 2 characters"),
     product_image:imageValid,
+    product_image_user:imageValid.optional(),
     brand:z.string().min(2,"Brand name must be at least 2 characters"),
     ingredients:ingredientsJsonSchema,
     category:categoryEnum
@@ -31,6 +34,8 @@ export const createProductSchema  =z.object({
 export const updateProductSchema  =z.object({
     name:z.string().min(2,"Product name must be atleast 2 characters").optional(),
     product_image:imageValid.optional(),
+    product_image_user:imageValid.optional(),
+    product_image_official:imageValid.optional().nullable(),
     brand:z.string().min(2,"Brand name must be at least 2 characters").optional(),
     ingredients:ingredientsJsonSchema.optional(),
     category:categoryEnum.optional()
