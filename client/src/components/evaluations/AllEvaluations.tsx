@@ -4,6 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import { resolveMediaUrl } from "../../config/api";
+import WarningChip, { normalizeWarningStatus } from "../general/WarningChip";
 
 export type EvaluationHistoryCard = {
   evaluationContextId: string;
@@ -21,18 +22,6 @@ type AllEvaluationsProps = {
   onPressItem?: (item: EvaluationHistoryCard) => void;
 };
 
-const statusColorByValue: Record<string, string> = {
-  safe: "#2F8451",
-  caution: "#8A6200",
-  avoid: "#AF2E2E",
-};
-
-const statusBgByValue: Record<string, string> = {
-  safe: "#EAF7EF",
-  caution: "#FFF5DE",
-  avoid: "#FDEBEC",
-};
-
 const formatDate = (value: string): string => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) {
@@ -44,19 +33,6 @@ const formatDate = (value: string): string => {
     month: "short",
     year: "numeric",
   });
-};
-
-const normalizeStatus = (value?: string): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const normalized = value.toLowerCase();
-  if (normalized === "safe" || normalized === "caution" || normalized === "avoid") {
-    return normalized;
-  }
-
-  return null;
 };
 
 export default function AllEvaluations({
@@ -105,9 +81,7 @@ export default function AllEvaluations({
       {!loading ? (
         <Box style={{ gap: 10 }}>
           {items.map((item, index) => {
-            const status = normalizeStatus(item.status);
-            const badgeColor = status ? statusColorByValue[status] : "#617386";
-            const badgeBg = status ? statusBgByValue[status] : "#EEF3F8";
+            const status = normalizeWarningStatus(item.status);
             const imageUri = resolveMediaUrl(item.imageUri ?? null);
 
             return (
@@ -175,16 +149,7 @@ export default function AllEvaluations({
                     </Text>
 
                     <Box flexDirection="row" alignItems="center" style={{ gap: 8 }}>
-                      <Box px="$2" py="$0.5" borderRadius={999} bg={badgeBg}>
-                        <Text
-                          fontSize={11}
-                          lineHeight={14}
-                          color={badgeColor}
-                          fontFamily="RobotoMedium"
-                        >
-                          {status ? status.toUpperCase() : "UNKNOWN"}
-                        </Text>
-                      </Box>
+                      <WarningChip status={status} />
                       <Feather name="chevron-right" size={16} color="#62758A" />
                     </Box>
                   </Box>

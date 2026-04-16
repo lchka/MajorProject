@@ -2,16 +2,102 @@ import React from "react";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
+import { MotiView } from "moti";
 import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
-import { getLocalEvaluations } from "../../services";
+import {
+  SortDropdown,
+  type PastAnalysisSortOption,
+} from "../actions/PastAnalysisDropdown";
+import WarningChip from "../general/WarningChip";
+import { getLocalEvaluations, type LocalEvaluation } from "../../services";
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
 import type { AuthStackParamList } from "../../types/navigation";
+
+const DEFAULT_SORT_OPTION: PastAnalysisSortOption = "Newest First (DEFAULT)";
+
+const toTimestamp = (value: string): number => {
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+};
+
+const getSkinConcernKey = (evaluation: LocalEvaluation): string => {
+  const matchedConditions = toStringArray(evaluation.resultJson.matched_conditions);
+  const profileConditions = toStringArray(evaluation.resultJson.profile_conditions);
+  return (matchedConditions[0] ?? profileConditions[0] ?? "").toLowerCase();
+};
+
+const isMissingHistory = (evaluation: LocalEvaluation): boolean => {
+  const hasSummary = typeof evaluation.resultJson.summary === "string" && evaluation.resultJson.summary.trim().length > 0;
+  const hasConditionSignals =
+    toStringArray(evaluation.resultJson.matched_conditions).length > 0 ||
+    toStringArray(evaluation.resultJson.profile_conditions).length > 0;
+  const hasAllergenSignals =
+    toStringArray(evaluation.resultJson.matched_allergens).length > 0 ||
+    toStringArray(evaluation.resultJson.profile_allergens).length > 0;
+  const hasPreferenceSignals =
+    toStringArray(evaluation.resultJson.matched_preferences).length > 0 ||
+    toStringArray(evaluation.resultJson.profile_preferences).length > 0;
+
+  return !hasSummary && !hasConditionSignals && !hasAllergenSignals && !hasPreferenceSignals;
+};
+
+const sortEvaluations = (
+  evaluations: LocalEvaluation[],
+  sortOption: PastAnalysisSortOption,
+): LocalEvaluation[] => {
+  const entries = [...evaluations];
+
+  if (sortOption === "Oldest First") {
+    return entries.sort((a, b) => toTimestamp(a.createdAt) - toTimestamp(b.createdAt));
+  }
+
+  if (sortOption === "Brand A-Z") {
+    return entries.sort((a, b) =>
+      a.productName.localeCompare(b.productName, undefined, { sensitivity: "base" }),
+    );
+  }
+
+  if (sortOption === "Skin Concern") {
+    return entries.sort((a, b) => {
+      const concernCompare = getSkinConcernKey(a).localeCompare(getSkinConcernKey(b));
+      if (concernCompare !== 0) {
+        return concernCompare;
+      }
+
+      return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
+    });
+  }
+
+  if (sortOption === "Missing History?") {
+    return entries.sort((a, b) => {
+      const aMissing = isMissingHistory(a);
+      const bMissing = isMissingHistory(b);
+
+      if (aMissing !== bMissing) {
+        return aMissing ? -1 : 1;
+      }
+
+      return toTimestamp(b.createdAt) - toTimestamp(a.createdAt);
+    });
+  }
+
+  return entries.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+};
 
 type AnalysisCard = {
   id: string;
   title: string;
   image?: string | null;
+  status?: string | null;
   isPlaceholder?: boolean;
 };
 
@@ -31,6 +117,8 @@ export default function PastAnalysis({
   const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
   const [analysisCards, setAnalysisCards] = React.useState<AnalysisCard[]>([]);
   const [analysisLoading, setAnalysisLoading] = React.useState(true);
+  const [isSortOpen, setIsSortOpen] = React.useState(false);
+  const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>(DEFAULT_SORT_OPTION);
   const cardsSignatureRef = React.useRef<string>("");
 
   React.useEffect(() => {
@@ -50,17 +138,19 @@ export default function PastAnalysis({
       const scopedEvaluations = profileId
         ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
         : localEvaluations;
+      const sortedEvaluations = sortEvaluations(scopedEvaluations, sortOption);
 
-      const cards = scopedEvaluations.map((evaluation) => {
+      const cards = sortedEvaluations.map((evaluation) => {
         return {
           id: evaluation.evaluationContextId,
           title: evaluation.productName || "Unknown product",
           image: resolveMediaUrl(evaluation.imageUri) ?? null,
+          status: typeof evaluation.resultJson.status === "string" ? evaluation.resultJson.status : null,
         } satisfies AnalysisCard;
       });
 
       const nextSignature = JSON.stringify(
-        cards.map((card) => ({ id: card.id, title: card.title, image: card.image })),
+        cards.map((card) => ({ id: card.id, title: card.title, image: card.image, status: card.status })),
       );
 
       if (nextSignature !== cardsSignatureRef.current) {
@@ -73,7 +163,7 @@ export default function PastAnalysis({
         setAnalysisCards([]);
       }
     }
-  }, [profileId]);
+  }, [profileId, sortOption]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -113,9 +203,18 @@ export default function PastAnalysis({
     });
   }, [analysisCards]);
 
+  const updateAnalysisPageFromOffset = React.useCallback((offsetX: number) => {
+    if (!analysisViewportWidth) {
+      return;
+    }
+
+    const pageIndex = Math.round(offsetX / analysisViewportWidth);
+    setAnalysisPage((previous) => (previous === pageIndex ? previous : pageIndex));
+  }, [analysisViewportWidth]);
+
   return (
     <>
-      <Box my="$2" style={styles.sectionHeader}>
+      <Box my="$2" style={styles.sectionHeader} position="relative">
         <Text
           fontSize={22}
           pt="$2"
@@ -125,7 +224,26 @@ export default function PastAnalysis({
         >
           {title}
         </Text>
-        <Feather name="more-horizontal" size={28} color="#111111" />
+        <Pressable
+          onPress={() => {
+            setIsSortOpen((previous) => !previous);
+          }}
+          p="$1"
+          borderRadius="$full"
+        >
+          <Feather name="more-horizontal" size={28} color="#111111" />
+        </Pressable>
+
+        {isSortOpen ? (
+          <SortDropdown
+            selectedValue={sortOption}
+            onSelect={(nextOption) => {
+              setSortOption(nextOption);
+              setAnalysisPage(0);
+              setIsSortOpen(false);
+            }}
+          />
+        ) : null}
       </Box>
 
       <Box
@@ -136,16 +254,16 @@ export default function PastAnalysis({
         <ScrollView
           horizontal
           pagingEnabled
+          scrollEventThrottle={16}
           showsHorizontalScrollIndicator={false}
+          onScrollBeginDrag={() => {
+            setIsSortOpen(false);
+          }}
+          onScroll={(event) => {
+            updateAnalysisPageFromOffset(event.nativeEvent.contentOffset.x);
+          }}
           onMomentumScrollEnd={(event) => {
-            if (!analysisViewportWidth) {
-              return;
-            }
-
-            const pageIndex = Math.round(
-              event.nativeEvent.contentOffset.x / analysisViewportWidth,
-            );
-            setAnalysisPage(pageIndex);
+            updateAnalysisPageFromOffset(event.nativeEvent.contentOffset.x);
           }}
         >
           {analysisPages.map((pageItems, pageIndex) => (
@@ -165,6 +283,8 @@ export default function PastAnalysis({
                       item.isPlaceholder ? styles.analysisPlaceholder : null,
                     ]}
                     onPress={() => {
+                      setIsSortOpen(false);
+
                       if (item.isPlaceholder) {
                         navigation.navigate(
                           "CameraScreen",
@@ -218,6 +338,12 @@ export default function PastAnalysis({
                           }}
                         />
                       )}
+
+                      {!item.isPlaceholder ? (
+                        <Box position="absolute" left={12} bottom={8}>
+                          <WarningChip status={item.status} />
+                        </Box>
+                      ) : null}
                     </Box>
                     {item.isPlaceholder ? null : (
                       <Box style={styles.cardFooter}>
@@ -254,8 +380,21 @@ function PageDots({ total, activeIndex }: { total: number; activeIndex: number }
   return (
     <Box style={styles.pageDotsRow}>
       {Array.from({ length: total }).map((_, index) => (
-        <Box
+        <MotiView
           key={`page-dot-${index}`}
+          from={{
+            width: index === activeIndex ? 14 : 6,
+            opacity: index === activeIndex ? 1 : 0.65,
+            transform: [{ scale: index === activeIndex ? 1 : 0.92 }],
+            backgroundColor: index === activeIndex ? "#556575" : "#B8C3CC",
+          }}
+          animate={{
+            width: index === activeIndex ? 14 : 6,
+            opacity: index === activeIndex ? 1 : 0.65,
+            transform: [{ scale: index === activeIndex ? 1 : 0.92 }],
+            backgroundColor: index === activeIndex ? "#556575" : "#B8C3CC",
+          }}
+          transition={{ type: "timing", duration: 240 }}
           style={[styles.pageDot, index === activeIndex ? styles.pageDotActive : null]}
         />
       ))}
