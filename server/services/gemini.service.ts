@@ -9,6 +9,13 @@ export type ParsedProductFromImage = {
 	category: string;
 };
 
+export type TextVisibilityProbe = {
+	hasVisibleText: boolean;
+	name: string;
+	brand: string;
+	signal: string;
+};
+
 const PRODUCT_CATEGORIES = [
 	"Shampoo",
 	"Deodorant & Antiperspirant",
@@ -66,6 +73,21 @@ Rules:
 - Exclude claims such as "No Silicone", "No Mineral Oils", "No Colourants", "Sulfate Free", and "Paraben Free".
 - If you find one long comma-separated list, split into array items.
 - Do not include markdown, code fences, commentary, source links, or extra keys.
+`;
+
+const textVisibilitySchemaDescription = `
+Return ONLY valid JSON in this exact shape:
+{
+	"hasVisibleText": true,
+	"name": "string",
+	"brand": "string"
+}
+
+Rules:
+- hasVisibleText is true only when brand and/or product name text is readable from the label/front pack.
+- hasVisibleText is false when text is blurry, cut off, too small, or not visible.
+- name and brand should be best-effort short values when readable; otherwise empty strings.
+- Do not include markdown, code fences, commentary, or extra keys.
 `;
 
 export class GeminiService {
@@ -200,6 +222,51 @@ export class GeminiService {
 		}
 	}
 
+	private parseTextVisibilityJson(text: string): TextVisibilityProbe {
+		const firstBrace = text.indexOf("{");
+		const lastBrace = text.lastIndexOf("}");
+
+		if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+			return {
+				hasVisibleText: false,
+				name: "",
+				brand: "",
+				signal: "No parseable OCR signal",
+			};
+		}
+
+		try {
+			const parsed = JSON.parse(text.slice(firstBrace, lastBrace + 1)) as {
+				hasVisibleText?: unknown;
+				name?: unknown;
+				brand?: unknown;
+			};
+
+			const name = typeof parsed.name === "string" ? parsed.name.trim() : "";
+			const brand = typeof parsed.brand === "string" ? parsed.brand.trim() : "";
+			const hasVisibleText =
+				typeof parsed.hasVisibleText === "boolean"
+					? parsed.hasVisibleText
+					: name.length > 1 || brand.length > 1;
+
+			const signal = [brand, name].filter(Boolean).join(" | ") || "Weak text signal";
+
+			return {
+				hasVisibleText,
+				name,
+				brand,
+				signal,
+			};
+		} catch {
+			return {
+				hasVisibleText: false,
+				name: "",
+				brand: "",
+				signal: "Unreadable text",
+			};
+		}
+	}
+
 	private async extractIngredientsFallback(file: Express.Multer.File): Promise<string[]> {
 		const model = this.getModel();
 		const result = await model.generateContent([
@@ -312,6 +379,35 @@ export class GeminiService {
 			...parsed,
 			ingredients: webIngredients,
 		};
+	}
+
+	async detectTextVisibility(file: Express.Multer.File): Promise<TextVisibilityProbe> {
+		if (!file?.buffer || !file.mimetype) {
+			throw new HttpError(BAD_REQUEST, "A valid product image file is required");
+		}
+
+		const model = this.getModel();
+		const result = await model.generateContent([
+			textVisibilitySchemaDescription,
+			{
+				inlineData: {
+					mimeType: file.mimetype,
+					data: file.buffer.toString("base64"),
+				},
+			},
+		]);
+
+		const responseText = result.response.text();
+		if (!responseText) {
+			return {
+				hasVisibleText: false,
+				name: "",
+				brand: "",
+				signal: "No OCR response",
+			};
+		}
+
+		return this.parseTextVisibilityJson(responseText);
 	}
 }
 

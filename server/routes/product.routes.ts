@@ -27,6 +27,14 @@ router.post(
 	productController.createProductFromScan.bind(productController),
 );
 
+router.post(
+	"/scan/visibility",
+	authMiddleware,
+	can(Permission.PRODUCT_CREATE),
+	productImageUpload,
+	productController.detectScanTextVisibility.bind(productController),
+);
+
 // list products
 router.get(
 	"/",
