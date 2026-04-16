@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import CreateEvaluations from "./ShowEvaluation";
+import LoadingScreen from "../../components/general/loadingScreen";
 import {
   evaluationContextService,
   productService,
@@ -71,13 +72,7 @@ export default function EvaluationResultScreen() {
   }, [route.params.evaluationContextId]);
 
   if (loading) {
-    return (
-      <Box flex={1} bg="#F8FBFF" alignItems="center" justifyContent="center" px="$5">
-        <Text fontSize={16} lineHeight={20} color="#4E6074" fontFamily="RobotoMedium">
-          Loading evaluation...
-        </Text>
-      </Box>
-    );
+    return <LoadingScreen staged={false} message="Loading evaluation..." />;
   }
 
   if (!context) {

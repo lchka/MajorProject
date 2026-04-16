@@ -27,6 +27,13 @@ export interface ProductOfficialImagePayload {
   source: "cached" | "serpapi" | "fallback";
 }
 
+export interface UpdateProductInput {
+  name?: string;
+  brand?: string;
+  ingredients?: string[];
+  category?: string;
+}
+
 export const productService = {
   getProductById: async (id: string): Promise<Product> => {
     const response = await api.get(`/products/${id}`);
@@ -61,6 +68,10 @@ export const productService = {
       return null;
     }
 
+    return response.data;
+  },
+  updateProduct: async (id: string, data: UpdateProductInput): Promise<Product> => {
+    const response = await api.patch(`/products/${id}`, data);
     return response.data;
   },
 };

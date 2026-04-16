@@ -126,6 +126,15 @@ export default function HistoryScreen() {
     [profiles, routeProfileId],
   );
 
+  const profileSwitcherItems = React.useMemo(() => {
+    return profiles.map((profile) => ({
+      id: profile.id,
+      name: profile.first_name?.trim() || "Profile",
+      avatarSource: profile.profile_image ? { uri: profile.profile_image } : undefined,
+      isMain: profile.main_profile,
+    }));
+  }, [profiles]);
+
   return (
     <Box style={styles.screen}>
       <Box
@@ -158,6 +167,27 @@ export default function HistoryScreen() {
         <AllEvaluations
           items={historyItems}
           loading={loading}
+          profileSwitcherItems={profileSwitcherItems}
+          activeProfileId={activeProfile?.id}
+          onSelectProfile={(profileId) => {
+            navigation.navigate("HistoryScreen", { profileId });
+          }}
+          onAddProfile={() => {
+            navigation.navigate("ProfileScreen");
+          }}
+          onEditProfile={(profileId) => {
+            const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
+
+            navigation.navigate("EditProfileScreen", {
+              profileId: profileToEdit?.id,
+              profileName: profileToEdit?.first_name || undefined,
+              profileImageUri: profileToEdit?.profile_image ?? undefined,
+              profilePreferenceNames:
+                profileToEdit?.preferences?.map((item) => item.name) ?? [],
+              profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
+              profileIsMain: profileToEdit?.main_profile ?? false,
+            });
+          }}
           onPressItem={(item) => {
             navigation.navigate("EvaluationResultScreen", {
               evaluationContextId: item.evaluationContextId,

@@ -11,7 +11,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CreateEvaluations from "./ShowEvaluation";
 import ShowProduct from "./ShowProduct";
-import EvaluationLoading from "../loading/EvaluationLoading";
+import LoadingScreen from "../../components/general/loadingScreen";
 import {
 	evaluationContextService,
 	productService,
@@ -28,12 +28,12 @@ export default function CameraScreen() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const route = useRoute<RouteProp<AuthStackParamList, "CameraScreen">>();
 	const routeProfileId = route.params?.profileId;
+	const routeImageUri = route.params?.imageUri;
 	const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 	const [isOpeningCamera, setIsOpeningCamera] = React.useState(false);
 	const [didAutoOpenCamera, setDidAutoOpenCamera] = React.useState(false);
 	const [isResolvingProduct, setIsResolvingProduct] = React.useState(false);
 	const [isProcessingEvaluation, setIsProcessingEvaluation] = React.useState(false);
-	const [hasConfirmedProduct, setHasConfirmedProduct] = React.useState(false);
 	const [activeProfile, setActiveProfile] = React.useState<Profile | null>(null);
 	const [resolvedProduct, setResolvedProduct] = React.useState<Product | null>(null);
 	const [evaluationContext, setEvaluationContext] = React.useState<EvaluationContext | null>(null);
@@ -97,7 +97,7 @@ export default function CameraScreen() {
 	}, [loadActiveProfile, navigation]);
 
 	const runEvaluation = React.useCallback(async () => {
-		if (!resolvedProduct || !hasConfirmedProduct) {
+		if (!resolvedProduct) {
 			return;
 		}
 
@@ -137,7 +137,7 @@ export default function CameraScreen() {
 		} finally {
 			setIsProcessingEvaluation(false);
 		}
-	}, [activeProfile, capturedUri, hasConfirmedProduct, loadActiveProfile, navigation, resolvedProduct]);
+	}, [activeProfile, capturedUri, loadActiveProfile, navigation, resolvedProduct]);
 
 	const handleSnapPhoto = React.useCallback(async () => {
 		if (isOpeningCamera) {
@@ -168,7 +168,6 @@ export default function CameraScreen() {
 			if (result.assets.length > 0) {
 				const imageUri = result.assets[0].uri;
 				setCapturedUri(imageUri);
-				setHasConfirmedProduct(false);
 				setResolvedProduct(null);
 				setEvaluationContext(null);
 				void resolveProductFromPhoto(imageUri);
@@ -185,13 +184,33 @@ export default function CameraScreen() {
 			return;
 		}
 
+		if (!routeImageUri) {
+			return;
+		}
+
+		setDidAutoOpenCamera(true);
+		setCapturedUri(routeImageUri);
+		setResolvedProduct(null);
+		setEvaluationContext(null);
+		void resolveProductFromPhoto(routeImageUri);
+	}, [didAutoOpenCamera, resolveProductFromPhoto, routeImageUri]);
+
+	React.useEffect(() => {
+		if (didAutoOpenCamera) {
+			return;
+		}
+
+		if (routeImageUri) {
+			return;
+		}
+
 		setDidAutoOpenCamera(true);
 		void handleSnapPhoto();
-	}, [didAutoOpenCamera, handleSnapPhoto]);
+	}, [didAutoOpenCamera, handleSnapPhoto, routeImageUri]);
 
 	if (capturedUri && evaluationContext) {
 		if (isProcessingEvaluation) {
-			return <EvaluationLoading />;
+			return <LoadingScreen staged />;
 		}
 
 		return (
@@ -207,7 +226,6 @@ export default function CameraScreen() {
 				currentProfilePreferences={activeProfile?.preferences?.map((item) => item.name) ?? []}
 				onRetake={() => {
 					setCapturedUri(null);
-					setHasConfirmedProduct(false);
 					setEvaluationContext(null);
 					setResolvedProduct(null);
 					setActiveProfile(null);
@@ -218,7 +236,7 @@ export default function CameraScreen() {
 	}
 
 	if (capturedUri && (isResolvingProduct || isProcessingEvaluation)) {
-		return <EvaluationLoading />;
+		return <LoadingScreen staged />;
 	}
 
 	if (capturedUri && resolvedProduct) {
@@ -227,13 +245,48 @@ export default function CameraScreen() {
 				product={resolvedProduct}
 				capturedUri={capturedUri}
 				isProcessing={isProcessingEvaluation}
-				onContinue={() => {
-					setHasConfirmedProduct(true);
-					void runEvaluation();
+				onContinue={(ingredients) => {
+					void (async () => {
+						if (!resolvedProduct) {
+							return;
+						}
+
+						const trimmedIngredients = ingredients
+							.map((item) => item.trim())
+							.filter((item) => item.length > 0);
+
+						let productForEvaluation = resolvedProduct;
+						try {
+							const currentIngredients = Array.isArray(resolvedProduct.ingredients)
+								? resolvedProduct.ingredients.filter(
+									(item): item is string => typeof item === "string" && item.trim().length > 0,
+								)
+								: [];
+
+							const hasChanged =
+								trimmedIngredients.length !== currentIngredients.length ||
+								trimmedIngredients.some((value, index) => value !== currentIngredients[index]);
+
+							if (hasChanged && trimmedIngredients.length > 0) {
+								const updated = await productService.updateProduct(resolvedProduct.id, {
+									ingredients: trimmedIngredients,
+								});
+								productForEvaluation = updated;
+								setResolvedProduct(updated);
+							}
+						} catch {
+							Alert.alert(
+								"Could not save ingredients",
+								"We will continue with the currently detected ingredients.",
+							);
+						}
+
+						setResolvedProduct(productForEvaluation);
+						void runEvaluation();
+					})();
 				}}
 				onRetake={() => {
 					setCapturedUri(null);
-					setHasConfirmedProduct(false);
 					setResolvedProduct(null);
 					setEvaluationContext(null);
 					void handleSnapPhoto();

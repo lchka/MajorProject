@@ -86,44 +86,46 @@ export default function NavBarBottom({
 
 	return (
 		<Box style={styles.bottomNav}>
-			<BottomIcon
-				label="HOME"
-				isActive={activeTab === "home"}
-				onPress={handleHomePress}
-				icon={
-					<Feather
-						name="home"
-						size={32}
-						color={activeTab === "home" ? "#374151" : homeIconColor}
-					/>
-				}
-			/>
-			<BottomIcon
-				label="UPLOAD"
-				isActive={activeTab === "upload"}
-				onPress={handleUploadPress}
-				icon={<Feather name="upload-cloud" size={32} color="#66707A" />}
-			/>
-			<ScanButton onPress={handleUploadPress} />
-			<BottomIcon
-				label="MY HISTORY"
-				isActive={activeTab === "history"}
-				onPress={handleHistoryPress}
-				icon={<Ionicons name="bookmark-outline" size={32} color="#66707A" />}
-			/>
-			<BottomIcon
-				label="PROFILE"
-				isActive={activeTab === "profile"}
-				onPress={handleProfilePress}
-				icon={
-					<Image
-						source={avatarSource}
-						style={{ width: 32, height: 32, borderRadius: 20, opacity: 0.95 }}
-						resizeMode="cover"
-						alt="Profile avatar"
-					/>
-				}
-			/>
+			<Box style={styles.bottomNavRail}>
+				<BottomIcon
+					label="HOME"
+					isActive={activeTab === "home"}
+					onPress={handleHomePress}
+					icon={
+						<Feather
+							name="home"
+							size={32}
+							color={activeTab === "home" ? "#374151" : homeIconColor}
+						/>
+					}
+				/>
+				<BottomIcon
+					label="UPLOAD"
+					isActive={activeTab === "upload"}
+					onPress={handleUploadPress}
+					icon={<Feather name="upload-cloud" size={32} color="#66707A" />}
+				/>
+				<ScanButton onPress={handleUploadPress} />
+				<BottomIcon
+					label="MY HISTORY"
+					isActive={activeTab === "history"}
+					onPress={handleHistoryPress}
+					icon={<Ionicons name="bookmark-outline" size={32} color="#66707A" />}
+				/>
+				<BottomIcon
+					label="PROFILE"
+					isActive={activeTab === "profile"}
+					onPress={handleProfilePress}
+					icon={
+						<Image
+							source={avatarSource}
+							style={{ width: 32, height: 32, borderRadius: 20, opacity: 0.95 }}
+							resizeMode="cover"
+							alt="Profile avatar"
+						/>
+					}
+				/>
+			</Box>
 		</Box>
 	);
 }

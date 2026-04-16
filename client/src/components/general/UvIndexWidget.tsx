@@ -5,6 +5,8 @@ import { LinearGradient } from "expo-linear-gradient";
 type Props = {
   uvIndex: number;
   recommendation?: string;
+  title?: string;
+  subtitle?: string;
   onClose?: () => void;
 };
 
@@ -25,6 +27,8 @@ const getLabel = (uv: number) => {
 export const UvIndexCard: React.FC<Props> = ({
   uvIndex,
   recommendation = "Apply SPF 30+ sunscreen",
+  title = "Today's UV Forecast",
+  subtitle = "Sun exposure guidance",
   onClose,
 }) => {
   const safeUv = Number.isFinite(uvIndex) ? uvIndex : 0;
@@ -44,6 +48,15 @@ export const UvIndexCard: React.FC<Props> = ({
       shadowRadius={10}
       elevation={3}
     >
+      <VStack mb="$3">
+        <Text fontSize="$lg" fontWeight="$bold" color="$coolGray900">
+          {title}
+        </Text>
+        <Text fontSize="$xs" color="$coolGray500">
+          {subtitle}
+        </Text>
+      </VStack>
+
       {/* Header */}
       <HStack justifyContent="space-between" alignItems="center">
         <VStack>

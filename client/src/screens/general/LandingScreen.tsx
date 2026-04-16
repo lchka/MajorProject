@@ -384,8 +384,29 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <Box px="$2" mb="$4">
+        <Box px="$2">
           <PastAnalysis profileId={profileId} />
+        </Box>
+        <Box px="$2" >
+          <AllConditions
+            conditionNames={activeProfileConditions}
+            profileFirstName={activeProfile?.first_name}
+            onPressCondition={(conditionName) => {
+              const matchedCondition = activeProfileConditionDetails.find(
+                (item) => item.name === conditionName,
+              );
+
+              setSelectedCondition({
+                name: conditionName,
+                description: matchedCondition?.description,
+              });
+            }}
+            onPressEdit={() =>
+              navigation.navigate("ConditionScreen", {
+                profileId: profileId ?? undefined,
+              })
+            }
+          />
         </Box>
         <Box px="$2" my="$8">
           <UvIndexCard
@@ -419,27 +440,7 @@ export default function LandingScreen() {
           />
         </Box>
         {/* remember to delete this once the navbar takes up the proper space */}
-        <Box px="$2" my="$4">
-          <AllConditions
-            conditionNames={activeProfileConditions}
-            profileFirstName={activeProfile?.first_name}
-            onPressCondition={(conditionName) => {
-              const matchedCondition = activeProfileConditionDetails.find(
-                (item) => item.name === conditionName,
-              );
-
-              setSelectedCondition({
-                name: conditionName,
-                description: matchedCondition?.description,
-              });
-            }}
-            onPressEdit={() =>
-              navigation.navigate("ConditionScreen", {
-                profileId: profileId ?? undefined,
-              })
-            }
-          />
-        </Box>
+        
         <Box px="$2" my="$4">
           <AllAllergens
             profileFirstName={activeProfile?.first_name}

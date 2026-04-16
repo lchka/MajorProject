@@ -41,6 +41,7 @@ export type AuthStackParamList = {
   CameraScreen:
     | {
         profileId?: string;
+        imageUri?: string;
       }
     | undefined;
   HistoryScreen:

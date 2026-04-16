@@ -1,98 +1,211 @@
 import React from "react";
-import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
+import { TextInput } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import { Box, Image, Pressable, ScrollView, Text, VStack, HStack } from "@gluestack-ui/themed";
+import NavBarTop from "../../components/general/NavBarTop";
 import type { Product } from "../../services/productService";
 
 type ShowProductProps = {
-	product: Product;
-	capturedUri: string;
-	isProcessing: boolean;
-	onContinue: () => void;
-	onRetake: () => void;
+  product: Product;
+  capturedUri: string;
+  isProcessing: boolean;
+  onContinue: (ingredients: string[]) => void;
+  onRetake: () => void;
+};
+
+const toIngredientList = (value: Product["ingredients"]): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
 };
 
 export default function ShowProduct({
-	product,
-	capturedUri,
-	isProcessing,
-	onContinue,
-	onRetake,
+  product,
+  capturedUri,
+  isProcessing,
+  onContinue,
+  onRetake,
 }: ShowProductProps) {
-	return (
-		<Box flex={1} bg="#F2F6FA" px="$5" pt="$8" pb="$6">
-			<Text fontSize={28} lineHeight={32} color="#0F172A" fontFamily="RobotoMedium" mb="$3">
-				Product Found
-			</Text>
-			<Text fontSize={14} lineHeight={20} color="#475569" fontFamily="Roboto" mb="$4">
-				Check this product. If correct, continue to evaluation.
-			</Text>
+  const [isEditingIngredients, setIsEditingIngredients] = React.useState(false);
+  const [ingredientsText, setIngredientsText] = React.useState("");
 
-			<Box
-				style={{
-					borderRadius: 18,
-					borderWidth: 1,
-					borderColor: "#DDE6EF",
-					backgroundColor: "#FFFFFF",
-					overflow: "hidden",
-				}}
-			>
-				<Image
-					source={{ uri: product.product_image ?? capturedUri }}
-					alt={product.name}
-					style={{ width: "100%", height: 260 }}
-					resizeMode="cover"
-				/>
-				<Box px="$4" py="$4" style={{ gap: 8 }}>
-					<Text fontSize={22} lineHeight={26} color="#0F172A" fontFamily="RobotoMedium">
-						{product.name}
-					</Text>
-					{product.brand ? (
-						<Text fontSize={14} lineHeight={18} color="#334155" fontFamily="Roboto">
-							Brand: {product.brand}
-						</Text>
-					) : null}
-					{product.category ? (
-						<Text fontSize={14} lineHeight={18} color="#334155" fontFamily="Roboto">
-							Category: {product.category}
-						</Text>
-					) : null}
-				</Box>
-			</Box>
+  React.useEffect(() => {
+    const ingredients = toIngredientList(product.ingredients);
+    setIngredientsText(ingredients.join(", "));
+    setIsEditingIngredients(false);
+  }, [product.id, product.ingredients]);
 
-			<Box mt="$5" style={{ gap: 10 }}>
-				<Pressable
-					onPress={onContinue}
-					disabled={isProcessing}
-					style={{
-						height: 52,
-						borderRadius: 14,
-						backgroundColor: "#4D9FD8",
-						alignItems: "center",
-						justifyContent: "center",
-						opacity: isProcessing ? 0.7 : 1,
-					}}
-				>
-					<Text fontSize={16} lineHeight={18} color="#FFFFFF" fontFamily="RobotoMedium">
-						Continue To Evaluation
-					</Text>
-				</Pressable>
+  const parsedIngredients = React.useMemo(() => {
+    return ingredientsText
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }, [ingredientsText]);
 
-				<Pressable
-					onPress={onRetake}
-					style={{
-						height: 48,
-						borderRadius: 14,
-						borderWidth: 1,
-						borderColor: "#D6E2ED",
-						backgroundColor: "#FFFFFF",
-						alignItems: "center",
-						justifyContent: "center",
-					}}
-				>
-					<Text fontSize={15} lineHeight={17} color="#3B4A5A" fontFamily="RobotoMedium">
-						Retake Photo
-					</Text>
-				</Pressable>
-			</Box>
-		</Box>
-	);
+  return (
+    <Box flex={1} bg="#F4F7FB">
+      <NavBarTop notificationCount={0} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 28 }}
+      >
+        <Box px="$5" pt="$4" pb="$6">
+          {/* Header */}
+          <VStack space="xs" mb="$5">
+            <Text fontSize={30} lineHeight={34} color="#0F172A" fontFamily="RobotoMedium">
+              Product Found
+            </Text>
+            <Text fontSize={14} color="#64748B">
+              Confirm the product before continuing
+            </Text>
+          </VStack>
+
+          {/* Product Card */}
+          <Box
+            borderRadius={22}
+            overflow="hidden"
+            bg="white"
+            shadowColor="#000"
+            shadowOpacity={0.06}
+            shadowRadius={12}
+            elevation={4}
+          >
+            {/* Image */}
+            <Image
+              source={{ uri: product.product_image ?? capturedUri }}
+              alt={product.name}
+              style={{ width: "100%", height: 280 }}
+              resizeMode="cover"
+            />
+
+        {/* Content */}
+        <VStack px="$5" py="$4" space="sm">
+          {/* Product Name */}
+          <Text fontSize={24} lineHeight={28} color="#0F172A" fontFamily="RobotoMedium">
+            {product.name}
+          </Text>
+
+          {/* Meta Info */}
+          <HStack space="sm" flexWrap="wrap">
+            {product.brand && (
+              <Box
+                bg="#EEF4FF"
+                px="$3"
+                py="$1"
+                borderRadius="$full"
+              >
+                <Text fontSize={12} color="#3B82F6">
+                  {product.brand}
+                </Text>
+              </Box>
+            )}
+
+            {product.category && (
+              <Box
+                bg="#F1F5F9"
+                px="$3"
+                py="$1"
+                borderRadius="$full"
+              >
+                <Text fontSize={12} color="#475569">
+                  {product.category}
+                </Text>
+              </Box>
+            )}
+          </HStack>
+
+          <Box mt="$3">
+            <HStack alignItems="center" justifyContent="space-between" mb="$2">
+              <Text fontSize={14} color="#334155" fontFamily="RobotoMedium">
+                Pulled Ingredients
+              </Text>
+
+              <Pressable
+                onPress={() => {
+                  setIsEditingIngredients((previous) => !previous);
+                }}
+                p="$1.5"
+                borderRadius="$full"
+                bg={isEditingIngredients ? "#DFF0FF" : "#EEF2F7"}
+                borderWidth={1}
+                borderColor={isEditingIngredients ? "#8EC5F0" : "#D6DEE8"}
+              >
+                <Feather name="edit-2" size={14} color={isEditingIngredients ? "#2E96CB" : "#5B6B7A"} />
+              </Pressable>
+            </HStack>
+
+            {isEditingIngredients ? (
+              <Box borderWidth={1} borderColor="#CBD5E1" borderRadius={12} bg="#FFFFFF" px="$3" py="$2">
+                <TextInput
+                  value={ingredientsText}
+                  onChangeText={setIngredientsText}
+                  multiline
+                  textAlignVertical="top"
+                  placeholder="Enter ingredients separated by commas"
+                  placeholderTextColor="#94A3B8"
+                  style={{
+                    minHeight: 86,
+                    fontSize: 14,
+                    lineHeight: 20,
+                    color: "#1E293B",
+                  }}
+                />
+              </Box>
+            ) : (
+              <Box borderWidth={1} borderColor="#E2E8F0" borderRadius={12} bg="#F8FAFC" px="$3" py="$2.5">
+                <Text fontSize={13} lineHeight={18} color="#475569">
+                  {parsedIngredients.length > 0
+                    ? parsedIngredients.join(", ")
+                    : "No ingredients were detected. Tap the pencil to add them."}
+                </Text>
+              </Box>
+            )}
+          </Box>
+        </VStack>
+          </Box>
+
+          {/* Actions */}
+          <VStack mt="$6" space="sm">
+            <Pressable
+              onPress={() => {
+                onContinue(parsedIngredients);
+              }}
+              disabled={isProcessing}
+              style={{
+                height: 54,
+                borderRadius: 16,
+                backgroundColor: "#4D9FD8",
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: isProcessing ? 0.7 : 1,
+              }}
+            >
+              <Text fontSize={16} color="#FFFFFF" fontFamily="RobotoMedium">
+                Continue to Evaluation
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={onRetake}
+              style={{
+                height: 50,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: "#E2E8F0",
+                backgroundColor: "#FFFFFF",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text fontSize={15} color="#475569" fontFamily="RobotoMedium">
+                Retake Photo
+              </Text>
+            </Pressable>
+          </VStack>
+        </Box>
+      </ScrollView>
+    </Box>
+  );
 }

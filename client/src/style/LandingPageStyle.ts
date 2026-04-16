@@ -4,7 +4,7 @@ export const styles = StyleSheet.create({
 	// Page scaffolding
 	screen: {
 		flex: 1,
-		backgroundColor: "#ffffff",//will have to mess around with it more
+		backgroundColor: "#ffffff",
 		
 	},
 	scrollContent: {
@@ -229,11 +229,13 @@ export const styles = StyleSheet.create({
 	},
 	// Bottom navigation bar
 	bottomNav: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		bottom: 0,
-		height: 92,
+		width: "100%",
+		marginTop: "auto",
+		height: 82,
+		backgroundColor: "transparent",
+	},
+	bottomNavRail: {
+		height: 82,
 		backgroundColor: "#C6D8E5",
 		borderTopWidth: 1,
 		borderTopColor: "#AEC3D3",

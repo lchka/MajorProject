@@ -318,7 +318,7 @@ export default function CreateEvaluations({
 
 			<NavBarTop notificationCount={0} />
 
-			<Box flex={1} px="$3" pt="$2" style={{ paddingBottom: 120 }}>
+			<Box flex={1} px="$3" pt="$2">
 				<DifferentProfile
 					profiles={profileSwitcherItems}
 					activeProfileId={activeProfileId}

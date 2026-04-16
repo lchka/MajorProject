@@ -31,37 +31,70 @@ const getStageSource = (stageKey: LoadingStage["key"]) => {
 	if (stageKey === "ai") {
 		return require("../../../assets/animations/loading_ai.json");
 	}
+
 	if (stageKey === "files") {
 		return require("../../../assets/animations/loading_Files.json");
 	}
-	return require("../../../assets/animations/hourglass_loading.json");
+
+	return require("../../../assets/animations/loading_screen.json");
 };
 
-export default function EvaluationLoading() {
+type LoadingScreenProps = {
+	message?: string;
+	staged?: boolean;
+	compact?: boolean;
+};
+
+export default function LoadingScreen({
+	message,
+	staged = true,
+	compact = false,
+}: LoadingScreenProps) {
 	const [stageIndex, setStageIndex] = React.useState(0);
 
 	React.useEffect(() => {
+		if (!staged) {
+			return;
+		}
+
 		const stage = STAGES[stageIndex];
-		if (stage.durationMs === null) return;
+		if (stage.durationMs === null) {
+			return;
+		}
 
 		const timer = setTimeout(() => {
 			setStageIndex((current) =>
-				current >= STAGES.length - 1 ? current : current + 1
+				current >= STAGES.length - 1 ? current : current + 1,
 			);
 		}, stage.durationMs);
 
-		return () => clearTimeout(timer);
-	}, [stageIndex]);
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [stageIndex, staged]);
 
-	const currentStage = STAGES[Math.min(stageIndex, STAGES.length - 1)];
+	const currentStage = staged
+		? STAGES[Math.min(stageIndex, STAGES.length - 1)]
+		: {
+				key: "hourglass" as const,
+				message: message ?? "Loading...",
+			};
+
 	const currentSource = getStageSource(currentStage.key);
 	const animationSize = currentStage.key === "files" ? 390 : 270;
 	const animationBoxSize = currentStage.key === "files" ? 360 : 300;
-
-	const progress = ((stageIndex + 1) / STAGES.length) * 100;
+	const progress = staged ? ((stageIndex + 1) / STAGES.length) * 100 : 40;
+	const resolvedMessage = message ?? currentStage.message;
 
 	return (
-		<Box flex={1} bg="#F8FBFF" alignItems="center" justifyContent="center" px="$6">
+		<Box
+			flex={compact ? undefined : 1}
+			bg="#F8FBFF"
+			alignItems="center"
+			justifyContent="center"
+			px="$6"
+			py={compact ? "$3" : undefined}
+		>
 			<Box
 				w="$full"
 				maxWidth={390}
@@ -73,7 +106,6 @@ export default function EvaluationLoading() {
 				py="$7"
 				px="$5"
 			>
-				{/* Animation */}
 				<Box
 					alignItems="center"
 					justifyContent="center"
@@ -97,9 +129,8 @@ export default function EvaluationLoading() {
 					</AnimatePresence>
 				</Box>
 
-				{/* Message */}
 				<MotiText
-					key={currentStage.message}
+					key={resolvedMessage}
 					from={{ opacity: 0, translateY: 6 }}
 					animate={{ opacity: 1, translateY: 0 }}
 					transition={{ type: "timing", duration: 400 }}
@@ -112,10 +143,9 @@ export default function EvaluationLoading() {
 						fontFamily: "RobotoMedium",
 					}}
 				>
-					{currentStage.message}
+					{resolvedMessage}
 				</MotiText>
 
-				{/* Progress bar */}
 				<Box mt="$4" w="$full">
 					<Box h={6} bg="#E6ECF2" borderRadius={999} overflow="hidden">
 						<MotiView
@@ -131,18 +161,19 @@ export default function EvaluationLoading() {
 					</Box>
 				</Box>
 
-				{/* Step indicators */}
-				<Box flexDirection="row" mt="$3" style={{ gap: 6 }}>
-					{STAGES.map((_, i) => (
-						<Box
-							key={i}
-							width={6}
-							height={6}
-							borderRadius={3}
-							bg={i <= stageIndex ? "#58CCED" : "#D6E3EF"}
-						/>
-					))}
-				</Box>
+				{staged ? (
+					<Box flexDirection="row" mt="$3" style={{ gap: 6 }}>
+						{STAGES.map((_, index) => (
+							<Box
+								key={index}
+								width={6}
+								height={6}
+								borderRadius={3}
+								bg={index <= stageIndex ? "#58CCED" : "#D6E3EF"}
+							/>
+						))}
+					</Box>
+				) : null}
 			</Box>
 		</Box>
 	);
