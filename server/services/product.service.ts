@@ -129,7 +129,7 @@ export class ProductService {
 			data: {
 				userId,
 				name: data.name,
-				product_image: userImage,
+				product_image_user: userImage,
 				product_image_official: null,
 				brand: data.brand,
 				ingredients: data.ingredients as Prisma.InputJsonValue,
@@ -186,7 +186,7 @@ export class ProductService {
 			name: data.name,
 			brand: data.brand,
 			category: data.category,
-			product_image: data.product_image_user ?? data.product_image,
+			product_image_user: data.product_image_user ?? data.product_image,
 			product_image_official: data.product_image_official,
 			ingredients:
 				data.ingredients !== undefined
@@ -215,14 +215,14 @@ export class ProductService {
 				id: true,
 				name: true,
 				brand: true,
-				product_image: true,
+				product_image_user: true,
 				product_image_official: true,
 			},
 		})) as {
 			id: string;
 			name: string;
 			brand: string;
-			product_image: string;
+			product_image_user: string;
 			product_image_official?: string | null;
 		} | null;
 
@@ -234,7 +234,7 @@ export class ProductService {
 			return {
 				productId: product.id,
 				product_image_official: product.product_image_official,
-				product_image_user: product.product_image,
+				product_image_user: product.product_image_user,
 				product_image: product.product_image_official,
 				source: "cached",
 			};
@@ -262,7 +262,7 @@ export class ProductService {
 		return {
 			productId: product.id,
 			product_image_official: officialImageUrl,
-			product_image_user: product.product_image,
+			product_image_user: product.product_image_user,
 			product_image: officialImageUrl,
 			source: "serpapi",
 		};

@@ -95,7 +95,7 @@ model Product {
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name          String
-  product_image String
+  product_image_user String @map("product_image")
   product_image_official String?
   brand         String
   ingredients   Json
