@@ -36,10 +36,10 @@ export default function ProfileNameAgeSection({
 			</VStack>
 
 			<VStack space="xs">
-				<Text style={{ fontFamily: "RobotoMedium" }}>Last Name</Text>
+				<Text style={{ fontFamily: "RobotoMedium" }}>Last Name (optional)</Text>
 				<Input size="lg" borderRadius="$full">
 					<InputField
-						placeholder="Enter last name"
+						placeholder="Enter last name (optional)"
 						value={lastName}
 						onChangeText={onLastNameChange}
 						autoCapitalize="words"

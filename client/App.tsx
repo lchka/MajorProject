@@ -1,14 +1,17 @@
 import "react-native-reanimated";
-import "react-native-gesture-handler";
-import AnalyseScreen from "./src/screens/AnalyseScreen";
-import LandingScreen from "./src/screens/LandingScreen";
+import LandingScreen from "./src/screens/general/LandingScreen";
 import PreferenceScreen from "./src/screens/PreferenceScreen";
-import WelcomeScreen from "./src/screens/WelcomeScreen";
+import AllergenScreen from "./src/screens/AllergenScreen";
+import ConditionScreen from "./src/screens/Conditions/AddConditionScreen";
+import WelcomeScreen from "./src/screens/general/WelcomeScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import CreateProfile from "./src/screens/Profile/createProfile";
 import EditProfileScreen from "./src/screens/Profile/EditProfile";
 import AccountSettings from "./src/screens/general/AccountSettings";
-import CameraScreen from "./src/screens/general/CameraScreen";
+import CameraScreen from "./src/screens/Evaluations/CameraScreen";
+import EvaluationResultScreen from "./src/screens/Evaluations/EvaluationResultScreen";
+import EvaluationLoading from "./src/screens/Evaluations/EvaluationLoading";
+import HistoryScreen from "./src/screens/Evaluations/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
@@ -28,6 +31,7 @@ import { Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 const AUTH_TOKEN_KEY = "authToken";
+const PREVIEW_EVALUATION_LOADING = false;
 
 enableScreens(false);
 
@@ -47,6 +51,12 @@ export default function App() {
   const [initialRouteName, setInitialRouteName] = useState<keyof AuthStackParamList>("WelcomeScreen");
 
   useEffect(() => {
+    if (PREVIEW_EVALUATION_LOADING) {
+      setInitialRouteName("EvaluationLoading");
+      setAuthResolved(true);
+      return;
+    }
+
     const resolveAuthState = async () => {
       try {
         const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
@@ -75,13 +85,17 @@ export default function App() {
               <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
               <Stack.Screen name="LandingScreen" component={LandingScreen} />
               <Stack.Screen name="PreferenceScreen" component={PreferenceScreen} />
+              <Stack.Screen name="AllergenScreen" component={AllergenScreen} />
+              <Stack.Screen name="ConditionScreen" component={ConditionScreen} />
               <Stack.Screen name="LoginScreen" component={LoginScreen} />
               <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
               <Stack.Screen name="ProfileScreen" component={CreateProfile} />
               <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
-              <Stack.Screen name="AnalyseScreen" component={AnalyseScreen} />
               <Stack.Screen name="AccountSettingsScreen" component={AccountSettings} />
               <Stack.Screen name="CameraScreen" component={CameraScreen} />
+              <Stack.Screen name="HistoryScreen" component={HistoryScreen} />
+              <Stack.Screen name="EvaluationResultScreen" component={EvaluationResultScreen} />
+              <Stack.Screen name="EvaluationLoading" component={EvaluationLoading} />
             </Stack.Navigator>
           </NavigationContainer>
         </SafeAreaProvider>

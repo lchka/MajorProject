@@ -6,6 +6,16 @@ export type AuthStackParamList = {
         profileId?: string;
       }
     | undefined;
+  AllergenScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
+  ConditionScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
   LoginScreen: undefined;
   RegisterScreen: undefined;
   ProfileScreen:
@@ -28,5 +38,18 @@ export type AuthStackParamList = {
     | undefined;
   AnalyseScreen: undefined;
   AccountSettingsScreen: undefined;
-  CameraScreen: undefined;
+  CameraScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
+  HistoryScreen:
+    | {
+        profileId?: string;
+      }
+    | undefined;
+  EvaluationLoading: undefined;
+  EvaluationResultScreen: {
+    evaluationContextId: string;
+  };
 };

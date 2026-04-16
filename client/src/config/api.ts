@@ -4,10 +4,26 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AUTH_TOKEN_KEY = 'authToken';
+// Prevent rapid duplicate overlays when multiple requests fail at once.
+const SYSTEM_ERROR_EVENT_COOLDOWN_MS = 8000;
+
+type SystemErrorEvent = {
+  title: string;
+  message: string;
+  source: 'gemini';
+};
+
+type SystemErrorListener = (event: SystemErrorEvent) => void;
+
+const systemErrorListeners = new Set<SystemErrorListener>();
+// Holds one unread event so screens can consume it when they regain focus.
+let pendingSystemErrorEvent: SystemErrorEvent | null = null;
+let lastSystemErrorEventTime = 0;
 
 const DEFAULT_API_PORT = '3000';
 const DEFAULT_API_PATH = '/api';
 
+// Guarantees every configured base URL points at the API root.
 const ensureApiBasePath = (url: string): string => {
   const trimmed = url.trim().replace(/\/+$/, '');
   if (trimmed.endsWith('/api')) {
@@ -27,6 +43,7 @@ const extractHostname = (value: string): string | null => {
 };
 
 const getMetroHost = (): string | null => {
+  // Prefer Expo linking URI first, then fallback through known Expo/Metro fields.
   const scriptURL = NativeModules?.SourceCode?.scriptURL as string | undefined;
 
 
@@ -65,6 +82,7 @@ const normalizeAndroidLocalhost = (url: string): string => {
 };
 
 const buildDefaultApiUrl = (): string => {
+  // Auto-discover the dev host so physical devices and emulators work without manual edits.
   const metroHost = getMetroHost();
 
   if (metroHost) {
@@ -86,6 +104,144 @@ const envApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 const API_URL = normalizeAndroidLocalhost(
   ensureApiBasePath(envApiUrl || buildDefaultApiUrl()),
 );
+
+const getHostAndPort = (url: string): { host: string; port: string } | null => {
+  const normalized = url.includes('://') ? url : `http://${url}`;
+  const withoutProtocol = normalized.split('://')[1] || '';
+  const hostAndPath = withoutProtocol.split('/')[0] || '';
+  if (!hostAndPath) {
+    return null;
+  }
+
+  const [host, port = ''] = hostAndPath.split(':');
+  if (!host) {
+    return null;
+  }
+
+  return { host, port };
+};
+
+const getApiOrigin = (): string | null => {
+  const match = API_URL.match(/^(https?:\/\/[^/]+)/i);
+  return match?.[1] ?? null;
+};
+
+const isGeminiRequestUrl = (url?: string): boolean => {
+  const normalized = String(url ?? '').toLowerCase();
+  // These routes depend on Gemini services either directly or indirectly.
+  return normalized.includes('/products/scan') || normalized.includes('/evaluation-contexts/evaluate');
+};
+
+const normalizeMessage = (value: unknown): string => String(value ?? '').toLowerCase();
+
+export const isGeminiSystemFailure = (error: unknown): boolean => {
+  const candidate = error as {
+    code?: string;
+    response?: { status?: number; data?: { message?: string } };
+    config?: { url?: string };
+    message?: string;
+  };
+
+  const requestUrl = candidate?.config?.url;
+  const status = candidate?.response?.status;
+  const responseMessage = normalizeMessage(candidate?.response?.data?.message);
+  const genericMessage = normalizeMessage(candidate?.message);
+  // Match both explicit Gemini mentions and provider-agnostic wording.
+  const containsGeminiSignal =
+    responseMessage.includes('gemini') ||
+    genericMessage.includes('gemini') ||
+    responseMessage.includes('generative ai') ||
+    genericMessage.includes('generative ai');
+
+  // Gemini-powered endpoints failing with 5xx/timeouts/network are treated as system outages.
+  return (
+    isGeminiRequestUrl(requestUrl) &&
+    (
+      containsGeminiSignal ||
+      (typeof status === 'number' && status >= 500) ||
+      candidate?.code === 'ECONNABORTED' ||
+      (!candidate?.response && Boolean(candidate?.message))
+    )
+  );
+};
+
+const emitSystemError = (event: SystemErrorEvent) => {
+  const now = Date.now();
+  if (now - lastSystemErrorEventTime < SYSTEM_ERROR_EVENT_COOLDOWN_MS) {
+    return;
+  }
+
+  lastSystemErrorEventTime = now;
+  // Keep latest event for consumers that subscribe after a navigation change.
+  pendingSystemErrorEvent = event;
+  systemErrorListeners.forEach((listener) => {
+    listener(event);
+  });
+};
+
+export const subscribeSystemErrorEvents = (listener: SystemErrorListener): (() => void) => {
+  systemErrorListeners.add(listener);
+  return () => {
+    systemErrorListeners.delete(listener);
+  };
+};
+
+export const consumePendingSystemErrorEvent = (): SystemErrorEvent | null => {
+  // One-time read to avoid showing stale overlays repeatedly.
+  const nextEvent = pendingSystemErrorEvent;
+  pendingSystemErrorEvent = null;
+  return nextEvent;
+};
+
+export const resolveMediaUrl = (value?: string | null): string | null => {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.startsWith('data:')) {
+    return trimmed;
+  }
+
+  const apiOrigin = getApiOrigin();
+  if (trimmed.startsWith('/')) {
+    return apiOrigin ? `${apiOrigin}${trimmed}` : trimmed;
+  }
+
+  const currentHostAndPort = getHostAndPort(trimmed);
+  const apiHostAndPort = getHostAndPort(API_URL);
+
+  if (currentHostAndPort && apiHostAndPort) {
+    // Rewrite loopback-hosted media URLs so Android emulator/device can still load them.
+    const isLoopbackHost =
+      currentHostAndPort.host === 'localhost' ||
+      currentHostAndPort.host === '127.0.0.1' ||
+      currentHostAndPort.host === '10.0.2.2';
+
+    if (isLoopbackHost && currentHostAndPort.host !== apiHostAndPort.host) {
+      const targetPort = apiHostAndPort.port || currentHostAndPort.port;
+      const hostWithPort = targetPort
+        ? `${apiHostAndPort.host}:${targetPort}`
+        : apiHostAndPort.host;
+
+      return trimmed.replace(
+        /^([a-z]+:\/\/)([^/]+)/i,
+        `$1${hostWithPort}`,
+      );
+    }
+  }
+
+  if (trimmed.startsWith('uploads/')) {
+    // Support legacy relative paths returned by backend payloads.
+    return apiOrigin ? `${apiOrigin}/${trimmed}` : `/${trimmed}`;
+  }
+
+  return trimmed;
+};
 
 console.log('[API] Using base URL:', API_URL);
 
@@ -119,6 +275,14 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (isGeminiSystemFailure(error)) {
+      emitSystemError({
+        title: 'System Error',
+        message: 'Gemini is currently unavailable. Please try again in a moment.',
+        source: 'gemini',
+      });
+    }
+
     // Handle common errors
     if (error.code === 'ECONNABORTED') {
       console.error('Request timeout - backend may be cold starting');

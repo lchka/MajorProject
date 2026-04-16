@@ -6,6 +6,11 @@ export { userService } from './userService';
 export { profileService } from './profileService';
 export { evaluationContextService } from './evaluationContextService';
 export { productService } from './productService';
+export {
+  getLocalEvaluations,
+  setLocalEvaluations,
+  saveEvaluation,
+} from './localEvaluationStorage';
 
 // Re-export types
 export type { RegisterInput, LoginInput, GoogleAuthInput, AuthResponse } from './authService';
@@ -18,5 +23,11 @@ export type {
   CreateProfileInput,
   UpdateProfileInput,
 } from './profileService';
-export type { EvaluationContext } from './evaluationContextService';
-export type { Product } from './productService';
+export type {
+  EvaluationContext,
+  EvaluationResultJson,
+  EvaluateProductInput,
+  PersistEvaluationInput,
+} from './evaluationContextService';
+export type { Product, ProductImageUploadFile } from './productService';
+export type { LocalEvaluation } from './localEvaluationStorage';

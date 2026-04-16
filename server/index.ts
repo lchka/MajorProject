@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "node:path";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import preferenceRoutes from "./routes/preference.routes.js";
@@ -10,6 +11,8 @@ import profileRoutes from "./routes/profile.routes.js"
 import promptRoutes from "./routes/prompt.routes.js"
 import productRoutes from "./routes/product.routes.js"
 import evaluationContextRoutes from "./routes/evaluationContext.routes.js"
+import weatherRoutes from "./routes/weather.routes.js"
+import evaluationsRoutes from "./routes/evaluations.routes.js"
 import { errorHandler } from "./middleware/error.middleware.js";
 
 dotenv.config();
@@ -25,6 +28,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("API running");
@@ -40,6 +44,8 @@ app.use("/api/profiles", profileRoutes)
 app.use("/api/prompts", promptRoutes)
 app.use("/api/products", productRoutes)
 app.use("/api/evaluation-contexts", evaluationContextRoutes)
+app.use("/api/weather", weatherRoutes)
+app.use("/api/evaluations", evaluationsRoutes)
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

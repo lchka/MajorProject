@@ -42,7 +42,7 @@ export interface Preference {
 
 export interface CreateProfileInput {
   first_name: string;
-  last_name: string;
+  last_name?: string;
   age?: string;
   profile_image?: string | ProfileImageUploadFile;
   main_profile?: boolean;
@@ -122,6 +122,14 @@ export const profileService = {
    */
   getMyProfile: async (): Promise<Profile[]> => {
     const response = await api.get('/profiles/me');
+    return response.data;
+  },
+
+  /**
+   * Get profile by profile id
+   */
+  getProfileById: async (id: string): Promise<Profile> => {
+    const response = await api.get(`/profiles/${id}`);
     return response.data;
   },
 

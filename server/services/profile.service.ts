@@ -117,7 +117,7 @@ async createProfile(userId: string, data: CreateProfileDTO):Promise<ProfileRespo
                 data: {
                     userId,
                     first_name: data.first_name,
-                    last_name: data.last_name,
+                    last_name: data.last_name ?? "",
                     age: data.age,
                     profile_image: data.profile_image,
                     main_profile: true,
@@ -138,7 +138,7 @@ async createProfile(userId: string, data: CreateProfileDTO):Promise<ProfileRespo
             data: {
                 userId,
                 first_name: data.first_name,
-                last_name: data.last_name,
+                last_name: data.last_name ?? "",
                 age: data.age,
                 profile_image: data.profile_image,
                 main_profile: false,

@@ -2,7 +2,7 @@ import api from '../config/api';
 
 export interface RegisterInput {
   first_name: string;
-  last_name: string;
+  last_name?: string;
   email: string;
   password: string;
   c_password: string;

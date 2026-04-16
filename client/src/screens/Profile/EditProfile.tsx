@@ -14,7 +14,7 @@ import BackButton from "../../components/Buttons/BackButton";
 import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 import ProfileEditBadge from "../../components/profile/ProfileEditBadge";
-import PreferencesOverview from "../../components/preferences/AllPreferences";
+import AllPreferences from "../../components/preferences/AllPreferences";
 import RedBanner from "../../components/banners/RedBanner";
 import profileService, { ProfileImageUploadFile } from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
@@ -532,7 +532,7 @@ export default function EditProfileScreen() {
           </Pressable>
 
           <Box style={{ marginTop: 8, marginBottom: 10 }}>
-            <PreferencesOverview
+            <AllPreferences
               profilePreferenceNames={livePreferenceNames}
               profileFirstName={profileFirstName}
               onAddPreference={() =>

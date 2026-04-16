@@ -20,7 +20,7 @@ export const profileResponseSchema = z.object({
   id: z.string().uuid("Profile id must be a valid UUID"),
   userId: z.string().uuid("User id must be a valid UUID"),
   first_name: z.string().min(1, "First Name is required"),
-  last_name: z.string().min(1, "Last Name is required"),
+  last_name: z.string().optional().default(""),
   age: z.string().trim().optional().nullable(),
   profile_image: imageValid.optional().nullable(),
   main_profile: z.boolean(),
@@ -40,8 +40,12 @@ export const createProfileSchema = z.object({
   last_name: z
     .string()
     .trim()
-    .min(2, "Last Name must be at least 2 characters")
-    .max(100, "Last Name must not exceed 100 characters"),
+    .max(100, "Last Name must not exceed 100 characters")
+    .optional()
+    .refine(
+      (value) => value === undefined || value.length === 0 || value.length >= 2,
+      "Last Name must be at least 2 characters",
+    ),
   age: z.string().trim().optional(),
   profile_image: imageValid.optional(),
   main_profile: z.boolean().optional(),

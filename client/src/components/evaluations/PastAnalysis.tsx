@@ -1,9 +1,12 @@
 import React from "react";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { evaluationContextService, productService } from "../../services";
-import profileService from "../../services/profileService";
+import Feather from "@expo/vector-icons/Feather";
+import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { getLocalEvaluations } from "../../services";
+import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
+import type { AuthStackParamList } from "../../types/navigation";
 
 type AnalysisCard = {
   id: string;
@@ -14,64 +17,41 @@ type AnalysisCard = {
 
 type PastAnalysisProps = {
   profileId?: string | null;
+  title?: string;
 };
 
-export default function PastAnalysis({ profileId }: PastAnalysisProps) {
+export default function PastAnalysis({
+  profileId,
+  title = "Past Analysis",
+}: PastAnalysisProps) {
+  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const [analysisPage, setAnalysisPage] = React.useState(0);
   const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
   const [analysisCards, setAnalysisCards] = React.useState<AnalysisCard[]>([]);
   const [analysisLoading, setAnalysisLoading] = React.useState(true);
 
   React.useEffect(() => {
+    setAnalysisPage(0);
+  }, [profileId]);
+
+  useFocusEffect(
+    React.useCallback(() => {
     let isMounted = true;
 
     const loadPastAnalysis = async () => {
-      if (!profileId) {
-        if (isMounted) {
-          setAnalysisCards([]);
-          setAnalysisLoading(false);
-        }
-        return;
-      }
-
       setAnalysisLoading(true);
 
       try {
-        const profiles = await profileService.getMyProfile();
-        const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
+        const localEvaluations = await getLocalEvaluations();
+        const scopedEvaluations = profileId
+          ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
+          : localEvaluations;
 
-        if (!activeProfile || activeProfile.id !== profileId) {
-          if (isMounted) {
-            setAnalysisCards([]);
-            setAnalysisLoading(false);
-          }
-          return;
-        }
-
-        const contexts = await evaluationContextService.getMyContexts();
-        const productIds = Array.from(new Set(contexts.map((context) => context.productId)));
-        const products = await Promise.all(
-          productIds.map(async (productId) => {
-            try {
-              return await productService.getProductById(productId);
-            } catch {
-              return null;
-            }
-          }),
-        );
-
-        const productMap = new Map(
-          products
-            .filter((item): item is NonNullable<typeof item> => Boolean(item))
-            .map((product) => [product.id, product]),
-        );
-
-        const cards = contexts.map((context) => {
-          const product = productMap.get(context.productId);
+        const cards = scopedEvaluations.map((evaluation) => {
           return {
-            id: context.id,
-            title: product?.name ?? "Unknown product",
-            image: product?.product_image ?? null,
+            id: evaluation.evaluationContextId,
+            title: evaluation.productName || "Unknown product",
+            image: resolveMediaUrl(evaluation.imageUri) ?? null,
           } satisfies AnalysisCard;
         });
 
@@ -94,7 +74,8 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
     return () => {
       isMounted = false;
     };
-  }, [profileId]);
+    }, [profileId]),
+  );
 
   const analysisPages = React.useMemo(() => {
     const pageSize = 9;
@@ -117,83 +98,136 @@ export default function PastAnalysis({ profileId }: PastAnalysisProps) {
   }, [analysisCards]);
 
   return (
-    <Box
-      onLayout={(event) => {
-        setAnalysisViewportWidth(event.nativeEvent.layout.width);
-      }}
-    >
-      <ScrollView
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(event) => {
-          if (!analysisViewportWidth) {
-            return;
-          }
+    <>
+      <Box my="$2" style={styles.sectionHeader}>
+        <Text
+          fontSize={22}
+          pt="$2"
+          lineHeight={22}
+          fontFamily="RobotoMedium"
+          color="#151515"
+        >
+          {title}
+        </Text>
+        <Feather name="more-horizontal" size={28} color="#111111" />
+      </Box>
 
-          const pageIndex = Math.round(
-            event.nativeEvent.contentOffset.x / analysisViewportWidth,
-          );
-          setAnalysisPage(pageIndex);
+      <Box
+        onLayout={(event) => {
+          setAnalysisViewportWidth(event.nativeEvent.layout.width);
         }}
       >
-        {analysisPages.map((pageItems, pageIndex) => (
-          <Box
-            key={`analysis-page-${pageIndex}`}
-            style={[
-              styles.analysisPage,
-              analysisViewportWidth ? { width: analysisViewportWidth } : null,
-            ]}
-          >
-            <Box style={styles.grid}>
-              {pageItems.map((item, cardIndex) => (
-                <Pressable
-                  key={`${item.id}-${pageIndex}-${cardIndex}`}
-                  style={[
-                    styles.analysisCard,
-                    item.isPlaceholder ? styles.analysisPlaceholder : null,
-                  ]}
-                  disabled={Boolean(item.isPlaceholder)}
-                >
-                  <Box style={styles.analysisImageWrap}>
-                    {item.isPlaceholder || !item.image ? (
-                      <Box style={styles.analysisImagePlaceholder} />
-                    ) : (
-                      <Image
-                        source={{ uri: item.image }}
-                        style={styles.analysisImage}
-                        resizeMode="cover"
-                        alt={item.title || "Past analysis product"}
-                      />
-                    )}
-                  </Box>
-                  <Box style={styles.cardFooter}>
-                    <Text
-                      numberOfLines={1}
-                      style={styles.cardTitle}
-                      pt="$1"
-                      fontWeight={600}
-                      fontSize={14}
-                      lineHeight={12}
-                      fontFamily="Roboto"
-                      color="#121212"
-                    >
-                      {item.title}
-                    </Text>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(event) => {
+            if (!analysisViewportWidth) {
+              return;
+            }
+
+            const pageIndex = Math.round(
+              event.nativeEvent.contentOffset.x / analysisViewportWidth,
+            );
+            setAnalysisPage(pageIndex);
+          }}
+        >
+          {analysisPages.map((pageItems, pageIndex) => (
+            <Box
+              key={`analysis-page-${pageIndex}`}
+              style={[
+                styles.analysisPage,
+                analysisViewportWidth ? { width: analysisViewportWidth } : null,
+              ]}
+            >
+              <Box style={styles.grid}>
+                {pageItems.map((item, cardIndex) => (
+                  <Pressable
+                    key={`${item.id}-${pageIndex}-${cardIndex}`}
+                    style={[
+                      styles.analysisCard,
+                      item.isPlaceholder ? styles.analysisPlaceholder : null,
+                    ]}
+                    disabled={Boolean(item.isPlaceholder)}
+                    onPress={() => {
+                      if (item.isPlaceholder) {
+                        return;
+                      }
+
+                      navigation.navigate("EvaluationResultScreen", {
+                        evaluationContextId: item.id,
+                      });
+                    }}
+                  >
+                    <Box style={styles.analysisImageWrap}>
+                      {item.isPlaceholder ? (
+                        <Box style={styles.analysisImagePlaceholderPromptWrap}>
+                          <Box style={styles.analysisPlaceholderIconWrap}>
+                            <Feather name="camera" size={14} color="#FFFFFF" />
+                          </Box>
+                          <Text
+                            textAlign="center"
+                            fontSize={14}
+                            lineHeight={18}
+                            fontFamily="RobotoMedium"
+                            color="#4A86C6"
+                            mt="$1"
+                          >
+                            Scan product
+                          </Text>
+                          <Text
+                            textAlign="center"
+                            fontSize={11}
+                            lineHeight={14}
+                            fontFamily="Roboto"
+                            color="#5F7FA5"
+                            mt="$1"
+                          >
+                            Tap to analyse{"\n"}skincare
+                          </Text>
+                        </Box>
+                      ) : !item.image ? (
+                        <Box style={styles.analysisImagePlaceholder} />
+                      ) : (
+                        <Image
+                          source={{ uri: item.image }}
+                          style={styles.analysisImage}
+                          resizeMode="cover"
+                          alt={item.title || "Past analysis product"}
+                          onError={() => {
+                            console.warn("[PastAnalysis] Failed to load image", item.image);
+                          }}
+                        />
+                      )}
+                    </Box>
                     {item.isPlaceholder ? null : (
-                      <AntDesign name="right" size={14} color="#111111" />
+                      <Box style={styles.cardFooter}>
+                        <Text
+                          numberOfLines={1}
+                          style={styles.cardTitle}
+                          pt="$1"
+                          fontWeight={600}
+                          fontSize={14}
+                          lineHeight={12}
+                          fontFamily="Roboto"
+                          color="#121212"
+                        >
+                          {item.title}
+                        </Text>
+                        <AntDesign name="right" size={14} color="#111111" />
+                      </Box>
                     )}
-                  </Box>
-                </Pressable>
-              ))}
+                  </Pressable>
+                ))}
+              </Box>
             </Box>
-          </Box>
-        ))}
-      </ScrollView>
-      {analysisLoading ? null : (
-        <PageDots total={analysisPages.length} activeIndex={analysisPage} />
-      )}
-    </Box>
+          ))}
+        </ScrollView>
+        {analysisLoading ? null : (
+          <PageDots total={analysisPages.length} activeIndex={analysisPage} />
+        )}
+      </Box>
+    </>
   );
 }
 

@@ -9,14 +9,13 @@ import { Easing } from "react-native-reanimated";
 import {
   Box,
   Center,
-  Divider,
   HStack,
   Text,
   VStack,
 } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import CreateButton from "../components/Buttons/CreateButton";
-import { AuthStackParamList } from "../types/navigation";
+import CreateButton from "../../components/Buttons/CreateButton";
+import { AuthStackParamList } from "../../types/navigation";
 
 // AsyncStorage key used to detect an existing signed-in session.
 const AUTH_TOKEN_KEY = "authToken";
@@ -53,12 +52,6 @@ const CHECKLIST_SEQUENCE_TOTAL_MS =
   CHECK_FADE_IN_STAGGER_MS * 2 +
   CHECK_FADE_IN_DURATION_MS;
 
-// first button waits until checklist sequence is done (relative to typewriter completion)
-const CTA_FADE_IN_START_DELAY_MS =
-  CHECK_FADE_IN_START_DELAY_MS +
-  CHECK_FADE_IN_STAGGER_MS * 2 +
-  CHECK_FADE_IN_DURATION_MS +
-  400;
 
 // How long each CTA button fade/slide animation lasts.
 const CTA_FADE_IN_DURATION_MS = 1200;
@@ -257,7 +250,7 @@ export default function WelcomeScreen() {
               style={{ marginTop: -14 }}
             >
               <LottieView
-                source={require("../../assets/animations/Welcome.json")}
+                source={require("../../../assets/animations/Welcome.json")}
                 autoPlay
                 loop={false}
                 style={{
@@ -284,14 +277,14 @@ export default function WelcomeScreen() {
                   </Text>
 
                   <Image
-                    source={require("../../assets/logo/6.png")}
+                    source={require("../../../assets/logo/6.png")}
                     style={{ width: 200, height: 200, marginLeft: 0, marginTop: -60 }}
                     resizeMode="contain"
                   />
                 </HStack>
               </MotiView>
               <LottieView
-                source={require("../../assets/animations/Live chatbot.json")}
+                source={require("../../../assets/animations/Live chatbot.json")}
                 autoPlay
                 loop={false}
                 onAnimationFinish={handleLiveChatAnimationFinished}
@@ -460,7 +453,7 @@ export default function WelcomeScreen() {
                     style={{ alignSelf: "center" }}
                   >
                     <Image
-                      source={require("../../assets/logo/6.png")}
+                      source={require("../../../assets/logo/6.png")}
                       style={{ width: 310, height: 200, marginLeft: -30, marginTop: 0 }}
                       resizeMode="contain"
                     />
