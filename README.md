@@ -4,7 +4,7 @@ A full-stack application built with a modern TypeScript-first architecture.
 
 ---
 
-## 🧱 Tech Stack
+## Tech Stack
 
 ### Server
 - Node.js
