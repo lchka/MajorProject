@@ -176,6 +176,67 @@ Scan QR and test flows.
 
 ---
 
+## 🐳 Docker
+
+Docker files live under `server/`:
+- `server/docker-compose.yaml` (PostgreSQL service)
+- `server/Dockerfile` (Node server image)
+
+### Start PostgreSQL with Docker Compose
+
+From `server/`:
+
+```bash
+docker compose up -d
+```
+
+This starts:
+- PostgreSQL `16`
+- Port mapping `5432:5432`
+
+Then set `server/.env` `DATABASE_URL` to match compose credentials:
+
+```env
+DATABASE_URL=postgresql://myuser:postgres@localhost:5432/my_backend_db
+```
+
+After DB is up, run migrations and required seed:
+
+```bash
+cd server
+npx prisma migrate dev
+npm run seed
+```
+
+### Stop Docker services
+
+From `server/`:
+
+```bash
+docker compose down
+```
+
+To also remove persisted database volume:
+
+```bash
+docker compose down -v
+```
+
+### Optional: Run server in Docker
+
+From `server/`:
+
+```bash
+docker build -t lumiere-server .
+docker run --env-file .env -p 3000:3000 lumiere-server
+```
+
+Note:
+- If server runs in container and DB runs in compose, use container networking/host mapping accordingly.
+- For local simplest setup, run only PostgreSQL in Docker and run server via `npm run dev`.
+
+---
+
 ## 🏗️ 7. Production Deployment
 
 ### Server Startup Sequence
