@@ -50,6 +50,14 @@ export interface EvaluateProductInput {
   promptId?: string;
 }
 
+export interface PersistEvaluationInput {
+  evaluationContextId?: string;
+  productId: string;
+  profileId: string;
+  promptId?: string;
+  resultJson: EvaluationResultJson;
+}
+
 export const evaluationContextService = {
   getMyContexts: async (): Promise<EvaluationContext[]> => {
     const response = await api.get(`/evaluation-contexts/me`);
@@ -61,6 +69,10 @@ export const evaluationContextService = {
   },
   evaluateProduct: async (data: EvaluateProductInput): Promise<EvaluationContext> => {
     const response = await api.post(`/evaluation-contexts/evaluate`, data);
+    return response.data;
+  },
+  sendToServer: async (data: PersistEvaluationInput): Promise<EvaluationContext> => {
+    const response = await api.post(`/evaluations`, data);
     return response.data;
   },
   getById: async (id: string): Promise<EvaluationContext> => {

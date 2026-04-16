@@ -11,7 +11,12 @@ import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CreateEvaluations from "./ShowEvaluation";
 import EvaluationLoading from "./EvaluationLoading";
-import { evaluationContextService, productService, profileService } from "../../services";
+import {
+	evaluationContextService,
+	productService,
+	profileService,
+	saveEvaluation,
+} from "../../services";
 import { isGeminiSystemFailure } from "../../config/api";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
@@ -55,6 +60,18 @@ export default function CameraScreen() {
 			const evaluatedContext = await evaluationContextService.evaluateProduct({
 				productId: scannedProduct.id,
 				profileId: selectedProfile.id,
+			});
+
+			await saveEvaluation({
+				evaluationContextId: evaluatedContext.id,
+				profileId: evaluatedContext.profileId,
+				productId: evaluatedContext.productId,
+				promptId: evaluatedContext.promptId,
+				resultJson: evaluatedContext.resultJson,
+				productName: scannedProduct.name,
+				profileName: selectedProfile.first_name?.trim() || "Profile",
+				imageUri: scannedProduct.product_image ?? null,
+				createdAt: evaluatedContext.createdAt,
 			});
 
 			setEvaluationContext(evaluatedContext);

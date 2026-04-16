@@ -2,8 +2,8 @@ import React from "react";
 import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { evaluationContextService, productService } from "../../services";
+import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { getLocalEvaluations } from "../../services";
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
 import type { AuthStackParamList } from "../../types/navigation";
@@ -34,45 +34,24 @@ export default function PastAnalysis({
     setAnalysisPage(0);
   }, [profileId]);
 
-  React.useEffect(() => {
+  useFocusEffect(
+    React.useCallback(() => {
     let isMounted = true;
 
     const loadPastAnalysis = async () => {
-      if (!profileId) {
-        if (isMounted) {
-          setAnalysisCards([]);
-          setAnalysisLoading(false);
-        }
-        return;
-      }
-
       setAnalysisLoading(true);
 
       try {
-        const contexts = await evaluationContextService.getByProfileId(profileId);
-        const productIds = Array.from(new Set(contexts.map((context) => context.productId)));
-        const products = await Promise.all(
-          productIds.map(async (productId) => {
-            try {
-              return await productService.getProductById(productId);
-            } catch {
-              return null;
-            }
-          }),
-        );
+        const localEvaluations = await getLocalEvaluations();
+        const scopedEvaluations = profileId
+          ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
+          : localEvaluations;
 
-        const productMap = new Map(
-          products
-            .filter((item): item is NonNullable<typeof item> => Boolean(item))
-            .map((product) => [product.id, product]),
-        );
-
-        const cards = contexts.map((context) => {
-          const product = productMap.get(context.productId);
+        const cards = scopedEvaluations.map((evaluation) => {
           return {
-            id: context.id,
-            title: product?.name ?? "Unknown product",
-            image: resolveMediaUrl(product?.product_image) ?? null,
+            id: evaluation.evaluationContextId,
+            title: evaluation.productName || "Unknown product",
+            image: resolveMediaUrl(evaluation.imageUri) ?? null,
           } satisfies AnalysisCard;
         });
 
@@ -95,7 +74,8 @@ export default function PastAnalysis({
     return () => {
       isMounted = false;
     };
-  }, [profileId]);
+    }, [profileId]),
+  );
 
   const analysisPages = React.useMemo(() => {
     const pageSize = 9;

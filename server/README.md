@@ -27,3 +27,21 @@ Example:
 curl "http://localhost:3000/api/weather/uv?lat=53.3498&lon=-6.2603" \
 	-H "Authorization: Bearer <token>"
 ```
+
+## Evaluations Archive Endpoint
+
+- Route: `POST /api/evaluations`
+- Auth: Requires `Authorization: Bearer <token>`
+- Purpose: Persist an evaluation payload sent from client-side local overflow handling.
+
+Expected body:
+
+```json
+{
+	"evaluationContextId": "<uuid optional>",
+	"profileId": "<uuid>",
+	"productId": "<uuid>",
+	"promptId": "<uuid optional>",
+	"resultJson": {}
+}
+```
