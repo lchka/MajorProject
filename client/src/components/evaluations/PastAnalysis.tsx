@@ -180,7 +180,33 @@ export default function PastAnalysis({
                     }}
                   >
                     <Box style={styles.analysisImageWrap}>
-                      {item.isPlaceholder || !item.image ? (
+                      {item.isPlaceholder ? (
+                        <Box style={styles.analysisImagePlaceholderPromptWrap}>
+                          <Box style={styles.analysisPlaceholderIconWrap}>
+                            <Feather name="camera" size={14} color="#FFFFFF" />
+                          </Box>
+                          <Text
+                            textAlign="center"
+                            fontSize={14}
+                            lineHeight={18}
+                            fontFamily="RobotoMedium"
+                            color="#4A86C6"
+                            mt="$1"
+                          >
+                            Scan product
+                          </Text>
+                          <Text
+                            textAlign="center"
+                            fontSize={11}
+                            lineHeight={14}
+                            fontFamily="Roboto"
+                            color="#5F7FA5"
+                            mt="$1"
+                          >
+                            Tap to analyse{"\n"}skincare
+                          </Text>
+                        </Box>
+                      ) : !item.image ? (
                         <Box style={styles.analysisImagePlaceholder} />
                       ) : (
                         <Image
@@ -194,23 +220,23 @@ export default function PastAnalysis({
                         />
                       )}
                     </Box>
-                    <Box style={styles.cardFooter}>
-                      <Text
-                        numberOfLines={1}
-                        style={styles.cardTitle}
-                        pt="$1"
-                        fontWeight={600}
-                        fontSize={14}
-                        lineHeight={12}
-                        fontFamily="Roboto"
-                        color="#121212"
-                      >
-                        {item.title}
-                      </Text>
-                      {item.isPlaceholder ? null : (
+                    {item.isPlaceholder ? null : (
+                      <Box style={styles.cardFooter}>
+                        <Text
+                          numberOfLines={1}
+                          style={styles.cardTitle}
+                          pt="$1"
+                          fontWeight={600}
+                          fontSize={14}
+                          lineHeight={12}
+                          fontFamily="Roboto"
+                          color="#121212"
+                        >
+                          {item.title}
+                        </Text>
                         <AntDesign name="right" size={14} color="#111111" />
-                      )}
-                    </Box>
+                      </Box>
+                    )}
                   </Pressable>
                 ))}
               </Box>
