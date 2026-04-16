@@ -18,6 +18,19 @@ export type OfficialImageAsset = {
 
 export class SerpApiImageService {
   private readonly serpApiBaseUrl = "https://serpapi.com/search.json";
+  private readonly serpApiTimeoutMs = 12000;
+
+  private compactWords(value: string): string {
+    return Array.from(
+      new Set(
+        value
+          .split(/\s+/)
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+          .map((item) => item.toLowerCase()),
+      ),
+    ).join(" ");
+  }
 
   private getApiKey(): string {
     const apiKey = process.env.SERPAPI_API_KEY?.trim();
@@ -33,36 +46,55 @@ export class SerpApiImageService {
   }
 
   private buildQuery(name: string, brand: string): string {
-    const query = `${brand} ${name} product white background`.trim();
+    const primary = this.compactWords(`${brand} ${name}`);
+    const query = `${primary} product white background`.trim();
     return query.replace(/\s+/g, " ");
   }
 
-  private async getFirstImageUrl(name: string, brand: string): Promise<string> {
-    const query = this.buildQuery(name, brand);
-
-    if (!query) {
-      throw new HttpError(BAD_REQUEST, "Product name and brand are required for official image lookup.");
-    }
-
-    const apiKey = this.getApiKey();
-
+  private async requestSerpImageUrl(apiKey: string, query: string): Promise<string | null> {
     const response = await axios.get<SerpApiResponse>(this.serpApiBaseUrl, {
       params: {
         engine: "google_images",
         q: query,
         api_key: apiKey,
       },
-      timeout: 15000,
+      timeout: this.serpApiTimeoutMs,
     });
 
     const firstResult = response.data.images_results?.[0];
-    const firstImageUrl = firstResult?.original ?? firstResult?.thumbnail;
+    return firstResult?.original ?? firstResult?.thumbnail ?? null;
+  }
 
-    if (!firstImageUrl) {
-      throw new HttpError(NOT_FOUND, "No official image found for this product.");
+  private async getFirstImageUrl(name: string, brand: string): Promise<string> {
+    const primaryQuery = this.buildQuery(name, brand);
+    const fallbackQuery = `${this.compactWords(name)} product white background`.trim();
+
+    if (!primaryQuery) {
+      throw new HttpError(BAD_REQUEST, "Product name and brand are required for official image lookup.");
     }
 
-    return firstImageUrl;
+    const apiKey = this.getApiKey();
+
+    for (const query of [primaryQuery, fallbackQuery]) {
+      if (!query) {
+        continue;
+      }
+
+      try {
+        const imageUrl = await this.requestSerpImageUrl(apiKey, query);
+        if (imageUrl) {
+          return imageUrl;
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error) && (error.code === "ECONNABORTED" || !error.response)) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new HttpError(NOT_FOUND, "No official image found for this product.");
   }
 
   async fetchOfficialImageAsset(params: { name: string; brand: string }): Promise<OfficialImageAsset> {

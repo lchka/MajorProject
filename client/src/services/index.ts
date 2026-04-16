@@ -6,6 +6,7 @@ export { userService } from './userService';
 export { profileService } from './profileService';
 export { evaluationContextService } from './evaluationContextService';
 export { productService } from './productService';
+export { weatherService } from './weatherService';
 export {
   getLocalEvaluations,
   setLocalEvaluations,
@@ -31,4 +32,5 @@ export type {
   PersistEvaluationInput,
 } from './evaluationContextService';
 export type { Product, ProductImageUploadFile } from './productService';
+export type { CurrentUvSnapshot } from './weatherService';
 export type { LocalEvaluation } from './localEvaluationStorage';

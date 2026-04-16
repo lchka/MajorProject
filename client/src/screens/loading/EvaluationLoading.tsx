@@ -13,12 +13,12 @@ const STAGES: LoadingStage[] = [
 	{
 		key: "ai",
 		message: "Analyzing your skin profile",
-		durationMs: 4000,
+		durationMs: 3000,
 	},
 	{
 		key: "files",
 		message: "Matching ingredients with trusted research",
-		durationMs: 4000,
+		durationMs: 3000,
 	},
 	{
 		key: "hourglass",

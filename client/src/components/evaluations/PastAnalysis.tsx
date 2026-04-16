@@ -164,9 +164,12 @@ export default function PastAnalysis({
                       styles.analysisCard,
                       item.isPlaceholder ? styles.analysisPlaceholder : null,
                     ]}
-                    disabled={Boolean(item.isPlaceholder)}
                     onPress={() => {
                       if (item.isPlaceholder) {
+                        navigation.navigate(
+                          "CameraScreen",
+                          profileId ? { profileId } : undefined,
+                        );
                         return;
                       }
 

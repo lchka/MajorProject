@@ -22,7 +22,7 @@ export default function ImageEvaluation({
 						source={{ uri: imageUri }}
 						alt="Scanned product image"
 						resizeMode="contain"
-						style={{ width: 280, height: 280, borderRadius: 26 }}
+						style={{ width: 280, height: 280, borderRadius: 80 }}
 					/>
 				) : (
 					<Box w={350} h={350} alignItems="center" justifyContent="center">

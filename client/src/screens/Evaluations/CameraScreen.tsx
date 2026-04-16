@@ -10,7 +10,8 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CreateEvaluations from "./ShowEvaluation";
-import EvaluationLoading from "./EvaluationLoading";
+import ShowProduct from "./ShowProduct";
+import EvaluationLoading from "../loading/EvaluationLoading";
 import {
 	evaluationContextService,
 	productService,
@@ -29,30 +30,41 @@ export default function CameraScreen() {
 	const routeProfileId = route.params?.profileId;
 	const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 	const [isOpeningCamera, setIsOpeningCamera] = React.useState(false);
+	const [didAutoOpenCamera, setDidAutoOpenCamera] = React.useState(false);
+	const [isResolvingProduct, setIsResolvingProduct] = React.useState(false);
 	const [isProcessingEvaluation, setIsProcessingEvaluation] = React.useState(false);
+	const [hasConfirmedProduct, setHasConfirmedProduct] = React.useState(false);
 	const [activeProfile, setActiveProfile] = React.useState<Profile | null>(null);
-	const [evaluatedProduct, setEvaluatedProduct] = React.useState<Product | null>(null);
+	const [resolvedProduct, setResolvedProduct] = React.useState<Product | null>(null);
 	const [evaluationContext, setEvaluationContext] = React.useState<EvaluationContext | null>(null);
 
-	const processCapturedPhoto = React.useCallback(async (uri: string) => {
-		setIsProcessingEvaluation(true);
+	const loadActiveProfile = React.useCallback(async (): Promise<Profile | null> => {
+		const profiles = await profileService.getMyProfile();
+		const selectedProfile =
+			(routeProfileId
+				? profiles.find((profile) => profile.id === routeProfileId)
+				: null) ??
+			profiles.find((profile) => profile.main_profile) ??
+			profiles[0] ??
+			null;
+
+		if (!selectedProfile) {
+			Alert.alert("Profile required", "Please create a profile before running evaluation.");
+			return null;
+		}
+
+		setActiveProfile(selectedProfile);
+		return selectedProfile;
+	}, [routeProfileId]);
+
+	const resolveProductFromPhoto = React.useCallback(async (uri: string) => {
+		setIsResolvingProduct(true);
 
 		try {
-			const profiles = await profileService.getMyProfile();
-			const selectedProfile =
-				(routeProfileId
-					? profiles.find((profile) => profile.id === routeProfileId)
-					: null) ??
-				profiles.find((profile) => profile.main_profile) ??
-				profiles[0] ??
-				null;
-
+			const selectedProfile = await loadActiveProfile();
 			if (!selectedProfile) {
-				Alert.alert("Profile required", "Please create a profile before running evaluation.");
 				return;
 			}
-
-			setActiveProfile(selectedProfile);
 
 			const scannedProduct = await productService.scanProductImage({ uri });
 
@@ -71,10 +83,34 @@ export default function CameraScreen() {
 				// Keep the scanned image when official lookup fails.
 			}
 
-			setEvaluatedProduct(displayProduct);
+			setResolvedProduct(displayProduct);
+		} catch (error) {
+			if (isGeminiSystemFailure(error)) {
+				navigation.navigate("LandingScreen");
+				return;
+			}
+
+			Alert.alert("Scan failed", "Could not identify this product. Please try again.");
+		} finally {
+			setIsResolvingProduct(false);
+		}
+	}, [loadActiveProfile, navigation]);
+
+	const runEvaluation = React.useCallback(async () => {
+		if (!resolvedProduct || !hasConfirmedProduct) {
+			return;
+		}
+
+		setIsProcessingEvaluation(true);
+
+		try {
+			const selectedProfile = activeProfile ?? (await loadActiveProfile());
+			if (!selectedProfile) {
+				return;
+			}
 
 			const evaluatedContext = await evaluationContextService.evaluateProduct({
-				productId: scannedProduct.id,
+				productId: resolvedProduct.id,
 				profileId: selectedProfile.id,
 			});
 
@@ -84,9 +120,9 @@ export default function CameraScreen() {
 				productId: evaluatedContext.productId,
 				promptId: evaluatedContext.promptId,
 				resultJson: evaluatedContext.resultJson,
-				productName: displayProduct.name,
+				productName: resolvedProduct.name,
 				profileName: selectedProfile.first_name?.trim() || "Profile",
-				imageUri: displayProduct.product_image ?? null,
+				imageUri: resolvedProduct.product_image ?? capturedUri ?? null,
 				createdAt: evaluatedContext.createdAt,
 			});
 
@@ -97,11 +133,11 @@ export default function CameraScreen() {
 				return;
 			}
 
-			Alert.alert("Evaluation failed", "Could not finish this scan. Please try again.");
+			Alert.alert("Evaluation failed", "Could not finish this evaluation. Please try again.");
 		} finally {
 			setIsProcessingEvaluation(false);
 		}
-	}, [navigation, routeProfileId]);
+	}, [activeProfile, capturedUri, hasConfirmedProduct, loadActiveProfile, navigation, resolvedProduct]);
 
 	const handleSnapPhoto = React.useCallback(async () => {
 		if (isOpeningCamera) {
@@ -124,29 +160,44 @@ export default function CameraScreen() {
 				quality: 0.9,
 			});
 
-			if (!result.canceled && result.assets.length > 0) {
+			if (result.canceled) {
+				navigation.goBack();
+				return;
+			}
+
+			if (result.assets.length > 0) {
 				const imageUri = result.assets[0].uri;
 				setCapturedUri(imageUri);
-				setEvaluatedProduct(null);
+				setHasConfirmedProduct(false);
+				setResolvedProduct(null);
 				setEvaluationContext(null);
-				void processCapturedPhoto(imageUri);
+				void resolveProductFromPhoto(imageUri);
 			}
 		} catch {
 			Alert.alert("Camera unavailable", "Could not open camera right now. Please try again.");
 		} finally {
 			setIsOpeningCamera(false);
 		}
-	}, [isOpeningCamera, processCapturedPhoto]);
+	}, [isOpeningCamera, resolveProductFromPhoto]);
 
-	if (capturedUri) {
+	React.useEffect(() => {
+		if (didAutoOpenCamera) {
+			return;
+		}
+
+		setDidAutoOpenCamera(true);
+		void handleSnapPhoto();
+	}, [didAutoOpenCamera, handleSnapPhoto]);
+
+	if (capturedUri && evaluationContext) {
 		if (isProcessingEvaluation) {
 			return <EvaluationLoading />;
 		}
 
 		return (
 			<CreateEvaluations
-				imageUri={evaluatedProduct?.product_image ?? capturedUri}
-				productName={evaluatedProduct?.name ?? "Analyzing Product"}
+				imageUri={resolvedProduct?.product_image ?? capturedUri}
+				productName={resolvedProduct?.name ?? "Analyzing Product"}
 				isProcessing={false}
 				resultJson={evaluationContext?.resultJson}
 				greetingName={activeProfile?.first_name?.trim() || "Lili"}
@@ -156,88 +207,51 @@ export default function CameraScreen() {
 				currentProfilePreferences={activeProfile?.preferences?.map((item) => item.name) ?? []}
 				onRetake={() => {
 					setCapturedUri(null);
+					setHasConfirmedProduct(false);
 					setEvaluationContext(null);
-					setEvaluatedProduct(null);
+					setResolvedProduct(null);
 					setActiveProfile(null);
+					void handleSnapPhoto();
 				}}
 			/>
 		);
 	}
 
-	return (
-		<Box flex={1} bg="#F2F6FA" alignItems="center" justifyContent="center" px="$5">
-			<Text fontSize={28} lineHeight={32} color="#0F172A" fontFamily="RobotoMedium" mb="$4">
-				Camera
-			</Text>
+	if (capturedUri && (isResolvingProduct || isProcessingEvaluation)) {
+		return <EvaluationLoading />;
+	}
 
-			<Box
-				style={{
-					width: "100%",
-					maxWidth: 360,
-					aspectRatio: 3 / 4,
-					borderRadius: 22,
-					borderWidth: 1,
-					borderColor: "#DDE6EF",
-					backgroundColor: "#EAF1F8",
-					overflow: "hidden",
-					alignItems: "center",
-					justifyContent: "center",
+	if (capturedUri && resolvedProduct) {
+		return (
+			<ShowProduct
+				product={resolvedProduct}
+				capturedUri={capturedUri}
+				isProcessing={isProcessingEvaluation}
+				onContinue={() => {
+					setHasConfirmedProduct(true);
+					void runEvaluation();
 				}}
-			>
-				{capturedUri ? (
-					<Image
-						source={{ uri: capturedUri }}
-						alt="Captured photo"
-						style={{ width: "100%", height: "100%" }}
-						resizeMode="cover"
-					/>
-				) : (
-					<Box alignItems="center" justifyContent="center">
-						<Feather name="camera" size={42} color="#6B7E91" />
-						<Text mt="$2" fontSize={14} lineHeight={18} color="#6B7E91" fontFamily="Roboto">
-							No photo captured yet
-						</Text>
-					</Box>
-				)}
-			</Box>
+				onRetake={() => {
+					setCapturedUri(null);
+					setHasConfirmedProduct(false);
+					setResolvedProduct(null);
+					setEvaluationContext(null);
+					void handleSnapPhoto();
+				}}
+			/>
+		);
+	}
 
-			<Box width="$full" maxWidth={360} mt="$5" style={{ gap: 10 }}>
-				<Pressable
-					onPress={handleSnapPhoto}
-					disabled={isOpeningCamera}
-					style={{
-						height: 52,
-						borderRadius: 14,
-						backgroundColor: "#4D9FD8",
-						alignItems: "center",
-						justifyContent: "center",
-						opacity: isOpeningCamera ? 0.7 : 1,
-					}}
-				>
-					<Text fontSize={16} lineHeight={18} color="#FFFFFF" fontFamily="RobotoMedium">
-						{capturedUri ? "Retake Photo" : isOpeningCamera ? "Opening Camera..." : "Snap Picture"}
-					</Text>
-				</Pressable>
-
-				{capturedUri ? (
-					<Pressable
-						onPress={() => setCapturedUri(null)}
-						style={{
-							height: 48,
-							borderRadius: 14,
-							borderWidth: 1,
-							borderColor: "#D6E2ED",
-							backgroundColor: "#FFFFFF",
-							alignItems: "center",
-							justifyContent: "center",
-						}}
-					>
-						<Text fontSize={15} lineHeight={17} color="#3B4A5A" fontFamily="RobotoMedium">
-							Clear Photo
-						</Text>
-					</Pressable>
-				) : null}
+	if (isOpeningCamera || !didAutoOpenCamera) {
+		return (
+			<Box flex={1} bg="#000000" alignItems="center" justifyContent="center" px="$6">
+				<Feather name="camera" size={42} color="#FFFFFF" />
+				<Text mt="$3" fontSize={17} lineHeight={20} color="#FFFFFF" fontFamily="RobotoMedium">
+					Opening Camera
+				</Text>
 			</Box>
-		</Box>
-	);
+		);
+	}
+
+	return null;
 }

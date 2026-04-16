@@ -126,8 +126,8 @@ export const styles = StyleSheet.create({
 		opacity: 0.85,
 	},
 	analysisPlaceholder: {
-		backgroundColor: "#EAF4FF",
-		borderColor: "#C8DDF5",
+		backgroundColor: "transparent",
+		borderColor: "#88c2ff",
 		borderWidth: 1,
 	},
 	analysisImagePlaceholder: {
@@ -143,7 +143,7 @@ export const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "center",
 		paddingHorizontal: 8,
-		backgroundColor: "#EAF4FF",
+		backgroundColor: "transparent",
 		borderWidth: 1.5,
 		borderColor: "#9FC1EA",
 		borderStyle: "dashed",

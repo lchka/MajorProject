@@ -9,10 +9,10 @@ type Props = {
 };
 
 const getUvColor = (uv: number) => {
-  if (uv <= 2) return "#22c55e"; // green
-  if (uv <= 5) return "#eab308"; // yellow
-  if (uv <= 7) return "#f97316"; // orange
-  return "#ef4444"; // red
+  if (uv <= 2) return "#22c55e";
+  if (uv <= 5) return "#eab308";
+  if (uv <= 7) return "#f97316";
+  return "#ef4444";
 };
 
 const getLabel = (uv: number) => {
@@ -24,89 +24,62 @@ const getLabel = (uv: number) => {
 
 export const UvIndexCard: React.FC<Props> = ({
   uvIndex,
-  recommendation = "Wear Sunscreen with 30 SPF",
+  recommendation = "Apply SPF 30+ sunscreen",
   onClose,
 }) => {
-  const uvColor = getUvColor(uvIndex);
-  const label = getLabel(uvIndex);
+  const safeUv = Number.isFinite(uvIndex) ? uvIndex : 0;
+  const uvColor = getUvColor(safeUv);
+  const label = getLabel(safeUv);
+  const clampedUv = Math.max(0, Math.min(safeUv, 11));
 
   return (
     <Box
       bg="$backgroundLight0"
-      borderRadius="$2xl"
-      p="$4"
+      borderRadius="$3xl"
+      p="$5"
       borderWidth={1}
-      borderColor="$coolGray200"
+      borderColor="$coolGray100"
+      shadowColor="#000"
+      shadowOpacity={0.05}
+      shadowRadius={10}
+      elevation={3}
     >
-      <HStack space="md" alignItems="center">
-        {/* UV Icon */}
-        <Box
-          w={70}
-          h={70}
-          borderRadius={35}
-          borderWidth={2}
-          borderColor={uvColor}
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Text fontSize="$2xl" fontWeight="$bold" color={uvColor}>
-            O
+      {/* Header */}
+      <HStack justifyContent="space-between" alignItems="center">
+        <VStack>
+          <Text fontSize="$sm" color="$coolGray500">
+            UV Index
           </Text>
-          <Text fontWeight="$bold" color={uvColor}>
-            UV
+          <Text fontSize="$2xl" fontWeight="$bold">
+            {label}
           </Text>
-        </Box>
-
-        {/* Right Content */}
-        <VStack flex={1} space="sm">
-          {/* Header */}
-          <HStack alignItems="center" justifyContent="space-between">
-            <HStack alignItems="center" space="xs">
-              <Text color="#ef4444" fontWeight="$bold">
-                !
-              </Text>
-              <Text fontSize="$lg" fontWeight="$semibold">
-                UV Index {label}!
-              </Text>
-            </HStack>
-
-            {onClose && (
-              <Pressable onPress={onClose}>
-                <Box
-                  bg="$red500"
-                  w={24}
-                  h={24}
-                  borderRadius={12}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text color="white">×</Text>
-                </Box>
-              </Pressable>
-            )}
-          </HStack>
-
-          {/* Recommendation */}
-          <Box
-            bg="#fca5a5"
-            px="$3"
-            py="$2"
-            borderRadius="$lg"
-            alignSelf="flex-start"
-          >
-            <Text fontWeight="$medium">{recommendation}</Text>
-          </Box>
         </VStack>
+
+        <HStack alignItems="center" space="sm">
+          <Text fontSize="$3xl" fontWeight="$bold" color={uvColor}>
+            {safeUv.toFixed(1)}
+          </Text>
+
+          {onClose && (
+            <Pressable onPress={onClose}>
+              <Box
+                bg="$coolGray200"
+                w={28}
+                h={28}
+                borderRadius={14}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text fontWeight="$bold">×</Text>
+              </Box>
+            </Pressable>
+          )}
+        </HStack>
       </HStack>
 
-      {/* UV Bar */}
-      <Box mt="$4">
-        <Box
-          h={8}
-          borderRadius={999}
-          overflow="hidden"
-          bg="$coolGray200"
-        >
+      {/* Progress Bar */}
+      <Box mt="$5">
+        <Box h={10} borderRadius={999} overflow="hidden">
           <LinearGradient
             colors={["#22c55e", "#eab308", "#f97316", "#ef4444"]}
             start={{ x: 0, y: 0 }}
@@ -115,19 +88,35 @@ export const UvIndexCard: React.FC<Props> = ({
           />
         </Box>
 
-        {/* Indicator */}
-        <Box mt="$2" alignItems="center">
+        {/* Indicator Dot */}
+        <Box
+          position="absolute"
+          top={-4}
+          left={`${(clampedUv / 11) * 100}%`}
+          transform={[{ translateX: -8 }]}
+        >
           <Box
-            position="absolute"
-            left={`${Math.min(uvIndex * 10, 100)}%`}
-            transform={[{ translateX: -10 }]}
-          >
-            <Box w={2} h={16} bg="black" />
-            <Text mt="$1" fontWeight="$bold">
-              {uvIndex.toFixed(1)}
-            </Text>
-          </Box>
+            w={16}
+            h={16}
+            borderRadius={8}
+            bg="white"
+            borderWidth={3}
+            borderColor={uvColor}
+          />
         </Box>
+      </Box>
+
+      {/* Recommendation */}
+      <Box
+        mt="$5"
+        bg="$coolGray100"
+        px="$4"
+        py="$3"
+        borderRadius="$xl"
+      >
+        <Text fontSize="$sm" color="$coolGray700">
+          ☀️ {recommendation}
+        </Text>
       </Box>
     </Box>
   );

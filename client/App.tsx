@@ -10,7 +10,7 @@ import EditProfileScreen from "./src/screens/Profile/EditProfile";
 import AccountSettings from "./src/screens/general/AccountSettings";
 import CameraScreen from "./src/screens/Evaluations/CameraScreen";
 import EvaluationResultScreen from "./src/screens/Evaluations/EvaluationResultScreen";
-import EvaluationLoading from "./src/screens/Evaluations/EvaluationLoading";
+import EvaluationLoading from "./src/screens/loading/EvaluationLoading";
 import HistoryScreen from "./src/screens/Evaluations/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";

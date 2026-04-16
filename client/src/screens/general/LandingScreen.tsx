@@ -16,6 +16,7 @@ import PreferencesOverview from "../../components/preferences/AllPreferences";
 import AllConditions from "../../components/conditions/AllConditions";
 import SingleCondition from "../../components/conditions/SingleCondition";
 import AllAllergens from "../../components/allergens/AllAllergens";
+import { weatherService, CurrentUvSnapshot } from "../../services/weatherService";
 import profileApiService, { Profile } from "../../services/profileService";
 import {
   consumePendingSystemErrorEvent,
@@ -25,6 +26,8 @@ import { AuthStackParamList } from "../../types/navigation";
 import { styles } from "../../style/LandingPageStyle";
 
 const AUTH_TOKEN_KEY = "authToken";
+const DEFAULT_UV_LAT = 53.3498;
+const DEFAULT_UV_LON = -6.2603;
 
 export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -48,6 +51,8 @@ export default function LandingScreen() {
   const [profiles, setProfiles] = React.useState<
     { id: string; name: string; avatarUri?: string; isMain: boolean }[]
   >([]);
+  const [uvSnapshot, setUvSnapshot] = React.useState<CurrentUvSnapshot | null>(null);
+  const [isUvLoading, setIsUvLoading] = React.useState(false);
 
   const loadProfiles = React.useCallback(async () => {
     try {
@@ -82,6 +87,18 @@ export default function LandingScreen() {
     }
   }, []);
 
+  const loadUv = React.useCallback(async () => {
+    try {
+      setIsUvLoading(true);
+      const snapshot = await weatherService.getCurrentUv(DEFAULT_UV_LAT, DEFAULT_UV_LON);
+      setUvSnapshot(snapshot);
+    } catch {
+      setUvSnapshot(null);
+    } finally {
+      setIsUvLoading(false);
+    }
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       const pendingSystemError = consumePendingSystemErrorEvent();
@@ -93,6 +110,7 @@ export default function LandingScreen() {
       }
 
       void loadProfiles();
+      void loadUv();
 
       void profileApiService
         .getAllAllergens()
@@ -105,8 +123,39 @@ export default function LandingScreen() {
           setAvailableAllergens([]);
         });
 
-    }, [loadProfiles]),
+    }, [loadProfiles, loadUv]),
   );
+
+  const uvRecommendation = React.useMemo(() => {
+    if (isUvLoading && !uvSnapshot) {
+      return "Loading live UV data...";
+    }
+
+    if (!uvSnapshot) {
+      return "Live UV unavailable right now.";
+    }
+
+    const uv = uvSnapshot.uvIndex;
+    const weatherLabel = uvSnapshot.weatherMain ?? "Current conditions";
+    const temperatureLabel =
+      typeof uvSnapshot.temperatureCelsius === "number"
+        ? ` ${Math.round(uvSnapshot.temperatureCelsius)}°C`
+        : "";
+
+    if (uv <= 2) {
+      return `${weatherLabel}${temperatureLabel}. Minimal sun protection needed.`;
+    }
+
+    if (uv <= 5) {
+      return `${weatherLabel}${temperatureLabel}. Wear sunscreen and sunglasses.`;
+    }
+
+    if (uv <= 7) {
+      return `${weatherLabel}${temperatureLabel}. SPF 30+, hat, and shade recommended.`;
+    }
+
+    return `${weatherLabel}${temperatureLabel}. High UV: avoid peak sun and reapply SPF.`;
+  }, [isUvLoading, uvSnapshot]);
 
   React.useEffect(() => {
     return subscribeSystemErrorEvents((event) => {
@@ -279,7 +328,7 @@ export default function LandingScreen() {
         showsVerticalScrollIndicator={false}
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
-        <Box mt="$7" mb="$3">
+        <Box mt="$7">
           <SwitchProfile
             profiles={profiles.map((profile) => ({
               id: profile.id,
@@ -335,11 +384,14 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <Box px="$2" my="$4">
+        <Box px="$2" mb="$4">
           <PastAnalysis profileId={profileId} />
         </Box>
         <Box px="$2" my="$8">
-          <UvIndexCard uvIndex={6.4} />
+          <UvIndexCard
+            uvIndex={uvSnapshot?.uvIndex ?? 0}
+            recommendation={uvRecommendation}
+          />
         </Box>
 
         <Box px="$2" my="$4">
