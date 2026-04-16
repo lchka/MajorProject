@@ -105,8 +105,8 @@ export default function CreateProfile() {
 	}, [step]);
 
 	const handleNext = () => {
-		if (step === 1 && (!firstName.trim() || !lastName.trim())) {
-			Alert.alert("Missing info", "Please enter first and last name.");
+		if (step === 1 && !firstName.trim()) {
+			Alert.alert("Missing info", "Please enter first name.");
 			return;
 		}
 
@@ -121,7 +121,7 @@ export default function CreateProfile() {
 		// Shared payload used for either updating the initial profile or creating an additional one.
 		const payload = {
 			first_name: firstName.trim(),
-			last_name: lastName.trim(),
+			last_name: lastName.trim() ? lastName.trim() : undefined,
 			age: age.trim() ? age.trim() : undefined,
 			profile_image: profileImage,
 			conditionIds,

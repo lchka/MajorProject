@@ -76,7 +76,8 @@ export default function RegisterScreen() {
   };
 
   const validateLastName = (value: string) => {
-    if (!value.trim()) return "Last name is required.";
+    if (!value.trim()) return "";
+    if (value.trim().length < 2) return "Last name must be at least 2 characters.";
     return "";
   };
 
@@ -141,9 +142,14 @@ export default function RegisterScreen() {
 
   const lastNameRules = [
     {
-      id: "last-name-required",
-      label: "Last name is required",
-      test: (value: string) => value.trim().length > 0,
+      id: "last-name-optional",
+      label: "Last name is optional",
+      test: () => true,
+    },
+    {
+      id: "last-name-length",
+      label: "If entered, last name has at least 2 characters",
+      test: (value: string) => value.trim().length === 0 || value.trim().length >= 2,
     },
   ];
 
@@ -334,7 +340,7 @@ export default function RegisterScreen() {
 
     const result = registerSchema.safeParse({
       first_name: firstName,
-      last_name: lastName,
+      last_name: lastName.trim() ? lastName : undefined,
       email,
       password,
       c_password: confirmPassword,
@@ -351,7 +357,7 @@ export default function RegisterScreen() {
 
       const response = await authService.register({
         first_name: firstName.trim(),
-        last_name: lastName.trim(),
+        last_name: lastName.trim() ? lastName.trim() : undefined,
         email: email.toLowerCase().trim(),
         password,
         c_password: confirmPassword,
@@ -553,7 +559,7 @@ export default function RegisterScreen() {
                     <VStack space="xs">
                       <Input size="lg" borderRadius="$full">
                         <InputField
-                          placeholder="Last name"
+                          placeholder="Last name (optional)"
                           value={lastName}
                           onChangeText={(value) => {
                             setLastName(value);

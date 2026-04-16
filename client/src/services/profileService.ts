@@ -42,7 +42,7 @@ export interface Preference {
 
 export interface CreateProfileInput {
   first_name: string;
-  last_name: string;
+  last_name?: string;
   age?: string;
   profile_image?: string | ProfileImageUploadFile;
   main_profile?: boolean;

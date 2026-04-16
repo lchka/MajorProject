@@ -10,7 +10,7 @@ const nameSchema = z
 
 export const profileBaseSchema = z.object({
 	first_name: nameSchema,
-	last_name: nameSchema,
+	last_name: nameSchema.optional(),
 	age: z.string().trim().optional(),
 	profile_image: OptionalImageFileSchema,
 	conditionIds: relationIdsSchema.optional(),
