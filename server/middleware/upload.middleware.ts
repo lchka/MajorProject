@@ -12,6 +12,7 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
     "image/webp",
     "image/gif",
     "image/svg+xml",
+    "image/heic",
 ]);
 
 const imageFileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
