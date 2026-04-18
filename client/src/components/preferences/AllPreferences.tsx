@@ -318,35 +318,88 @@ export default function AllPreferences({
 						</Box>
 					</Box>
 
-					{/* This is the horizontal preferences row */}
-					<ScrollView
-						horizontal
-						onScrollBeginDrag={resetInactivityTimer}
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
-					>
-						<Box flexDirection="row" alignItems="flex-start" gap={12}>
-							{/* These are the existing preference icons + labels */}
-							{resolvedPreferences.map((preference) => (
-								<Box key={preference.runtimeId} alignItems="center" width={94}>
-									<Box position="relative">
-										<Image
-											source={preference.imageSource}
-											alt={preference.imageAlt}
-											resizeMode="contain"
-											style={{ width: 70, height: 70 }}
-										/>
+					<Box>
+						{/* This is the horizontal preferences row with pagination dots like Past Analysis. */}
+						{resolvedPreferences.length === 0 ? (
+							<Box
+								bg="#FFFFFF"
+								borderRadius={14}
+								px="$4"
+								py="$4"
+								alignItems="center"
+								width="100%"
+							>
+								<Text
+									textAlign="center"
+									fontSize={14}
+									lineHeight={18}
+									color="#4B5563"
+									fontFamily="Roboto"
+									mb="$3"
+								>
+									Add preferences to your profile
+								</Text>
+								<Pressable
+									alignItems="center"
+									onPress={() => {
+										resetInactivityTimer();
+										onAddPreference?.();
+									}}
+									disabled={!onAddPreference}
+								>
+									<Box
+										width={64}
+										height={64}
+										borderRadius={32}
+										borderWidth={2}
+										borderColor="#58CCED"
+										bg="#FFFFFF"
+										alignItems="center"
+										justifyContent="center"
+									>
+										<Icon as={AddIcon} size="xl" color="#58CCED" />
+									</Box>
+									<Text
+										mt="$2"
+										textAlign="center"
+										fontSize={13}
+										lineHeight={15}
+										fontFamily="RobotoBold"
+										color="#111111"
+									>
+										ADD MORE
+									</Text>
+								</Pressable>
+							</Box>
+						) : (
+							<ScrollView
+								horizontal
+								onScrollBeginDrag={resetInactivityTimer}
+								showsHorizontalScrollIndicator={false}
+								contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
+							>
+								<Box flexDirection="row" alignItems="flex-start" gap={12}>
+								{/* These are the existing preference icons + labels */}
+								{resolvedPreferences.map((preference) => (
+									<Box key={preference.runtimeId} alignItems="center" width={94}>
+										<Box position="relative">
+											<Image
+												source={preference.imageSource}
+												alt={preference.imageAlt}
+												resizeMode="contain"
+												style={{ width: 70, height: 70 }}
+											/>
 
-										{isEditMode && onRemovePreference ? (
-											<RemoveIconTag
-												onDelete={() => {
-													resetInactivityTimer();
-													void handleDeletePreference(preference.runtimeId);
-												}}
-												disabled={isRemovingPreference || removingId !== null}
-												size={22}
-												position={{ top:0, right: -8 }}
-												accessibilityLabel={`Remove ${preference.label}`}
+											{isEditMode && onRemovePreference ? (
+												<RemoveIconTag
+													onDelete={() => {
+														resetInactivityTimer();
+														void handleDeletePreference(preference.runtimeId);
+													}}
+													disabled={isRemovingPreference || removingId !== null}
+													size={22}
+													position={{ top:0, right: -8 }}
+													accessibilityLabel={`Remove ${preference.label}`}
 											/>
 										) : null}
 									</Box>
@@ -366,7 +419,7 @@ export default function AllPreferences({
 							))}
 
 							{/* This is the Add More button that opens preference management */}
-							<Pressable
+								<Pressable
 								alignItems="center"
 								width={94}
 								onPress={() => {
@@ -398,9 +451,11 @@ export default function AllPreferences({
 								>
 									ADD MORE
 								</Text>
-							</Pressable>
-						</Box>
-					</ScrollView>
+								</Pressable>
+							</Box>
+						</ScrollView>
+						)}
+					</Box>
 				</>
 			) : (
 				renderChips()

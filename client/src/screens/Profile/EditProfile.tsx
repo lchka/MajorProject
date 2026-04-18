@@ -13,12 +13,13 @@ import { Box, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import BackButton from "../../components/Buttons/BackButton";
 import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
+import QuickStartPanel from "../../components/general/QuickStartPanel";
 import ProfileEditBadgeComponent from "../../components/profile/ProfileEditBadge";
 import AllConditions from "../../components/conditions/AllConditions";
 import AllAllergens from "../../components/allergens/AllAllergens";
 import AllPreferences from "../../components/preferences/AllPreferences";
 import RedBanner from "../../components/banners/RedBanner";
-import profileApiService, { ProfileImageUploadFile } from "../../services/profileService";
+import profileApiService, { ProfileImageUploadFile, Profile } from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
 
 export default function EditProfileScreen() {
@@ -48,12 +49,28 @@ export default function EditProfileScreen() {
   const [isUpdatingMain, setIsUpdatingMain] = React.useState(false);
   const [isMainStatus, setIsMainStatus] = React.useState(profileIsMain);
   const [showMainWarning, setShowMainWarning] = React.useState(false);
+  const [profileData, setProfileData] = React.useState<Profile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = React.useState(true);
   const mainWarningTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileFirstName = nameValue.trim().split(" ")[0]?.trim();
   const previewImageUri = profileImage?.uri ?? profileImageUri;
   const hasNameChanges = nameValue.trim() !== originalNameValue;
   const hasAgeChanges = ageValue.trim() !== originalAgeValue;
   const hasPendingChanges = Boolean(profileImage) || hasNameChanges || hasAgeChanges;
+
+  const completionStats = React.useMemo(() => {
+    if (!profileData) {
+      return { allergens: 0, conditions: 0, preferences: 0, percentage: 0 };
+    }
+
+    const allergenCount = profileData.allergens?.length ?? 0;
+    const conditionCount = profileData.conditions?.length ?? 0;
+    const preferenceCount = profileData.preferences?.length ?? 0;
+    const completedSteps = (allergenCount > 0 ? 1 : 0) + (conditionCount > 0 ? 1 : 0) + (preferenceCount > 0 ? 1 : 0);
+    const percentage = Math.round((completedSteps / 3) * 100);
+
+    return { allergens: allergenCount, conditions: conditionCount, preferences: preferenceCount, percentage };
+  }, [profileData]);
 
   const handlePickProfileImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -103,6 +120,7 @@ export default function EditProfileScreen() {
             setLivePreferenceNames(profilePreferenceNames ?? []);
             setLiveConditionNames([]);
             setLiveAllergenNames([]);
+            setIsLoadingProfile(false);
           }
           return;
         }
@@ -117,11 +135,14 @@ export default function EditProfileScreen() {
           setLivePreferenceNames(activeProfile?.preferences?.map((item) => item.name) ?? []);
           setLiveConditionNames(activeProfile?.conditions?.map((item) => item.name) ?? []);
           setLiveAllergenNames(activeProfile?.allergens?.map((item) => item.name) ?? []);
+          setProfileData(activeProfile ?? null);
+          setIsLoadingProfile(false);
         } catch {
           if (isMounted) {
             setLivePreferenceNames(profilePreferenceNames ?? []);
             setLiveConditionNames([]);
             setLiveAllergenNames([]);
+            setIsLoadingProfile(false);
           }
         }
       };
@@ -324,6 +345,30 @@ export default function EditProfileScreen() {
             Edit Profile
           </Text>
         </Box>
+
+        {profileData && !isLoadingProfile && (
+          <QuickStartPanel
+            profileFirstName={profileFirstName}
+            allergenCount={completionStats.allergens}
+            conditionCount={completionStats.conditions}
+            preferenceCount={completionStats.preferences}
+            onPressAddAllergens={() =>
+              navigation.navigate("AllergenScreen", {
+                profileId: route.params?.profileId,
+              })
+            }
+            onPressAddConditions={() =>
+              navigation.navigate("ConditionScreen", {
+                profileId: route.params?.profileId,
+              })
+            }
+            onPressAddPreferences={() =>
+              navigation.navigate("PreferenceScreen", {
+                profileId: route.params?.profileId,
+              })
+            }
+          />
+        )}
 
         <Box
           style={{

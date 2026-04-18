@@ -7,16 +7,21 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../../components/general/NavBarBottom";
+import QuickStartPanel from "../../components/general/QuickStartPanel";
 import NavBarTop from "../../components/general/NavBarTop";
 import SystemErrorModal from "../../components/banners/SystemError";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import PastAnalysis from "../../components/evaluations/PastAnalysis";
 import { UvIndexCard } from "../../components/general/UvIndexWidget";
+import ProdScanCta from "../../components/general/ProdScanCta";
 import PreferencesOverview from "../../components/preferences/AllPreferences";
 import AllConditions from "../../components/conditions/AllConditions";
 import SingleCondition from "../../components/conditions/SingleCondition";
 import AllAllergens from "../../components/allergens/AllAllergens";
-import { weatherService, CurrentUvSnapshot } from "../../services/weatherService";
+import {
+  weatherService,
+  CurrentUvSnapshot,
+} from "../../services/weatherService";
 import profileApiService, { Profile } from "../../services/profileService";
 import {
   consumePendingSystemErrorEvent,
@@ -28,6 +33,7 @@ import { styles } from "../../style/LandingPageStyle";
 const AUTH_TOKEN_KEY = "authToken";
 const DEFAULT_UV_LAT = 53.3498;
 const DEFAULT_UV_LON = -6.2603;
+const SWITCH_PROFILE_SCROLL_TRIGGER_PX = 6;
 
 export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -51,8 +57,11 @@ export default function LandingScreen() {
   const [profiles, setProfiles] = React.useState<
     { id: string; name: string; avatarUri?: string; isMain: boolean }[]
   >([]);
-  const [uvSnapshot, setUvSnapshot] = React.useState<CurrentUvSnapshot | null>(null);
+  const [uvSnapshot, setUvSnapshot] = React.useState<CurrentUvSnapshot | null>(
+    null,
+  );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
+  const [isSwitchProfileSticky, setIsSwitchProfileSticky] = React.useState(false);
 
   const loadProfiles = React.useCallback(async () => {
     try {
@@ -90,7 +99,10 @@ export default function LandingScreen() {
   const loadUv = React.useCallback(async () => {
     try {
       setIsUvLoading(true);
-      const snapshot = await weatherService.getCurrentUv(DEFAULT_UV_LAT, DEFAULT_UV_LON);
+      const snapshot = await weatherService.getCurrentUv(
+        DEFAULT_UV_LAT,
+        DEFAULT_UV_LON,
+      );
       setUvSnapshot(snapshot);
     } catch {
       setUvSnapshot(null);
@@ -122,7 +134,6 @@ export default function LandingScreen() {
         .catch(() => {
           setAvailableAllergens([]);
         });
-
     }, [loadProfiles, loadUv]),
   );
 
@@ -180,12 +191,30 @@ export default function LandingScreen() {
     [profileDetails, profileId],
   );
 
+  const activeProfileFirstName = React.useMemo(() => {
+    const explicitFirstName = activeProfile?.first_name?.trim();
+    if (explicitFirstName) {
+      return explicitFirstName;
+    }
+
+    const fallbackName =
+      profiles.find((profile) => profile.id === activeProfile?.id)?.name?.trim() ?? "";
+    return fallbackName.split(/\s+/)[0] ?? "";
+  }, [activeProfile, profiles]);
+
   const activeProfilePreferences = React.useMemo(() => {
     return activeProfile?.preferences?.map((item) => item.name) ?? [];
   }, [activeProfile]);
 
   const activeProfileConditions = React.useMemo(() => {
     return activeProfile?.conditions?.map((item) => item.name) ?? [];
+  }, [activeProfile]);
+
+  const completionStats = React.useMemo(() => {
+    const allergenCount = activeProfile?.allergens?.length ?? 0;
+    const conditionCount = activeProfile?.conditions?.length ?? 0;
+    const preferenceCount = activeProfile?.preferences?.length ?? 0;
+    return { allergens: allergenCount, conditions: conditionCount, preferences: preferenceCount };
   }, [activeProfile]);
 
   const activeProfileConditionDetails = React.useMemo(() => {
@@ -260,7 +289,8 @@ export default function LandingScreen() {
           return {
             ...profile,
             preferences:
-              profile.preferences?.filter((item) => item.id !== preferenceId) ?? [],
+              profile.preferences?.filter((item) => item.id !== preferenceId) ??
+              [],
           };
         }),
       );
@@ -326,10 +356,22 @@ export default function LandingScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
+        scrollEventThrottle={16}
+        onScroll={(event) => {
+          const offsetY = event.nativeEvent.contentOffset.y;
+          const shouldBeSticky = offsetY >= SWITCH_PROFILE_SCROLL_TRIGGER_PX;
+
+          setIsSwitchProfileSticky((previous) =>
+            previous === shouldBeSticky ? previous : shouldBeSticky,
+          );
+        }}
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
-        <Box mt="$7">
+
+        <Box px="$2" mt="$6">
           <SwitchProfile
+            isSticky={isSwitchProfileSticky}
             profiles={profiles.map((profile) => ({
               id: profile.id,
               name: profile.name,
@@ -384,87 +426,156 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <Box px="$2">
-          <PastAnalysis profileId={profileId} />
+        <Box px="$2" mt="$2">
+          <PastAnalysis profileId={profileId} profileName={activeProfileFirstName} />
         </Box>
-        <Box px="$2" >
-          <AllConditions
-            conditionNames={activeProfileConditions}
-            profileFirstName={activeProfile?.first_name}
-            onPressCondition={(conditionName) => {
-              const matchedCondition = activeProfileConditionDetails.find(
-                (item) => item.name === conditionName,
-              );
-
-              setSelectedCondition({
-                name: conditionName,
-                description: matchedCondition?.description,
-              });
-            }}
-            onPressEdit={() =>
-              navigation.navigate("ConditionScreen", {
-                profileId: profileId ?? undefined,
+        <Box px="$2" mt="$3">
+          <ProdScanCta
+            onPress={() =>
+              navigation.navigate("CameraScreen", {
+                profileId: profileId ?? activeProfile?.id,
               })
             }
           />
         </Box>
-        <Box px="$2" my="$8">
+       
+        <Box px="$2" mt="$9">
           <UvIndexCard
             uvIndex={uvSnapshot?.uvIndex ?? 0}
             recommendation={uvRecommendation}
           />
         </Box>
-
-        <Box px="$2" my="$4">
-          <PreferencesOverview
-            profilePreferenceNames={activeProfilePreferences}
-            preferences={activeProfile?.preferences?.map((item) => ({
-              id: item.id,
-              name: item.name,
-            }))}
-            profileFirstName={activeProfile?.first_name}
-            onRemovePreference={handleRemovePreference}
-            isRemovingPreference={isRemovingPreference}
-            isEditMode={isPreferenceEditMode}
-            onToggleEditMode={() => {
-              setIsPreferenceEditMode((previous) => !previous);
-            }}
-            onCloseEditMode={() => {
-              setIsPreferenceEditMode(false);
-            }}
-            onAddPreference={() =>
+         <Box px="$2" mt="$3">
+          <QuickStartPanel
+            profileFirstName={activeProfileFirstName}
+            allergenCount={completionStats.allergens}
+            conditionCount={completionStats.conditions}
+            preferenceCount={completionStats.preferences}
+            onPressAddAllergens={() =>
+              navigation.navigate("AllergenScreen", {
+                profileId: profileId ?? activeProfile?.id,
+              })
+            }
+            onPressAddConditions={() =>
+              navigation.navigate("ConditionScreen", {
+                profileId: profileId ?? activeProfile?.id,
+              })
+            }
+            onPressAddPreferences={() =>
               navigation.navigate("PreferenceScreen", {
-                profileId: profileId ?? undefined,
+                profileId: profileId ?? activeProfile?.id,
               })
             }
           />
         </Box>
-        {/* remember to delete this once the navbar takes up the proper space */}
-        
+        <Box px="$2" mt="$4">
+          <Box
+            bg="$backgroundLight0"
+            borderRadius="$3xl"
+            p="$2"
+            borderWidth={1}
+            borderColor="$coolGray100"
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={10}
+            elevation={3}
+          >
+            <AllConditions
+              conditionNames={activeProfileConditions}
+              profileFirstName={activeProfile?.first_name}
+              onPressCondition={(conditionName) => {
+                const matchedCondition = activeProfileConditionDetails.find(
+                  (item) => item.name === conditionName,
+                );
+
+                setSelectedCondition({
+                  name: conditionName,
+                  description: matchedCondition?.description,
+                });
+              }}
+              onPressEdit={() =>
+                navigation.navigate("ConditionScreen", {
+                  profileId: profileId ?? undefined,
+                })
+              }
+            />
+          </Box>
+        </Box>
+
         <Box px="$2" my="$4">
-          <AllAllergens
-            profileFirstName={activeProfile?.first_name}
-            allergens={activeProfile?.allergens?.map((item) => ({
-              id: item.id,
-              name: item.name,
-            }))}
-            availableAllergens={availableAllergens}
-            onRemoveAllergen={handleRemoveAllergen}
-            onSaveAllergens={handleSaveAllergens}
-            onOpenAddAllergen={() => {
-              navigation.navigate("AllergenScreen", {
-                profileId: profileId ?? undefined,
-              });
-            }}
-            isRemovingAllergen={isRemovingAllergen}
-            isEditMode={isAllergenEditMode}
-            onToggleEditMode={() => {
-              setIsAllergenEditMode((previous) => !previous);
-            }}
-            onCloseEditMode={() => {
-              setIsAllergenEditMode(false);
-            }}
-          />
+          <Box
+            bg="$backgroundLight0"
+            borderRadius="$3xl"
+            p="$2"
+            borderWidth={1}
+            borderColor="$coolGray100"
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={10}
+            elevation={3}
+          >
+            <PreferencesOverview
+              profilePreferenceNames={activeProfilePreferences}
+              preferences={activeProfile?.preferences?.map((item) => ({
+                id: item.id,
+                name: item.name,
+              }))}
+              profileFirstName={activeProfile?.first_name}
+              onRemovePreference={handleRemovePreference}
+              isRemovingPreference={isRemovingPreference}
+              isEditMode={isPreferenceEditMode}
+              onToggleEditMode={() => {
+                setIsPreferenceEditMode((previous) => !previous);
+              }}
+              onCloseEditMode={() => {
+                setIsPreferenceEditMode(false);
+              }}
+              onAddPreference={() =>
+                navigation.navigate("PreferenceScreen", {
+                  profileId: profileId ?? undefined,
+                })
+              }
+            />
+          </Box>
+        </Box>
+        {/* remember to delete this once the navbar takes up the proper space */}
+
+        <Box px="$2" pb="$8">
+          <Box
+            bg="$backgroundLight0"
+            borderRadius="$3xl"
+            p="$2"
+            borderWidth={1}
+            borderColor="$coolGray100"
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={10}
+            elevation={3}
+          >
+            <AllAllergens
+              profileFirstName={activeProfile?.first_name}
+              allergens={activeProfile?.allergens?.map((item) => ({
+                id: item.id,
+                name: item.name,
+              }))}
+              availableAllergens={availableAllergens}
+              onRemoveAllergen={handleRemoveAllergen}
+              onSaveAllergens={handleSaveAllergens}
+              onOpenAddAllergen={() => {
+                navigation.navigate("AllergenScreen", {
+                  profileId: profileId ?? undefined,
+                });
+              }}
+              isRemovingAllergen={isRemovingAllergen}
+              isEditMode={isAllergenEditMode}
+              onToggleEditMode={() => {
+                setIsAllergenEditMode((previous) => !previous);
+              }}
+              onCloseEditMode={() => {
+                setIsAllergenEditMode(false);
+              }}
+            />
+          </Box>
         </Box>
       </ScrollView>
 
@@ -492,7 +603,6 @@ export default function LandingScreen() {
           setSystemErrorOverlay(null);
         }}
       />
-
       {/* Sticky bottom navigation */}
       <NavBarBottom
         activeTab="home"

@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
 	scrollContent: {
 		paddingTop: 28,
 		paddingHorizontal: 3,
-		paddingBottom: 180,
+		paddingBottom: 120,
 	},
 	// Header
 	headerRow: {
@@ -71,7 +71,7 @@ export const styles = StyleSheet.create({
 		backgroundColor: "#E7ECF1",
 		borderWidth: 1,
 		borderColor: "#d1e2f0",
-		borderRadius: 18,
+		borderRadius: 24,
 		padding: 10,
 		flexDirection: "row",
 		alignItems: "center",
@@ -192,6 +192,20 @@ export const styles = StyleSheet.create({
 		fontSize: 13,
 		lineHeight: 14,
 		fontFamily: "RobotoMedium",
+	},
+	ctaButton: {
+		marginTop: 12,
+		alignSelf: "flex-start",
+		paddingHorizontal: 18,
+		paddingVertical: 10,
+		borderRadius: 999,
+		backgroundColor: "#1DD2D8",
+	},
+	ctaText: {
+		fontSize: 14,
+		lineHeight: 18,
+		fontFamily: "RobotoMedium",
+		color: "#0F172A",
 	},
 	// Preferences badges
 	preferenceRow: {

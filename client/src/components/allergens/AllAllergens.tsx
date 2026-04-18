@@ -270,196 +270,206 @@ export default function AllAllergens({
 	}, [allergenItems]);
 
 	return (
-		<Box mb={variant === "chips" ? "$0" : "$9"} pb={variant === "chips" ? "$0" : "$9"} onTouchStart={resetInactivityTimer}>
-			<Box my={variant === "chips" ? "$0" : "$6"}>
-			{variant === "visual" ? (
-				<>
-			<Box
-				px="$1"
-				pr="$2"
-				style={{
-					flexDirection: "row",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: 14,
-				}}
-			>
-				<Box>
-					<Box flexDirection="row" alignItems="center" gap={6}>
-						<CurrentProfile firstName={profileFirstName} fontSize={20} lineHeight={24} color="#1dd2d8" />
-						<Text fontSize={20} lineHeight={24} fontFamily="RobotoMedium" color="$black">
-							Allergens
-						</Text>
-					</Box>
-				</Box>
-
-				<Box style={{ marginTop: -4 }}>
-					<EditButton
-						onPress={() => {
-							resetInactivityTimer();
-							onToggleEditMode?.();
+		<Box onTouchStart={resetInactivityTimer}>
+			<Box>
+				{variant === "visual" ? (
+					<Box
+						px="$1"
+						pr="$2"
+						style={{
+							flexDirection: "row",
+							alignItems: "center",
+							justifyContent: "space-between",
+							marginBottom: 14,
 						}}
-						width={72}
-						label={isEditMode ? "Done" : "Edit"}
-						borderColor="#9ed5f2"
-						textColor="#499bc7"
-						style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
-						textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none" }}
-					/>
-				</Box>
-			</Box>
-				</>
-			) : null}
+					>
+						<Box>
+							<Box flexDirection="row" alignItems="center" gap={6}>
+								<CurrentProfile firstName={profileFirstName} fontSize={20} lineHeight={24} color="#1dd2d8" />
+								<Text fontSize={20} lineHeight={24} fontFamily="RobotoMedium" color="$black">
+									Allergens
+								</Text>
+							</Box>
+						</Box>
 
-			{allergenItems.length > 0 ? (
-				variant === "chips" ? (
-					renderChips()
-				) : (
-				// Horizontal-only row to match the swipe interaction from the design.
-				<ScrollView
-					horizontal
-					nestedScrollEnabled
-					directionalLockEnabled
-					onScrollBeginDrag={resetInactivityTimer}
-					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={{ paddingHorizontal: 6, paddingRight: 16 }}
-				>
-					<Box flexDirection="row" alignItems="flex-start" gap={16}>
-						{allergenItems.map((item) => (
-							<Box key={item.runtimeId} alignItems="center" width={122}>
-								<Box position="relative">
-									<Box
-										width={100}
-										height={100}
-										borderRadius={50}
-										bg={item.visual.color}
-										alignItems="center"
-										justifyContent="center"
-									>
-										<Image
-											source={item.visual.icon}
-											alt={item.visual.label}
-											resizeMode="contain"
-											style={{ width: 56, height: 56 }}
-										/>
+						<Box style={{ marginTop: -4 }}>
+							<EditButton
+								onPress={() => {
+									resetInactivityTimer();
+									onToggleEditMode?.();
+								}}
+								width={72}
+								label={isEditMode ? "Done" : "Edit"}
+								borderColor="#9ed5f2"
+								textColor="#499bc7"
+								style={{ height: 28, backgroundColor: "transparent", borderWidth: 2 }}
+								textStyle={{ fontSize: 14, lineHeight: 16, fontFamily: "Roboto", textTransform: "none" }}
+							/>
+						</Box>
+					</Box>
+				) : null}
+
+				{allergenItems.length > 0 ? (
+					variant === "chips" ? (
+						renderChips()
+					) : (
+						<ScrollView
+							horizontal
+							showsHorizontalScrollIndicator={false}
+							contentContainerStyle={{
+								flexDirection: "row",
+								alignItems: "flex-start",
+								paddingHorizontal: 6,
+								paddingRight: 6,
+							}}
+						>
+							{allergenItems.map((item, index) => (
+								<Box key={item.runtimeId} alignItems="center" width={122} style={{ marginRight: index === allergenItems.length - 1 ? 0 : 16 }}>
+									<Box position="relative">
+										<Box
+											width={100}
+											height={100}
+											borderRadius={50}
+											bg={item.visual.color}
+											alignItems="center"
+											justifyContent="center"
+										>
+											<Image
+												source={item.visual.icon}
+												alt={item.visual.label}
+												resizeMode="contain"
+												style={{ width: 56, height: 56 }}
+											/>
+										</Box>
+
+										{isEditMode ? (
+											<RemoveIconTag
+												onDelete={() => {
+													resetInactivityTimer();
+													void handleDeleteAllergen(item.runtimeId);
+												}}
+												disabled={isRemovingAllergen || removingId === item.runtimeId}
+												size={22}
+												position={{ top: 2, right: 2 }}
+												accessibilityLabel={`Remove ${item.visual.label}`}
+											/>
+										) : null}
 									</Box>
 
-									{isEditMode ? (
-										<RemoveIconTag
-											onDelete={() => {
-													resetInactivityTimer();
-												void handleDeleteAllergen(item.runtimeId);
-											}}
-											disabled={isRemovingAllergen || removingId === item.runtimeId}
-											size={22}
-											position={{ top: 2, right: 2 }}
-											accessibilityLabel={`Remove ${item.visual.label}`}
-										/>
-									) : null}
+									<Text
+										mt="$2"
+										textAlign="center"
+										fontSize={12}
+										lineHeight={15}
+										fontWeight={700}
+										fontFamily="RobotoBold"
+										color="#111111"
+									>
+										{item.visual.label}
+									</Text>
 								</Box>
+							))}
 
+							<Pressable
+								alignItems="center"
+								width={92}
+								style={{ marginLeft: 16 }}
+								onPress={() => {
+									resetInactivityTimer();
+									onOpenAddAllergen?.();
+								}}
+								disabled={!onOpenAddAllergen || isRemovingAllergen}
+							>
+								<Box
+									width={64}
+									height={64}
+									borderRadius={32}
+									borderWidth={2}
+									borderColor="#58CCED"
+									bg="#FFFFFF"
+									alignItems="center"
+									justifyContent="center"
+									mt="$5"
+									opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
+								>
+									<Icon as={AddIcon} size="xl" color="#58CCED" />
+								</Box>
 								<Text
 									mt="$2"
 									textAlign="center"
-									fontSize={12}
+									fontSize={13}
 									lineHeight={15}
-                                    fontWeight={700}
 									fontFamily="RobotoBold"
 									color="#111111"
 								>
-									{item.visual.label}
+									ADD MORE
 								</Text>
-							</Box>
-						))}
-
-						<Pressable
-							alignItems="center"
-							width={92}
-							onPress={() => {
-								resetInactivityTimer();
-								onOpenAddAllergen?.();
-							}}
-							disabled={!onOpenAddAllergen || isRemovingAllergen}
-						>
-							<Box
-								width={64}
-								height={64}
-								borderRadius={32}
-								borderWidth={2}
-								borderColor="#58CCED"
-								bg="#FFFFFF"
-								alignItems="center"
-								justifyContent="center"
-								mt="$5"
-								opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
-							>
-								<Icon as={AddIcon} size="xl" color="#58CCED" />
-							</Box>
-							<Text
-								mt="$2"
-								textAlign="center"
-								fontSize={13}
-								lineHeight={15}
-								fontFamily="RobotoBold"
-								color="#111111"
-							>
-								ADD MORE
+							</Pressable>
+						</ScrollView>
+					)
+				) : (
+					<Box
+						bg={variant === "chips" ? "#F8FAFC" : "#FFFFFF"}
+						borderWidth={0}
+						borderColor="transparent"
+						borderRadius={variant === "chips" ? 12 : 14}
+						px={variant === "chips" ? "$3" : "$4"}
+						py={variant === "chips" ? "$2" : "$4"}
+						alignItems={variant === "chips" ? undefined : "center"}
+					>
+						{variant === "chips" ? (
+							<Text fontSize={12} lineHeight={16} color="#7A838D" fontFamily="Roboto">
+								None
 							</Text>
-						</Pressable>
+						) : (
+							<Box alignItems="center" width="100%">
+								<Text
+									textAlign="center"
+									fontSize={14}
+									lineHeight={18}
+									color="#4B5563"
+									fontFamily="Roboto"
+									mb="$3"
+								>
+									Add allergens to your profile
+								</Text>
+								<Pressable
+									alignItems="center"
+									onPress={() => {
+										resetInactivityTimer();
+										onOpenAddAllergen?.();
+									}}
+									disabled={!onOpenAddAllergen || isRemovingAllergen}
+								>
+									<Box
+										width={64}
+										height={64}
+										borderRadius={32}
+										borderWidth={2}
+										borderColor="#58CCED"
+										bg="#FFFFFF"
+										alignItems="center"
+										justifyContent="center"
+										opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
+									>
+										<Icon as={AddIcon} size="xl" color="#58CCED" />
+									</Box>
+									<Text
+										mt="$2"
+										textAlign="center"
+										fontSize={13}
+										lineHeight={15}
+										fontFamily="RobotoBold"
+										color="#111111"
+									>
+										ADD MORE
+									</Text>
+								</Pressable>
+							</Box>
+						)}
 					</Box>
-				</ScrollView>
-				)
-			) : (
-				<Box
-					bg={variant === "chips" ? "#F8FAFC" : "#FFFFFF"}
-					borderWidth={1}
-					borderColor={variant === "chips" ? "#E4EDF6" : "#DCE5EF"}
-					borderRadius={variant === "chips" ? 12 : 14}
-					px={variant === "chips" ? "$3" : "$4"}
-					py={variant === "chips" ? "$2" : "$4"}
-					alignItems={variant === "chips" ? undefined : "center"}
-				>
-					{variant === "chips" ? (
-						<Text fontSize={12} lineHeight={16} color="#7A838D" fontFamily="Roboto">
-							None
-						</Text>
-					) : (
-						<Pressable
-							alignItems="center"
-							onPress={() => {
-								resetInactivityTimer();
-								onOpenAddAllergen?.();
-							}}
-							disabled={!onOpenAddAllergen || isRemovingAllergen}
-						>
-							<Box
-								width={64}
-								height={64}
-								borderRadius={32}
-								borderWidth={2}
-								borderColor="#58CCED"
-								bg="#FFFFFF"
-								alignItems="center"
-								justifyContent="center"
-								opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
-							>
-								<Icon as={AddIcon} size="xl" color="#58CCED" />
-							</Box>
-							<Text
-								mt="$2"
-								textAlign="center"
-								fontSize={13}
-								lineHeight={15}
-								fontFamily="RobotoBold"
-								color="#111111"
-							>
-								ADD MORE
-							</Text>
-						</Pressable>
-					)}
-				</Box>
-			)}
+				)}
 			</Box>
-			</Box>
+		</Box>
 	);
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Pressable, Text } from "@gluestack-ui/themed";
+import ReEvaluateButton from "../Buttons/Re-EvaluateButton";
 
 type ProfileRetakeBannerProps = {
   isVisible: boolean;
@@ -66,21 +67,11 @@ export default function ProfileRetakeBanner({
           </Text>
 
           {onRetake ? (
-            <Pressable
-              mt="$2"
-              alignSelf="flex-start"
-              borderRadius={8}
-              borderWidth={1}
-              borderColor="#D4AA56"
-              bg="#FFFFFF"
-              px="$3"
-              py="$1"
+            <ReEvaluateButton
               onPress={onRetake}
-            >
-              <Text fontSize={12} lineHeight={16} color="#6A4A08" fontFamily="RobotoMedium">
-                Re-evaluate
-              </Text>
-            </Pressable>
+              width={120}
+              style={{ marginTop: 8 }}
+            />
           ) : null}
         </Box>
       </Box>

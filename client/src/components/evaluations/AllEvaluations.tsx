@@ -5,6 +5,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Image, Pressable, Text, VStack, HStack } from "@gluestack-ui/themed";
 import { resolveMediaUrl } from "../../config/api";
+import SearchEvaluations from "../general/SearchEvaluations";
 import WarningChip, { normalizeWarningStatus } from "../general/WarningChip";
 import LoadingScreen from "../general/loadingScreen";
 import SwitchProfile from "../profile/SwitchProfile";
@@ -62,8 +63,31 @@ export default function AllEvaluations({
 }: AllEvaluationsProps) {
   const hasProfileSwitcher = Boolean(profileSwitcherItems && profileSwitcherItems.length > 0);
   const [currentPage, setCurrentPage] = React.useState(0);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
-  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
+  const filteredItems = React.useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return items;
+    }
+
+    return items.filter((item) => {
+      const haystack = [
+        item.productName,
+        item.profileName,
+        item.summary,
+        item.status,
+        formatDate(item.createdAt),
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(normalizedQuery);
+    });
+  }, [items, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
 
   React.useEffect(() => {
     setCurrentPage((previous) => {
@@ -74,8 +98,8 @@ export default function AllEvaluations({
 
   const paginatedItems = React.useMemo(() => {
     const start = currentPage * ITEMS_PER_PAGE;
-    return items.slice(start, start + ITEMS_PER_PAGE);
-  }, [currentPage, items]);
+    return filteredItems.slice(start, start + ITEMS_PER_PAGE);
+  }, [currentPage, filteredItems]);
 
   return (
     <Box px="$2" >
@@ -100,6 +124,14 @@ export default function AllEvaluations({
         <Ionicons name="time-outline" size={22} color="#64748B" />
       </HStack>
 
+      <Box mb="$4">
+        <SearchEvaluations
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by product, profile, or status"
+        />
+      </Box>
+
       {/* Loading */}
       {loading ? <LoadingScreen compact staged={false} message="Loading history..." /> : null}
 
@@ -123,8 +155,27 @@ export default function AllEvaluations({
         </Box>
       )}
 
+      {!loading && items.length > 0 && filteredItems.length === 0 && (
+        <Box
+          mt="$2"
+          borderRadius={18}
+          p="$5"
+          alignItems="center"
+          justifyContent="center"
+          bg="#F8FBFF"
+        >
+          <Feather name="search" size={24} color="#94A3B8" />
+          <Text mt="$2" fontSize={15} fontFamily="RobotoMedium" color="#334155">
+            No evaluations match your search
+          </Text>
+          <Text mt="$1" fontSize={13} color="#64748B">
+            Try another product name, profile, or status
+          </Text>
+        </Box>
+      )}
+
       {/* List */}
-      {!loading && items.length > 0 && (
+      {!loading && filteredItems.length > 0 && (
         <VStack space="md" pb="$2">
           {paginatedItems.map((item, index) => {
             const status = normalizeWarningStatus(item.status);

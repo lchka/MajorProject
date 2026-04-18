@@ -1,4 +1,5 @@
 import React from "react";
+import { MotiView } from "moti";
 import {
   Box,
   Text,
@@ -47,11 +48,16 @@ const optionMeta: Record<PastAnalysisSortOption, { label: string; hint: string }
 
 export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
   return (
-    <Box
-      position="absolute"
-      top={60}
-      right={0}
-      zIndex={100}
+    <MotiView
+      from={{ opacity: 0, translateY: -8, scale: 0.96 }}
+      animate={{ opacity: 1, translateY: 0, scale: 1 }}
+      transition={{ type: "timing", duration: 220 }}
+      style={{
+        position: "absolute",
+        top: 60,
+        right: 0,
+        zIndex: 100,
+      }}
     >
       <Box
         bg="white"
@@ -143,6 +149,6 @@ export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
           ))}
         </VStack>
       </Box>
-    </Box>
+    </MotiView>
   );
 };
