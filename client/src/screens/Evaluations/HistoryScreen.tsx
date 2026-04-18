@@ -6,11 +6,12 @@ import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
   EvaluationHistoryCard,
 } from "../../components/evaluations/AllEvaluations";
-import { evaluationContextService, productService, profileService } from "../../services";
+import { evaluationContextService, productService, profileService, getLocalEvaluations } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
+import type { LocalEvaluation } from "../../services";
 import { styles } from "../../style/LandingPageStyle";
 
 export default function HistoryScreen() {
@@ -23,8 +24,41 @@ export default function HistoryScreen() {
   const [profiles, setProfiles] = React.useState<Profile[]>([]);
 
   const loadHistory = React.useCallback(async () => {
-    setLoading(true);
+    // FAST PATH: Load from local storage first
+    try {
+      const localEvaluations = await getLocalEvaluations();
+      const scopedLocal = routeProfileId
+        ? localEvaluations.filter((evaluation) => evaluation.profileId === routeProfileId)
+        : localEvaluations;
 
+      const sortedLocal = [...scopedLocal].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      const localItems = sortedLocal.map((evaluation: LocalEvaluation) => ({
+        evaluationContextId: evaluation.evaluationContextId,
+        productName: evaluation.productName || "Unknown product",
+        profileName: evaluation.profileName || "Unknown profile",
+        createdAt: evaluation.createdAt,
+        status:
+          typeof evaluation.resultJson?.status === "string"
+            ? evaluation.resultJson.status
+            : undefined,
+        summary:
+          typeof evaluation.resultJson?.summary === "string"
+            ? evaluation.resultJson.summary
+            : undefined,
+        imageUri: evaluation.imageUri ?? null,
+      } satisfies EvaluationHistoryCard));
+
+      setHistoryItems(localItems);
+      setLoading(false);
+    } catch {
+      setHistoryItems([]);
+      setLoading(false);
+    }
+
+    // OPTIONAL: Fetch fresh data from server in background (no loading state)
     try {
       const [contexts, myProfiles] = await Promise.all([
         evaluationContextService.getMyContexts(),
@@ -103,18 +137,25 @@ export default function HistoryScreen() {
       });
 
       setProfiles(Array.from(profileMap.values()));
-      setHistoryItems(items);
+      setHistoryItems(items); // Update with server data if different
     } catch {
-      setProfiles([]);
-      setHistoryItems([]);
-    } finally {
-      setLoading(false);
+      // Silently fail - user already has local data
     }
   }, [routeProfileId]);
 
   useFocusEffect(
     React.useCallback(() => {
       void loadHistory();
+
+      // Load profiles in parallel for the switcher
+      profileService
+        .getMyProfile()
+        .then((myProfiles) => {
+          setProfiles(myProfiles);
+        })
+        .catch(() => {
+          setProfiles([]);
+        });
     }, [loadHistory]),
   );
 
