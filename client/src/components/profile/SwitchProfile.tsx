@@ -1,6 +1,7 @@
 import React from "react";
 import type { ImageSourcePropType } from "react-native";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { MotiView } from "moti";
 import {
 	Box,
 	Image,
@@ -27,6 +28,7 @@ type SwitchProfileProps = {
 	title?: string;
 	greetingLabel?: string;
 	cardAvatarSource?: ImageSourcePropType;
+	isSticky?: boolean;
 };
 
 // This formats the greeting name as the first name in caps.
@@ -49,6 +51,7 @@ export default function SwitchProfile({
 	title = "Change Profile",
 	greetingLabel,
 	cardAvatarSource = require("../../../assets/icon.png"),
+	isSticky = false,
 }: SwitchProfileProps) {
 	// This is where the switch card colors are controlled in this file.
 	const switchCardBackgroundColor = "#ebf5ff";
@@ -124,23 +127,33 @@ export default function SwitchProfile({
 	return (
 		<>
 			{/* This is the main switch profile card on landing */}
-			<Pressable
-				my="$2"
-				mx="$2"
-				style={[
-					styles.switchProfileCard,
-					{
-						backgroundColor: switchCardBackgroundColor,
-						borderColor: switchCardBorderColor,
-					},
-				]}
-				shadowColor="#000000"
-				shadowOpacity={0.14}
-				shadowRadius={10}
-				shadowOffset={{ width: 0, height: 4 }}
-				elevation={5}
-				onPress={() => setIsOpen(true)}
+			<MotiView
+				animateInitialState={false}
+				animate={{ marginTop: isSticky ? 16 : 8 }}
+				transition={{
+					type: "spring",
+					delay: 0,
+					damping: 22,
+					stiffness: 260,
+					mass: 0.35,
+				}}
 			>
+				<Pressable
+					mx="$2"
+					style={[
+						styles.switchProfileCard,
+						{
+							backgroundColor: switchCardBackgroundColor,
+							borderColor: switchCardBorderColor,
+						},
+					]}
+					shadowColor="#000000"
+					shadowOpacity={0.14}
+					shadowRadius={10}
+					shadowOffset={{ width: 0, height: 4 }}
+					elevation={5}
+					onPress={() => setIsOpen(true)}
+				>
 				{/* This is the active profile image on the card */}
 				<Box style={{ position: "relative" }}>
 					<Image source={displayedCardAvatarSource} style={styles.switchAvatar} alt="Profile avatar" />
@@ -170,9 +183,19 @@ export default function SwitchProfile({
 						Switch Profile
 					</Text>
 				</Box>
-				{/* This is the arrow icon on the right side */}
-				<AntDesign name="right" size={16} color="#111111" />
-			</Pressable>
+				{/* This matches the scan CTA's arrow badge style. */}
+				<Box
+					w={40}
+					h={40}
+					borderRadius={20}
+					bg="#6FA5DA"
+					alignItems="center"
+					justifyContent="center"
+				>
+					<Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+				</Box>
+				</Pressable>
+			</MotiView>
 
 			{/* This is the profile choice overlay modal */}
 			<ProfileChoice

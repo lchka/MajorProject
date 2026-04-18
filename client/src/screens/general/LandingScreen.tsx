@@ -32,6 +32,7 @@ import { styles } from "../../style/LandingPageStyle";
 const AUTH_TOKEN_KEY = "authToken";
 const DEFAULT_UV_LAT = 53.3498;
 const DEFAULT_UV_LON = -6.2603;
+const SWITCH_PROFILE_SCROLL_TRIGGER_PX = 6;
 
 export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -59,6 +60,7 @@ export default function LandingScreen() {
     null,
   );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
+  const [isSwitchProfileSticky, setIsSwitchProfileSticky] = React.useState(false);
 
   const loadProfiles = React.useCallback(async () => {
     try {
@@ -335,11 +337,22 @@ export default function LandingScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
+        scrollEventThrottle={16}
+        onScroll={(event) => {
+          const offsetY = event.nativeEvent.contentOffset.y;
+          const shouldBeSticky = offsetY >= SWITCH_PROFILE_SCROLL_TRIGGER_PX;
+
+          setIsSwitchProfileSticky((previous) =>
+            previous === shouldBeSticky ? previous : shouldBeSticky,
+          );
+        }}
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
 
         <Box px="$2" mt="$6">
           <SwitchProfile
+            isSticky={isSwitchProfileSticky}
             profiles={profiles.map((profile) => ({
               id: profile.id,
               name: profile.name,
@@ -394,7 +407,7 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <Box px="$2" mt="$4">
+        <Box px="$2" mt="$2">
           <PastAnalysis profileId={profileId} />
         </Box>
         <Box px="$2" mt="$3">
@@ -414,12 +427,15 @@ export default function LandingScreen() {
         </Box>
         <Box px="$2" mt="$4">
           <Box
-            borderWidth={1}
-            borderColor="#D1E2F0"
+            bg="$backgroundLight0"
             borderRadius="$3xl"
-            bg="#FFFFFF"
-            px="$2"
-            py="$2"
+            p="$2"
+            borderWidth={1}
+            borderColor="$coolGray100"
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={10}
+            elevation={3}
           >
             <AllConditions
               conditionNames={activeProfileConditions}
@@ -445,12 +461,15 @@ export default function LandingScreen() {
 
         <Box px="$2" my="$4">
           <Box
-            borderWidth={1}
-            borderColor="#D1E2F0"
+            bg="$backgroundLight0"
             borderRadius="$3xl"
-            bg="#FFFFFF"
-            px="$2"
-            py="$2"
+            p="$2"
+            borderWidth={1}
+            borderColor="$coolGray100"
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={10}
+            elevation={3}
           >
             <PreferencesOverview
               profilePreferenceNames={activeProfilePreferences}
@@ -478,14 +497,17 @@ export default function LandingScreen() {
         </Box>
         {/* remember to delete this once the navbar takes up the proper space */}
 
-        <Box px="$2"  >
+        <Box px="$2">
           <Box
-            borderWidth={1}
-            borderColor="#D1E2F0"
+            bg="$backgroundLight0"
             borderRadius="$3xl"
-            bg="#FFFFFF"
-            px="$2"
-            p="$7"
+            p="$2"
+            borderWidth={1}
+            borderColor="$coolGray100"
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={10}
+            elevation={3}
           >
             <AllAllergens
               profileFirstName={activeProfile?.first_name}

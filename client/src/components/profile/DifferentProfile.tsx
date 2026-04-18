@@ -1,6 +1,6 @@
 import React from "react";
 import type { ImageSourcePropType } from "react-native";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import { SWITCH_PROFILE_CLOSE_DURATION_MS } from "../../style/Animation";
 import { styles } from "../../style/LandingPageStyle";
@@ -157,7 +157,16 @@ export default function DifferentProfile({
 					</Text>
 				</Box>
 
-				<AntDesign name="right" size={16} color="#111111" />
+				<Box
+					w={40}
+					h={40}
+					borderRadius={20}
+					bg="#6FA5DA"
+					alignItems="center"
+					justifyContent="center"
+				>
+					<Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+				</Box>
 			</Pressable>
 
 			<ProfileChoice
