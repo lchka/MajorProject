@@ -47,6 +47,9 @@ export class ProductController {
 		next: NextFunction,
 	): Promise<void> {
 		try {
+			// CHANGE: Added detailed logging to debug image upload and product creation flow
+			console.log(`[Product Controller] createProductFromScan called`);
+			
 			const userId = req.userId ?? req.user?.id;
 			if (!userId) {
 				throw new HttpError(UNAUTHORISED, "User is not authenticated");
@@ -56,17 +59,23 @@ export class ProductController {
 				throw new HttpError(BAD_REQUEST, "Product image is required for scan parsing");
 			}
 
+			console.log(`[Product Controller] Uploading image to S3 - file: ${req.file.originalname}, size: ${req.file.size} bytes`);
+			
 			let productImageUrl: string;
 			try {
 				productImageUrl = await uploadProductImageToS3(userId, req.file);
+				console.log(`[Product Controller] Image uploaded to S3: ${productImageUrl}`);
 			} catch {
+				console.error(`[Product Controller] Failed to upload image to S3`);
 				throw new HttpError(
 					INTERNAL_SERVER_ERROR,
 					"Unable to upload product image to S3. Check AWS_S3_BUCKET and AWS credentials.",
 				);
 			}
 
+			console.log(`[Product Controller] Extracting product data via Gemini...`);
 			const parsed = await geminiService.extractProductFromImage(req.file);
+			console.log(`[Product Controller] Gemini extraction complete - name: "${parsed.name}", brand: "${parsed.brand}"`);
 
 			const product = await productService.createProductFromScan(userId, {
 				name: parsed.name,
@@ -76,8 +85,10 @@ export class ProductController {
 				product_image: productImageUrl,
 			});
 
+			console.log(`[Product Controller] Product created - id: ${product.id}`);
 			res.status(CREATED_SUCCESS).json(product);
 		} catch (error) {
+			console.error(`[Product Controller] Error in createProductFromScan:`, error instanceof Error ? error.message : error);
 			next(error);
 		}
 	}
