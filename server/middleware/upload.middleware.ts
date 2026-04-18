@@ -13,9 +13,11 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
     "image/webp",
     "image/gif",
     "image/svg+xml",
-    "image/heic",  // Added to support HEIC images from iOS gallery uploads
+    "image/heic", 
+    "image/heif",
+    "image/avif"  // Added to support HEIC images from iOS gallery uploads
 ]);
-]);
+
 
 const imageFileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
     if (ALLOWED_IMAGE_MIME_TYPES.has(file.mimetype)) {
