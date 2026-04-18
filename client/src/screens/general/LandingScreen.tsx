@@ -367,7 +367,7 @@ export default function LandingScreen() {
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
 
-        <Box px="$2" mt="$3" pt="$8" pb="$2" mb="$2">
+        <Box px="$2" mt="$3" pt="$8">
           <SwitchProfile
             profiles={profiles.map((profile) => ({
               id: profile.id,
@@ -425,7 +425,7 @@ export default function LandingScreen() {
         </Box>
         {/* FIX: Only render PastAnalysis after profiles are loaded to prevent render with null profileId */}
         {!isProfilesLoading && (
-          <Box px="$2" mt="$2">
+          <Box px="$2">
             <PastAnalysis profileId={profileId} profileName={activeProfileFirstName} />
           </Box>
         )}
