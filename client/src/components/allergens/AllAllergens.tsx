@@ -422,38 +422,50 @@ export default function AllAllergens({
 								None
 							</Text>
 						) : (
-							<Pressable
-								alignItems="center"
-								onPress={() => {
-									resetInactivityTimer();
-									onOpenAddAllergen?.();
-								}}
-								disabled={!onOpenAddAllergen || isRemovingAllergen}
-							>
-								<Box
-									width={64}
-									height={64}
-									borderRadius={32}
-									borderWidth={2}
-									borderColor="#58CCED"
-									bg="#FFFFFF"
-									alignItems="center"
-									justifyContent="center"
-									opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
-								>
-									<Icon as={AddIcon} size="xl" color="#58CCED" />
-								</Box>
+							<Box alignItems="center" width="100%">
 								<Text
-									mt="$2"
 									textAlign="center"
-									fontSize={13}
-									lineHeight={15}
-									fontFamily="RobotoBold"
-									color="#111111"
+									fontSize={14}
+									lineHeight={18}
+									color="#4B5563"
+									fontFamily="Roboto"
+									mb="$3"
 								>
-									ADD MORE
+									Add allergens to your profile
 								</Text>
-							</Pressable>
+								<Pressable
+									alignItems="center"
+									onPress={() => {
+										resetInactivityTimer();
+										onOpenAddAllergen?.();
+									}}
+									disabled={!onOpenAddAllergen || isRemovingAllergen}
+								>
+									<Box
+										width={64}
+										height={64}
+										borderRadius={32}
+										borderWidth={2}
+										borderColor="#58CCED"
+										bg="#FFFFFF"
+										alignItems="center"
+										justifyContent="center"
+										opacity={!onOpenAddAllergen || isRemovingAllergen ? 0.55 : 1}
+									>
+										<Icon as={AddIcon} size="xl" color="#58CCED" />
+									</Box>
+									<Text
+										mt="$2"
+										textAlign="center"
+										fontSize={13}
+										lineHeight={15}
+										fontFamily="RobotoBold"
+										color="#111111"
+									>
+										ADD MORE
+									</Text>
+								</Pressable>
+							</Box>
 						)}
 					</Box>
 				)}

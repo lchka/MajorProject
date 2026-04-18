@@ -7,6 +7,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../../components/general/NavBarBottom";
+import QuickStartPanel from "../../components/general/QuickStartPanel";
 import NavBarTop from "../../components/general/NavBarTop";
 import SystemErrorModal from "../../components/banners/SystemError";
 import SwitchProfile from "../../components/profile/SwitchProfile";
@@ -190,12 +191,30 @@ export default function LandingScreen() {
     [profileDetails, profileId],
   );
 
+  const activeProfileFirstName = React.useMemo(() => {
+    const explicitFirstName = activeProfile?.first_name?.trim();
+    if (explicitFirstName) {
+      return explicitFirstName;
+    }
+
+    const fallbackName =
+      profiles.find((profile) => profile.id === activeProfile?.id)?.name?.trim() ?? "";
+    return fallbackName.split(/\s+/)[0] ?? "";
+  }, [activeProfile, profiles]);
+
   const activeProfilePreferences = React.useMemo(() => {
     return activeProfile?.preferences?.map((item) => item.name) ?? [];
   }, [activeProfile]);
 
   const activeProfileConditions = React.useMemo(() => {
     return activeProfile?.conditions?.map((item) => item.name) ?? [];
+  }, [activeProfile]);
+
+  const completionStats = React.useMemo(() => {
+    const allergenCount = activeProfile?.allergens?.length ?? 0;
+    const conditionCount = activeProfile?.conditions?.length ?? 0;
+    const preferenceCount = activeProfile?.preferences?.length ?? 0;
+    return { allergens: allergenCount, conditions: conditionCount, preferences: preferenceCount };
   }, [activeProfile]);
 
   const activeProfileConditionDetails = React.useMemo(() => {
@@ -408,7 +427,7 @@ export default function LandingScreen() {
           />
         </Box>
         <Box px="$2" mt="$2">
-          <PastAnalysis profileId={profileId} />
+          <PastAnalysis profileId={profileId} profileName={activeProfileFirstName} />
         </Box>
         <Box px="$2" mt="$3">
           <ProdScanCta
@@ -419,10 +438,34 @@ export default function LandingScreen() {
             }
           />
         </Box>
+       
         <Box px="$2" mt="$9">
           <UvIndexCard
             uvIndex={uvSnapshot?.uvIndex ?? 0}
             recommendation={uvRecommendation}
+          />
+        </Box>
+         <Box px="$2" mt="$3">
+          <QuickStartPanel
+            profileFirstName={activeProfileFirstName}
+            allergenCount={completionStats.allergens}
+            conditionCount={completionStats.conditions}
+            preferenceCount={completionStats.preferences}
+            onPressAddAllergens={() =>
+              navigation.navigate("AllergenScreen", {
+                profileId: profileId ?? activeProfile?.id,
+              })
+            }
+            onPressAddConditions={() =>
+              navigation.navigate("ConditionScreen", {
+                profileId: profileId ?? activeProfile?.id,
+              })
+            }
+            onPressAddPreferences={() =>
+              navigation.navigate("PreferenceScreen", {
+                profileId: profileId ?? activeProfile?.id,
+              })
+            }
           />
         </Box>
         <Box px="$2" mt="$4">
@@ -497,7 +540,7 @@ export default function LandingScreen() {
         </Box>
         {/* remember to delete this once the navbar takes up the proper space */}
 
-        <Box px="$2">
+        <Box px="$2" pb="$8">
           <Box
             bg="$backgroundLight0"
             borderRadius="$3xl"
@@ -560,7 +603,6 @@ export default function LandingScreen() {
           setSystemErrorOverlay(null);
         }}
       />
-
       {/* Sticky bottom navigation */}
       <NavBarBottom
         activeTab="home"

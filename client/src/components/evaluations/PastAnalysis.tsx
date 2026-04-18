@@ -131,12 +131,14 @@ type AnalysisCard = {
 
 type PastAnalysisProps = {
   profileId?: string | null;
+  profileName?: string | null;
   title?: string;
   refreshIntervalMs?: number;
 };
 
 export default function PastAnalysis({
   profileId,
+  profileName,
   title = "Past Analysis",
   refreshIntervalMs = 3500,
 }: PastAnalysisProps) {
@@ -255,6 +257,10 @@ export default function PastAnalysis({
   }, [analysisViewportWidth, windowWidth]);
 
   const effectivePageWidth = analysisViewportWidth || windowWidth;
+  const headerFirstName = profileName?.trim() || "";
+  const possessiveLabel = /s$/i.test(headerFirstName)
+    ? `${headerFirstName}'`
+    : `${headerFirstName}'s`;
 
   return (
     <Box position="relative">
@@ -280,6 +286,11 @@ export default function PastAnalysis({
           fontFamily="RobotoMedium"
           color="#151515"
         >
+          {headerFirstName ? (
+            <Text fontSize={22} lineHeight={22} fontFamily="RobotoMedium" color="#1dd2d8">
+              {possessiveLabel}{" "}
+            </Text>
+          ) : null}
           {title}
         </Text>
         <Pressable
