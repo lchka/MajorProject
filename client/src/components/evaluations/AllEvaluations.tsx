@@ -37,6 +37,8 @@ type AllEvaluationsProps = {
   onSelectProfile?: (profileId: string) => void;
   onAddProfile?: () => void;
   onEditProfile?: (profileId?: string) => void;
+  useExternalScroll?: boolean;
+  showProfileSwitcher?: boolean;
 };
 
 const ITEMS_PER_PAGE = 7;
@@ -102,6 +104,8 @@ export default function AllEvaluations({
   onSelectProfile,
   onAddProfile,
   onEditProfile,
+  useExternalScroll = false,
+  showProfileSwitcher = true,
 }: AllEvaluationsProps) {
   const [cachedSwitcherItems, setCachedSwitcherItems] = React.useState<ProfileSwitcherItem[]>(
     profileSwitcherItems ?? [],
@@ -110,6 +114,7 @@ export default function AllEvaluations({
     (profileSwitcherItems && profileSwitcherItems.length > 0) ||
       cachedSwitcherItems.length > 0,
   );
+  const shouldShowSwitcher = showProfileSwitcher && hasProfileSwitcher;
   const effectiveSwitcherItems =
     profileSwitcherItems && profileSwitcherItems.length > 0
       ? profileSwitcherItems
@@ -163,13 +168,10 @@ export default function AllEvaluations({
     return filteredItems.slice(start, start + ITEMS_PER_PAGE);
   }, [currentPage, filteredItems]);
 
-  return (
-    <ScrollView
-      stickyHeaderIndices={hasProfileSwitcher ? [0] : []}
-      showsVerticalScrollIndicator={false}
-    >
+  const content = (
+    <>
       <Box px="$2" mb="$2">
-        {hasProfileSwitcher ? (
+        {shouldShowSwitcher ? (
           <SwitchProfile
             profiles={effectiveSwitcherItems}
             activeProfileId={activeProfileId}
@@ -457,6 +459,19 @@ export default function AllEvaluations({
         </VStack>
       )}
       </Box>
+    </>
+  );
+
+  if (useExternalScroll) {
+    return <Box>{content}</Box>;
+  }
+
+  return (
+    <ScrollView
+      stickyHeaderIndices={shouldShowSwitcher ? [0] : []}
+      showsVerticalScrollIndicator={false}
+    >
+      {content}
     </ScrollView>
   );
 }

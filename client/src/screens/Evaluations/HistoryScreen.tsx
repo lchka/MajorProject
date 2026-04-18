@@ -6,6 +6,7 @@ import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
   EvaluationHistoryCard,
 } from "../../components/evaluations/AllEvaluations";
+import SwitchProfile from "../../components/profile/SwitchProfile";
 import { evaluationContextService, productService, profileService, getLocalEvaluations } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
 import type { EvaluationContext } from "../../services/evaluationContextService";
@@ -205,33 +206,42 @@ export default function HistoryScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
       >
         <NavBarTop notificationCount={0} />
+
+        <Box px="$2" pt="$8" pb="$2" mb="$2" bg="$backgroundLight0">
+          <SwitchProfile
+            profiles={profileSwitcherItems}
+            activeProfileId={activeProfile?.id}
+            onSelectProfile={(profileId) => {
+              navigation.setParams({ profileId });
+            }}
+            onAddProfile={() => {
+              navigation.navigate("ProfileScreen");
+            }}
+            onEditProfile={(profileId) => {
+              const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
+
+              navigation.navigate("EditProfileScreen", {
+                profileId: profileToEdit?.id,
+                profileName: profileToEdit?.first_name || undefined,
+                profileImageUri: profileToEdit?.profile_image ?? undefined,
+                profilePreferenceNames:
+                  profileToEdit?.preferences?.map((item) => item.name) ?? [],
+                profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
+                profileIsMain: profileToEdit?.main_profile ?? false,
+              });
+            }}
+            title="Switch Profile"
+          />
+        </Box>
 
         <AllEvaluations
           items={historyItems}
           loading={loading}
-          profileSwitcherItems={profileSwitcherItems}
-          activeProfileId={activeProfile?.id}
-          onSelectProfile={(profileId) => {
-            navigation.setParams({ profileId });
-          }}
-          onAddProfile={() => {
-            navigation.navigate("ProfileScreen");
-          }}
-          onEditProfile={(profileId) => {
-            const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
-
-            navigation.navigate("EditProfileScreen", {
-              profileId: profileToEdit?.id,
-              profileName: profileToEdit?.first_name || undefined,
-              profileImageUri: profileToEdit?.profile_image ?? undefined,
-              profilePreferenceNames:
-                profileToEdit?.preferences?.map((item) => item.name) ?? [],
-              profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
-              profileIsMain: profileToEdit?.main_profile ?? false,
-            });
-          }}
+          useExternalScroll
+          showProfileSwitcher={false}
           onPressItem={(item) => {
             navigation.navigate("EvaluationResultScreen", {
               evaluationContextId: item.evaluationContextId,

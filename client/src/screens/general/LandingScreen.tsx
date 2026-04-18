@@ -32,7 +32,6 @@ import { styles } from "../../style/LandingPageStyle";
 
 const DEFAULT_UV_LAT = 53.3498;
 const DEFAULT_UV_LON = -6.2603;
-const SWITCH_PROFILE_SCROLL_TRIGGER_PX = 6;
 
 export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -61,7 +60,6 @@ export default function LandingScreen() {
     null,
   );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
-  const [isSwitchProfileSticky, setIsSwitchProfileSticky] = React.useState(false);
 
   const loadProfiles = React.useCallback(async () => {
     try {
@@ -366,21 +364,11 @@ export default function LandingScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
-        scrollEventThrottle={16}
-        onScroll={(event) => {
-          const offsetY = event.nativeEvent.contentOffset.y;
-          const shouldBeSticky = offsetY >= SWITCH_PROFILE_SCROLL_TRIGGER_PX;
-
-          setIsSwitchProfileSticky((previous) =>
-            previous === shouldBeSticky ? previous : shouldBeSticky,
-          );
-        }}
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
 
-        <Box px="$2" mt="$6">
+        <Box px="$2" mt="$3" pt="$8" pb="$2" mb="$2">
           <SwitchProfile
-            isSticky={isSwitchProfileSticky}
             profiles={profiles.map((profile) => ({
               id: profile.id,
               name: profile.name,
