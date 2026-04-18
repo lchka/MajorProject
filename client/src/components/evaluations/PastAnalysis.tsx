@@ -4,7 +4,7 @@ import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
-import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import {
   SortDropdown,
   type PastAnalysisSortOption,
@@ -136,6 +136,9 @@ type PastAnalysisProps = {
   refreshIntervalMs?: number;
 };
 
+const analysisCache = new Map<string, AnalysisCard[]>();
+const analysisSignatureCache = new Map<string, string>();
+
 export default function PastAnalysis({
   profileId,
   profileName,
@@ -147,10 +150,21 @@ export default function PastAnalysis({
   const [analysisPage, setAnalysisPage] = React.useState(0);
   const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
   const [analysisCards, setAnalysisCards] = React.useState<AnalysisCard[]>([]);
-  const [analysisLoading, setAnalysisLoading] = React.useState(true);
+  const [analysisLoading, setAnalysisLoading] = React.useState(false);
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>(DEFAULT_SORT_OPTION);
   const cardsSignatureRef = React.useRef<string>("");
+  const cacheKey = profileId ?? "all";
+
+  React.useEffect(() => {
+    const cachedCards = analysisCache.get(cacheKey);
+    const cachedSignature = analysisSignatureCache.get(cacheKey);
+
+    if (cachedCards && cachedCards.length > 0) {
+      setAnalysisCards(cachedCards);
+      cardsSignatureRef.current = cachedSignature ?? "";
+    }
+  }, [cacheKey]);
 
   React.useEffect(() => {
     setAnalysisPage(0);
@@ -187,32 +201,38 @@ export default function PastAnalysis({
       if (nextSignature !== cardsSignatureRef.current) {
         cardsSignatureRef.current = nextSignature;
         setAnalysisCards(cards);
+        analysisCache.set(cacheKey, cards);
+        analysisSignatureCache.set(cacheKey, nextSignature);
       }
     } catch {
       if (cardsSignatureRef.current !== "[]") {
         cardsSignatureRef.current = "[]";
         setAnalysisCards([]);
+        analysisCache.set(cacheKey, []);
+        analysisSignatureCache.set(cacheKey, "[]");
       }
     }
-  }, [profileId, sortOption]);
+  }, [cacheKey, profileId, sortOption]);
 
-  useFocusEffect(
-    React.useCallback(() => {
+  React.useEffect(() => {
+    if (analysisCards.length === 0) {
       setAnalysisLoading(true);
+    }
 
-      void loadPastAnalysis().finally(() => {
-        setAnalysisLoading(false);
-      });
+    void loadPastAnalysis().finally(() => {
+      setAnalysisLoading(false);
+    });
+  }, [analysisCards.length, loadPastAnalysis]);
 
-      const intervalId = setInterval(() => {
-        void loadPastAnalysis();
-      }, refreshIntervalMs);
+  React.useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadPastAnalysis();
+    }, refreshIntervalMs);
 
-      return () => {
-        clearInterval(intervalId);
-      };
-    }, [loadPastAnalysis, refreshIntervalMs]),
-  );
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadPastAnalysis, refreshIntervalMs]);
 
   const analysisPages = React.useMemo(() => {
     const pageSize = 9;

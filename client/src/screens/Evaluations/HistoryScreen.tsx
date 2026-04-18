@@ -1,5 +1,5 @@
 import React from "react";
-import { NavigationProp, RouteProp, useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import { NavigationProp, RouteProp, StackActions, useNavigation, useRoute } from "@react-navigation/native";
 import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import NavBarTop from "../../components/general/NavBarTop";
@@ -14,6 +14,8 @@ import type { Profile } from "../../services/profileService";
 import type { LocalEvaluation } from "../../services";
 import { styles } from "../../style/LandingPageStyle";
 
+let cachedProfiles: Profile[] = [];
+
 export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "HistoryScreen">>();
@@ -21,7 +23,7 @@ export default function HistoryScreen() {
 
   const [loading, setLoading] = React.useState(true);
   const [historyItems, setHistoryItems] = React.useState<EvaluationHistoryCard[]>([]);
-  const [profiles, setProfiles] = React.useState<Profile[]>([]);
+  const [profiles, setProfiles] = React.useState<Profile[]>(cachedProfiles);
 
   const loadHistory = React.useCallback(async () => {
     // FAST PATH: Load from local storage first
@@ -143,21 +145,22 @@ export default function HistoryScreen() {
     }
   }, [routeProfileId]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      void loadHistory();
+  React.useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
-      // Load profiles in parallel for the switcher
-      profileService
-        .getMyProfile()
-        .then((myProfiles) => {
-          setProfiles(myProfiles);
-        })
-        .catch(() => {
-          setProfiles([]);
-        });
-    }, [loadHistory]),
-  );
+  React.useEffect(() => {
+    // Load profiles once for the switcher and keep them cached
+    profileService
+      .getMyProfile()
+      .then((myProfiles) => {
+        cachedProfiles = myProfiles;
+        setProfiles(myProfiles);
+      })
+      .catch(() => {
+        setProfiles((current) => (current.length > 0 ? current : []));
+      });
+  }, []);
 
   const activeProfile = React.useMemo(
     () =>
@@ -211,7 +214,7 @@ export default function HistoryScreen() {
           profileSwitcherItems={profileSwitcherItems}
           activeProfileId={activeProfile?.id}
           onSelectProfile={(profileId) => {
-            navigation.navigate("HistoryScreen", { profileId });
+            navigation.setParams({ profileId });
           }}
           onAddProfile={() => {
             navigation.navigate("ProfileScreen");
@@ -245,6 +248,11 @@ export default function HistoryScreen() {
             : undefined
         }
         onPressHome={() => {
+          if (navigation.canGoBack()) {
+            navigation.dispatch(StackActions.popToTop());
+            return;
+          }
+
           navigation.navigate("LandingScreen");
         }}
         onPressProfile={() => {

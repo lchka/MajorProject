@@ -11,11 +11,12 @@ import AccountSettings from "./src/screens/general/AccountSettings";
 import CameraScreen from "./src/screens/Evaluations/CameraScreen";
 import EvaluationResultScreen from "./src/screens/Evaluations/EvaluationResultScreen";
 import LoadingScreen from "./src/components/general/loadingScreen";
+import SimpleLoadingScreen from "./src/components/general/SimpleLoadingScreen";
 import HistoryScreen from "./src/screens/Evaluations/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -127,7 +128,19 @@ export default function App() {
     setUnauthorizedHandler(navigateToLogin);
   }, []);
 
-  if (!fontsLoaded || !authResolved) return null;
+  if (!fontsLoaded) return null;
+
+  if (!authResolved) {
+    return (
+      <GluestackUIProvider config={config}>
+        <GestureHandlerRootView style={styles.container}>
+          <SafeAreaProvider>
+            <SimpleLoadingScreen fullScreen backgroundColor="#ffffff" />
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </GluestackUIProvider>
+    );
+  }
 
   return (
     <GluestackUIProvider config={config}>

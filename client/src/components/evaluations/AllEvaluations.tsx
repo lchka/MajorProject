@@ -103,11 +103,27 @@ export default function AllEvaluations({
   onAddProfile,
   onEditProfile,
 }: AllEvaluationsProps) {
-  const hasProfileSwitcher = Boolean(profileSwitcherItems && profileSwitcherItems.length > 0);
+  const [cachedSwitcherItems, setCachedSwitcherItems] = React.useState<ProfileSwitcherItem[]>(
+    profileSwitcherItems ?? [],
+  );
+  const hasProfileSwitcher = Boolean(
+    (profileSwitcherItems && profileSwitcherItems.length > 0) ||
+      cachedSwitcherItems.length > 0,
+  );
+  const effectiveSwitcherItems =
+    profileSwitcherItems && profileSwitcherItems.length > 0
+      ? profileSwitcherItems
+      : cachedSwitcherItems;
   const [currentPage, setCurrentPage] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>("Newest First (DEFAULT)");
+
+  React.useEffect(() => {
+    if (profileSwitcherItems && profileSwitcherItems.length > 0) {
+      setCachedSwitcherItems(profileSwitcherItems);
+    }
+  }, [profileSwitcherItems]);
 
   const filteredItems = React.useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -155,7 +171,7 @@ export default function AllEvaluations({
       <Box px="$2" mb="$2">
         {hasProfileSwitcher ? (
           <SwitchProfile
-            profiles={profileSwitcherItems ?? []}
+            profiles={effectiveSwitcherItems}
             activeProfileId={activeProfileId}
             onSelectProfile={onSelectProfile}
             onAddProfile={onAddProfile}

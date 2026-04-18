@@ -1,7 +1,7 @@
 import React from "react";
 import type { ImageSourcePropType } from "react-native";
 import { MotiView } from "moti";
-import { CommonActions, NavigationProp, useNavigation } from "@react-navigation/native";
+import { NavigationProp, StackActions, useNavigation } from "@react-navigation/native";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
@@ -43,12 +43,12 @@ export default function NavBarBottom({
 			return;
 		}
 
-		navigation.dispatch(
-			CommonActions.reset({
-				index: 0,
-				routes: [{ name: "LandingScreen" }],
-			}),
-		);
+		if (navigation.canGoBack()) {
+			navigation.dispatch(StackActions.popToTop());
+			return;
+		}
+
+		navigation.navigate("LandingScreen");
 	}, [navigation, onPressHome]);
 
 	const handleUploadPress = React.useCallback(() => {
@@ -100,17 +100,23 @@ export default function NavBarBottom({
 					}
 				/>
 				<BottomIcon
-					label="UPLOAD"
+					label="GALLERY"
 					isActive={activeTab === "upload"}
 					onPress={handleUploadPress}
 					icon={<Feather name="upload-cloud" size={32} color="#66707A" />}
 				/>
 				<ScanButton onPress={handleUploadPress} />
 				<BottomIcon
-					label="MY HISTORY"
+					label="HISTORY"
 					isActive={activeTab === "history"}
 					onPress={handleHistoryPress}
-					icon={<Ionicons name="bookmark-outline" size={32} color="#66707A" />}
+					icon={
+						<Ionicons
+							name="bookmark-outline"
+							size={32}
+							color={activeTab === "history" ? "#374151" : "#66707A"}
+						/>
+					}
 				/>
 				<BottomIcon
 					label="PROFILE"
