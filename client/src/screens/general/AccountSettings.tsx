@@ -1,5 +1,4 @@
 import React from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { Box, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import NavBarTop from "../../components/general/NavBarTop";
@@ -7,8 +6,7 @@ import BackButton from "../../components/Buttons/BackButton";
 import ChangeEmail from "../../components/actions/ChangeEmail";
 import ChangePassword from "../../components/actions/ChangePassword";
 import { AuthStackParamList } from "../../types/navigation";
-
-const AUTH_TOKEN_KEY = "authToken";
+import { clearAuthToken } from "../../utils/authStorage";
 
 export default function AccountSettings() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -39,7 +37,7 @@ export default function AccountSettings() {
 
 		try {
 			setIsLoggingOut(true);
-			await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+			await clearAuthToken();
 			navigation.reset({
 				index: 0,
 				routes: [{ name: "LoginScreen" }],

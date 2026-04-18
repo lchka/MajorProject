@@ -4,8 +4,8 @@ import {
   useFocusEffect,
   useNavigation,
 } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Box, ScrollView } from "@gluestack-ui/themed";
+import { clearAuthToken } from "../../utils/authStorage";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import QuickStartPanel from "../../components/general/QuickStartPanel";
 import NavBarTop from "../../components/general/NavBarTop";
@@ -30,7 +30,6 @@ import {
 import { AuthStackParamList } from "../../types/navigation";
 import { styles } from "../../style/LandingPageStyle";
 
-const AUTH_TOKEN_KEY = "authToken";
 const DEFAULT_UV_LAT = 53.3498;
 const DEFAULT_UV_LON = -6.2603;
 const SWITCH_PROFILE_SCROLL_TRIGGER_PX = 6;
@@ -39,6 +38,7 @@ export default function LandingScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const [profileId, setProfileId] = React.useState<string | null>(null);
   const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
+  const [isProfilesLoading, setIsProfilesLoading] = React.useState(true); // FIX: Track initial profile load
   const [availableAllergens, setAvailableAllergens] = React.useState<
     { id: string; name: string }[]
   >([]);
@@ -93,6 +93,9 @@ export default function LandingScreen() {
       setProfileDetails([]);
       setProfiles([]);
       setProfileId(null);
+    } finally {
+      // FIX: Mark profiles as loaded (whether successful or failed)
+      setIsProfilesLoading(false);
     }
   }, []);
 
@@ -137,6 +140,12 @@ export default function LandingScreen() {
     }, [loadProfiles, loadUv]),
   );
 
+  // FIX: Load profiles on initial mount (before focus effect)
+  // This prevents PastAnalysis from rendering with null profileId after login
+  React.useEffect(() => {
+    void loadProfiles();
+  }, [loadProfiles]);
+
   const uvRecommendation = React.useMemo(() => {
     if (isUvLoading && !uvSnapshot) {
       return "Loading live UV data...";
@@ -179,7 +188,7 @@ export default function LandingScreen() {
 
   // Clears local auth state and routes back to the login flow.
   const handleSignOut = async () => {
-    await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
+    await clearAuthToken();
     navigation.navigate("LoginScreen");
   };
 
@@ -426,9 +435,12 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <Box px="$2" mt="$2">
-          <PastAnalysis profileId={profileId} profileName={activeProfileFirstName} />
-        </Box>
+        {/* FIX: Only render PastAnalysis after profiles are loaded to prevent render with null profileId */}
+        {!isProfilesLoading && (
+          <Box px="$2" mt="$2">
+            <PastAnalysis profileId={profileId} profileName={activeProfileFirstName} />
+          </Box>
+        )}
         <Box px="$2" mt="$3">
           <ProdScanCta
             onPress={() =>

@@ -10,7 +10,7 @@ import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { saveAuthToken } from "../../utils/authStorage";
 import {
   Box,
   HStack,
@@ -79,8 +79,8 @@ export default function LoginScreen() {
 
   const { promptGoogleAuth, loading: googleLoading } = useGoogleAuth({
     onLoginSuccess: async (response) => {
+      // FIX: Removed success alert, navigate directly to landing/profile page
       await completeLoginFlow(response);
-      Alert.alert("Success!", "Google sign-in successful.");
     },
     onLoginError: (message) => {
       Alert.alert("Google Login Failed", message);
@@ -167,7 +167,7 @@ export default function LoginScreen() {
         password,
       });
 
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
+      await saveAuthToken(response.token);
 
       if (rememberMe) {
         await AsyncStorage.multiSet([
@@ -180,16 +180,10 @@ export default function LoginScreen() {
 
       console.log("Login successful:", response);
 
-      Alert.alert("Success!", "You have been signed in successfully.", [
-        {
-          text: "OK",
-          onPress: async () => {
-            await completeLoginFlow(response);
-            setEmail("");
-            setPassword("");
-          },
-        },
-      ]);
+      // FIX: Removed success alert, navigate directly to landing/profile page
+      await completeLoginFlow(response);
+      setEmail("");
+      setPassword("");
     } catch (error: any) {
       console.error("Login failed:", error);
 
