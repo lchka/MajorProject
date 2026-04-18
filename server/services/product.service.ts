@@ -209,6 +209,9 @@ export class ProductService {
 		product_image: string;
 		source: "cached" | "serpapi" | "fallback";
 	}> {
+		// CHANGE: Added comprehensive logging to diagnose SerpAPI image fetch issues
+		console.log(`[Product Service] getOfficialImageByProductId called - id: ${id}`);
+		
 		const product = (await this.productRuntime.findUnique({
 			where: { id },
 			select: {
@@ -227,10 +230,14 @@ export class ProductService {
 		} | null;
 
 		if (!product) {
+			console.error(`[Product Service] Product not found - id: ${id}`);
 			throw new HttpError(NOT_FOUND, `Product with id '${id}' not found`);
 		}
 
+		console.log(`[Product Service] Product found - name: "${product.name}", brand: "${product.brand}"`);
+
 		if (product.product_image_official) {
+			console.log(`[Product Service] Official image already cached - returning cached URL`);
 			return {
 				productId: product.id,
 				product_image_official: product.product_image_official,
@@ -240,11 +247,15 @@ export class ProductService {
 			};
 		}
 
+		console.log(`[Product Service] No cached official image - calling SerpAPI...`);
+		
 		try {
 			const officialAsset = await serpApiImageService.fetchOfficialImageAsset({
 				name: product.name,
 				brand: product.brand,
 			});
+
+			console.log(`[Product Service] Official image asset fetched - uploading to S3...`);
 
 			const officialKey = buildOfficialProductImageKey(product.id);
 			const officialImageUrl = await uploadBufferToS3({
@@ -253,12 +264,16 @@ export class ProductService {
 				contentType: officialAsset.contentType,
 			});
 
+			console.log(`[Product Service] Official image uploaded to S3 - URL: ${officialImageUrl}`);
+
 			await this.productRuntime.update({
 				where: { id: product.id },
 				data: {
 					product_image_official: officialImageUrl,
 				},
 			});
+
+			console.log(`[Product Service] Official image URL saved to database`);
 
 			return {
 				productId: product.id,
@@ -267,7 +282,8 @@ export class ProductService {
 				product_image: officialImageUrl,
 				source: "serpapi",
 			};
-		} catch {
+		} catch (error) {
+			console.error(`[Product Service] SerpAPI fetch failed - falling back to user image. Error:`, error instanceof Error ? error.message : error);
 			// SerpAPI misses should not break product confirmation/evaluation flow.
 			return {
 				productId: product.id,

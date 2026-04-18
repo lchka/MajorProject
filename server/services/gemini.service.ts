@@ -259,7 +259,11 @@ export class GeminiService {
 	}
 
 	async extractProductFromImage(file: Express.Multer.File): Promise<ParsedProductFromImage> {
+		// CHANGE: Added comprehensive logging to trace image extraction for gallery vs camera uploads
+		console.log(`[Gemini] extractProductFromImage called - mimetype: ${file.mimetype}, size: ${file.buffer.length} bytes`);
+		
 		if (!file?.buffer || !file.mimetype) {
+			console.error(`[Gemini] Invalid file - buffer: ${!!file?.buffer}, mimetype: ${file.mimetype}`);
 			throw new HttpError(BAD_REQUEST, "A valid product image file is required");
 		}
 
@@ -276,18 +280,24 @@ export class GeminiService {
 
 		const responseText = result.response.text();
 		if (!responseText) {
+			console.error(`[Gemini] Empty response from Gemini`);
 			throw new HttpError(BAD_REQUEST, "Gemini returned an empty response");
 		}
 
 		const parsed = this.parseJsonResponse(responseText);
+		console.log(`[Gemini] Parsed product data - name: "${parsed.name}", brand: "${parsed.brand}", ingredients: ${parsed.ingredients.length}`);
+		
 		// Preferred path: ingredient list comes directly from the label image.
 		if (parsed.ingredients.length > 0) {
+			console.log(`[Gemini] Ingredients found in initial extraction`);
 			return parsed;
 		}
 
 		// Second pass: ask for ingredients only, using the same image.
+		console.log(`[Gemini] No ingredients in initial extraction - attempting fallback extraction`);
 		const fallbackIngredients = await this.extractIngredientsFallback(file);
 		if (fallbackIngredients.length > 0) {
+			console.log(`[Gemini] Fallback extraction found ${fallbackIngredients.length} ingredients`);
 			return {
 				...parsed,
 				ingredients: fallbackIngredients,
@@ -295,6 +305,7 @@ export class GeminiService {
 		}
 
 		// Final pass: fetch latest UK/Ireland ingredients from web-grounded results.
+		console.log(`[Gemini] Attempting web-grounded ingredient extraction`);
 		const webIngredients = await this.extractIngredientsFromWeb({
 			name: parsed.name,
 			brand: parsed.brand,
@@ -302,6 +313,7 @@ export class GeminiService {
 		});
 
 		if (webIngredients.length === 0) {
+			console.error(`[Gemini] Could not extract ingredients from image or web sources`);
 			throw new HttpError(
 				BAD_REQUEST,
 				"Could not detect ingredients from the image or UK/Ireland web sources. Please upload a clearer Ingredients/INCI photo or include product name and brand manually.",

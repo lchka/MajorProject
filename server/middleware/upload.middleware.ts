@@ -5,6 +5,7 @@ import { BAD_REQUEST, HttpError } from "../utils/HttpError.js";
 const storage = multer.memoryStorage();
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB limit keeps uploads lightweight
 
+// CHANGE: Added support for HEIC/HEIF image format (commonly used on iOS devices)
 const ALLOWED_IMAGE_MIME_TYPES = new Set([
     "image/jpeg",
     "image/jpg",
@@ -12,7 +13,8 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
     "image/webp",
     "image/gif",
     "image/svg+xml",
-    "image/heic",
+    "image/heic",  // Added to support HEIC images from iOS gallery uploads
+]);
 ]);
 
 const imageFileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
