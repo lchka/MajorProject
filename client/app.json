@@ -16,7 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.lili.client",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "This app uses the camera to scan product labels for evaluation."
       }
     },
     "android": {
@@ -24,6 +25,9 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.client"
     },

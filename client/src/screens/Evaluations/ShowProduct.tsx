@@ -33,7 +33,7 @@ export default function ShowProduct({
   onContinue,
   onRetake,
 }: ShowProductProps) {
-  const [isIngredientsExpanded, setIsIngredientsExpanded] = React.useState(true);
+  const [isIngredientsExpanded, setIsIngredientsExpanded] = React.useState(false);
   const [isEditingIngredients, setIsEditingIngredients] = React.useState(false);
   const [isEvaluationProfileOpen, setIsEvaluationProfileOpen] = React.useState(false);
   const [ingredientsText, setIngredientsText] = React.useState("");

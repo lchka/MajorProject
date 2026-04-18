@@ -7,12 +7,14 @@ import { ProfileImageUploadFile } from "../../services/profileService";
 type ProfileImageSectionProps = {
 	profileImage?: ProfileImageUploadFile;
 	onPickImage: () => void;
+	onPickAvatar?: () => void;
 	isDisabled?: boolean;
 };
 
 export default function ProfileImageSection({
 	profileImage,
 	onPickImage,
+	onPickAvatar,
 	isDisabled = false,
 }: ProfileImageSectionProps) {
 	return (
@@ -46,6 +48,16 @@ export default function ProfileImageSection({
 				disabled={isDisabled}
 				isPulsing={false}
 			/>
+
+			{onPickAvatar ? (
+				<CreateButton
+					preset="outline"
+					label="Choose from Avatars"
+					onPress={onPickAvatar}
+					disabled={isDisabled}
+					isPulsing={false}
+				/>
+			) : null}
 		</VStack>
 	);
 }

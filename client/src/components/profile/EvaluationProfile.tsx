@@ -75,13 +75,13 @@ export default function EvaluationProfile({
 
 	const toggleProfile = React.useCallback(
 		(profileId: string) => {
-			if (profileId === resolvedDefaultProfileId) {
-				return;
-			}
-
 			setSelectedProfileIds((previous) => {
 				const currentlySelected = previous.includes(profileId);
 				if (currentlySelected) {
+					if (previous.length === 1) {
+						return previous;
+					}
+
 					return previous.filter((id) => id !== profileId);
 				}
 
@@ -92,7 +92,7 @@ export default function EvaluationProfile({
 				return [...previous, profileId];
 			});
 		},
-		[maxEvaluationProfiles, resolvedDefaultProfileId],
+		[maxEvaluationProfiles],
 	);
 
 	return (
@@ -123,7 +123,7 @@ export default function EvaluationProfile({
 							{title}
 						</Heading>
 						<Text mt="$1" fontSize={13} lineHeight={18} color="#6B7280">
-								Default profile is included. You can add up to two more profiles.
+							Select between 1 and 3 profiles for this evaluation.
 						</Text>
 					</Box>
 				</ModalHeader>
@@ -239,6 +239,8 @@ export default function EvaluationProfile({
 							borderRadius={14}
 							px="$5"
 							h={46}
+							disabled={selectedProfileIds.length === 0}
+							opacity={selectedProfileIds.length === 0 ? 0.55 : 1}
 							onPress={() => {
 								if (selectedProfileIds.length > 0) {
 									onSubmit(selectedProfileIds);

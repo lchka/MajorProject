@@ -12,11 +12,15 @@ import SystemErrorModal from "../../components/banners/SystemError";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import PastAnalysis from "../../components/evaluations/PastAnalysis";
 import { UvIndexCard } from "../../components/general/UvIndexWidget";
+import ProdScanCta from "../../components/general/ProdScanCta";
 import PreferencesOverview from "../../components/preferences/AllPreferences";
 import AllConditions from "../../components/conditions/AllConditions";
 import SingleCondition from "../../components/conditions/SingleCondition";
 import AllAllergens from "../../components/allergens/AllAllergens";
-import { weatherService, CurrentUvSnapshot } from "../../services/weatherService";
+import {
+  weatherService,
+  CurrentUvSnapshot,
+} from "../../services/weatherService";
 import profileApiService, { Profile } from "../../services/profileService";
 import {
   consumePendingSystemErrorEvent,
@@ -51,7 +55,9 @@ export default function LandingScreen() {
   const [profiles, setProfiles] = React.useState<
     { id: string; name: string; avatarUri?: string; isMain: boolean }[]
   >([]);
-  const [uvSnapshot, setUvSnapshot] = React.useState<CurrentUvSnapshot | null>(null);
+  const [uvSnapshot, setUvSnapshot] = React.useState<CurrentUvSnapshot | null>(
+    null,
+  );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
 
   const loadProfiles = React.useCallback(async () => {
@@ -90,7 +96,10 @@ export default function LandingScreen() {
   const loadUv = React.useCallback(async () => {
     try {
       setIsUvLoading(true);
-      const snapshot = await weatherService.getCurrentUv(DEFAULT_UV_LAT, DEFAULT_UV_LON);
+      const snapshot = await weatherService.getCurrentUv(
+        DEFAULT_UV_LAT,
+        DEFAULT_UV_LON,
+      );
       setUvSnapshot(snapshot);
     } catch {
       setUvSnapshot(null);
@@ -122,7 +131,6 @@ export default function LandingScreen() {
         .catch(() => {
           setAvailableAllergens([]);
         });
-
     }, [loadProfiles, loadUv]),
   );
 
@@ -260,7 +268,8 @@ export default function LandingScreen() {
           return {
             ...profile,
             preferences:
-              profile.preferences?.filter((item) => item.id !== preferenceId) ?? [],
+              profile.preferences?.filter((item) => item.id !== preferenceId) ??
+              [],
           };
         }),
       );
@@ -328,7 +337,8 @@ export default function LandingScreen() {
         showsVerticalScrollIndicator={false}
       >
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
-        <Box mt="$7">
+
+        <Box px="$2" mt="$6">
           <SwitchProfile
             profiles={profiles.map((profile) => ({
               id: profile.id,
@@ -384,87 +394,123 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        <Box px="$2">
+        <Box px="$2" mt="$4">
           <PastAnalysis profileId={profileId} />
         </Box>
-        <Box px="$2" >
-          <AllConditions
-            conditionNames={activeProfileConditions}
-            profileFirstName={activeProfile?.first_name}
-            onPressCondition={(conditionName) => {
-              const matchedCondition = activeProfileConditionDetails.find(
-                (item) => item.name === conditionName,
-              );
-
-              setSelectedCondition({
-                name: conditionName,
-                description: matchedCondition?.description,
-              });
-            }}
-            onPressEdit={() =>
-              navigation.navigate("ConditionScreen", {
-                profileId: profileId ?? undefined,
+        <Box px="$2" mt="$3">
+          <ProdScanCta
+            onPress={() =>
+              navigation.navigate("CameraScreen", {
+                profileId: profileId ?? activeProfile?.id,
               })
             }
           />
         </Box>
-        <Box px="$2" my="$8">
+        <Box px="$2" mt="$9">
           <UvIndexCard
             uvIndex={uvSnapshot?.uvIndex ?? 0}
             recommendation={uvRecommendation}
           />
         </Box>
+        <Box px="$2" mt="$4">
+          <Box
+            borderWidth={1}
+            borderColor="#D1E2F0"
+            borderRadius="$3xl"
+            bg="#FFFFFF"
+            px="$2"
+            py="$2"
+          >
+            <AllConditions
+              conditionNames={activeProfileConditions}
+              profileFirstName={activeProfile?.first_name}
+              onPressCondition={(conditionName) => {
+                const matchedCondition = activeProfileConditionDetails.find(
+                  (item) => item.name === conditionName,
+                );
+
+                setSelectedCondition({
+                  name: conditionName,
+                  description: matchedCondition?.description,
+                });
+              }}
+              onPressEdit={() =>
+                navigation.navigate("ConditionScreen", {
+                  profileId: profileId ?? undefined,
+                })
+              }
+            />
+          </Box>
+        </Box>
 
         <Box px="$2" my="$4">
-          <PreferencesOverview
-            profilePreferenceNames={activeProfilePreferences}
-            preferences={activeProfile?.preferences?.map((item) => ({
-              id: item.id,
-              name: item.name,
-            }))}
-            profileFirstName={activeProfile?.first_name}
-            onRemovePreference={handleRemovePreference}
-            isRemovingPreference={isRemovingPreference}
-            isEditMode={isPreferenceEditMode}
-            onToggleEditMode={() => {
-              setIsPreferenceEditMode((previous) => !previous);
-            }}
-            onCloseEditMode={() => {
-              setIsPreferenceEditMode(false);
-            }}
-            onAddPreference={() =>
-              navigation.navigate("PreferenceScreen", {
-                profileId: profileId ?? undefined,
-              })
-            }
-          />
+          <Box
+            borderWidth={1}
+            borderColor="#D1E2F0"
+            borderRadius="$3xl"
+            bg="#FFFFFF"
+            px="$2"
+            py="$2"
+          >
+            <PreferencesOverview
+              profilePreferenceNames={activeProfilePreferences}
+              preferences={activeProfile?.preferences?.map((item) => ({
+                id: item.id,
+                name: item.name,
+              }))}
+              profileFirstName={activeProfile?.first_name}
+              onRemovePreference={handleRemovePreference}
+              isRemovingPreference={isRemovingPreference}
+              isEditMode={isPreferenceEditMode}
+              onToggleEditMode={() => {
+                setIsPreferenceEditMode((previous) => !previous);
+              }}
+              onCloseEditMode={() => {
+                setIsPreferenceEditMode(false);
+              }}
+              onAddPreference={() =>
+                navigation.navigate("PreferenceScreen", {
+                  profileId: profileId ?? undefined,
+                })
+              }
+            />
+          </Box>
         </Box>
         {/* remember to delete this once the navbar takes up the proper space */}
-        
-        <Box px="$2" my="$4">
-          <AllAllergens
-            profileFirstName={activeProfile?.first_name}
-            allergens={activeProfile?.allergens?.map((item) => ({
-              id: item.id,
-              name: item.name,
-            }))}
-            availableAllergens={availableAllergens}
-            onRemoveAllergen={handleRemoveAllergen}
-            onSaveAllergens={handleSaveAllergens}
-            onOpenAddAllergen={() => {
-              navigation.navigate("AllergenScreen", {
-                profileId: profileId ?? undefined,
-              });
-            }}
-            isRemovingAllergen={isRemovingAllergen}
-            isEditMode={isAllergenEditMode}
-            onToggleEditMode={() => {
-              setIsAllergenEditMode((previous) => !previous);
-            }}
-            onCloseEditMode={() => {
-              setIsAllergenEditMode(false);
-            }}
-          />
+
+        <Box px="$2"  >
+          <Box
+            borderWidth={1}
+            borderColor="#D1E2F0"
+            borderRadius="$3xl"
+            bg="#FFFFFF"
+            px="$2"
+            p="$7"
+          >
+            <AllAllergens
+              profileFirstName={activeProfile?.first_name}
+              allergens={activeProfile?.allergens?.map((item) => ({
+                id: item.id,
+                name: item.name,
+              }))}
+              availableAllergens={availableAllergens}
+              onRemoveAllergen={handleRemoveAllergen}
+              onSaveAllergens={handleSaveAllergens}
+              onOpenAddAllergen={() => {
+                navigation.navigate("AllergenScreen", {
+                  profileId: profileId ?? undefined,
+                });
+              }}
+              isRemovingAllergen={isRemovingAllergen}
+              isEditMode={isAllergenEditMode}
+              onToggleEditMode={() => {
+                setIsAllergenEditMode((previous) => !previous);
+              }}
+              onCloseEditMode={() => {
+                setIsAllergenEditMode(false);
+              }}
+            />
+          </Box>
         </Box>
       </ScrollView>
 

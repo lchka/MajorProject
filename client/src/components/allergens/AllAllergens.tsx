@@ -1,5 +1,5 @@
 import React from "react";
-import { ImageSourcePropType } from "react-native";
+import { ImageSourcePropType, ScrollView } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { AddIcon, Box, Icon, Image, Pressable, Text } from "@gluestack-ui/themed";
 import CurrentProfile from "../general/CurrentProfileName";
@@ -270,8 +270,8 @@ export default function AllAllergens({
 	}, [allergenItems]);
 
 	return (
-		<Box mb={variant === "chips" ? "$0" : "$9"} pb={variant === "chips" ? "$0" : "$9"} onTouchStart={resetInactivityTimer}>
-			<Box my={variant === "chips" ? "$0" : "$6"}>
+		<Box onTouchStart={resetInactivityTimer}>
+			<Box>
 				{variant === "visual" ? (
 					<Box
 						px="$1"
@@ -313,14 +313,18 @@ export default function AllAllergens({
 					variant === "chips" ? (
 						renderChips()
 					) : (
-						<Box
-							flexDirection="row"
-							flexWrap="wrap"
-							alignItems="flex-start"
-							style={{ columnGap: 16, rowGap: 14, paddingHorizontal: 6, paddingRight: 6 }}
+						<ScrollView
+							horizontal
+							showsHorizontalScrollIndicator={false}
+							contentContainerStyle={{
+								flexDirection: "row",
+								alignItems: "flex-start",
+								paddingHorizontal: 6,
+								paddingRight: 6,
+							}}
 						>
-							{allergenItems.map((item) => (
-								<Box key={item.runtimeId} alignItems="center" width={122}>
+							{allergenItems.map((item, index) => (
+								<Box key={item.runtimeId} alignItems="center" width={122} style={{ marginRight: index === allergenItems.length - 1 ? 0 : 16 }}>
 									<Box position="relative">
 										<Box
 											width={100}
@@ -369,6 +373,7 @@ export default function AllAllergens({
 							<Pressable
 								alignItems="center"
 								width={92}
+								style={{ marginLeft: 16 }}
 								onPress={() => {
 									resetInactivityTimer();
 									onOpenAddAllergen?.();
@@ -400,7 +405,7 @@ export default function AllAllergens({
 									ADD MORE
 								</Text>
 							</Pressable>
-						</Box>
+						</ScrollView>
 					)
 				) : (
 					<Box

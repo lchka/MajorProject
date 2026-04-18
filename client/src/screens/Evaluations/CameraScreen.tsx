@@ -2,6 +2,10 @@
 import { Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import MaskedView from "@react-native-masked-view/masked-view";
+import Svg, { Path } from "react-native-svg";
 import {
 NavigationProp,
 RouteProp,
@@ -39,9 +43,11 @@ const route = useRoute<RouteProp<AuthStackParamList, "CameraScreen">>();
 const routeProfileId = route.params?.profileId;
 const routeImageUri = route.params?.imageUri;
 
+const [cameraLayout, setCameraLayout] = React.useState<{ width: number; height: number } | null>(null);
+
 const [cameraPermission, requestCameraPermission] = useCameraPermissions();
 const cameraRef = React.useRef<CameraView | null>(null);
-const [cameraFacing, setCameraFacing] = React.useState<"back" | "front">("back");
+const [isTorchEnabled, setIsTorchEnabled] = React.useState(false);
 
 const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 const [isCapturingPhoto, setIsCapturingPhoto] = React.useState(false);
@@ -146,13 +152,25 @@ if (allProfiles.length === 0) {
 setAllProfiles(profiles);
 }
 
+const hasExplicitSelection = Boolean(selectedProfileIds?.length);
+const requestedProfileIds = hasExplicitSelection
+? selectedProfileIds ?? []
+: [defaultProfile.id];
 const dedupedRequestedIds = Array.from(
-new Set((selectedProfileIds?.length ? selectedProfileIds : [defaultProfile.id]).filter(Boolean)),
+new Set(requestedProfileIds.filter(Boolean)),
 ).slice(0, 3);
 
 const selectedProfiles = dedupedRequestedIds
 .map((profileId) => profiles.find((profile) => profile.id === profileId))
 .filter((profile): profile is Profile => Boolean(profile));
+
+if (hasExplicitSelection && selectedProfiles.length === 0) {
+Alert.alert(
+"Profiles unavailable",
+"We could not find the selected profiles. Please re-open profile selection and try again.",
+);
+return;
+}
 
 const profilesToEvaluate = selectedProfiles.length > 0 ? selectedProfiles : [defaultProfile];
 
@@ -479,128 +497,151 @@ Grant Permission
 }
 
 return (
-<Box flex={1} bg="#000000">
+<Box
+flex={1}
+bg="#000000"
+onLayout={(event) => {
+const { width, height } = event.nativeEvent.layout;
+if (width > 0 && height > 0) {
+setCameraLayout({ width, height });
+}
+}}
+>
 <CameraView
 ref={cameraRef}
-facing={cameraFacing}
+facing="back"
 autofocus="on"
+enableTorch={isTorchEnabled}
 style={{ flex: 1 }}
 onCameraReady={() => {
 setIsCameraReady(true);
 }}
 />
 
-<Box
-position="absolute"
-top={0}
-left={0}
-right={0}
-height="14%"
-bg="rgba(0,0,0,0.92)"
+{/* Blur everything outside the scanning frame while keeping the center clear. */}
+{cameraLayout ? (
+<MaskedView
+pointerEvents="none"
+style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+maskElement={(() => {
+const frameTop = cameraLayout.height * 0.12;
+const frameBottom = cameraLayout.height * 0.16;
+const frameLeft = cameraLayout.width * 0.105;
+const frameRight = cameraLayout.width * 0.105;
+const frameWidth = cameraLayout.width - frameLeft - frameRight;
+const frameHeight = cameraLayout.height - frameTop - frameBottom;
+const cornerRadius = 34;
+const safeRadius = Math.max(0, Math.min(cornerRadius, frameWidth / 2, frameHeight / 2));
+
+const roundedRectPath = (x: number, y: number, width: number, height: number, radius: number) => {
+const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+const right = x + width;
+const bottom = y + height;
+return [
+`M ${x + r} ${y}`,
+`H ${right - r}`,
+`A ${r} ${r} 0 0 1 ${right} ${y + r}`,
+`V ${bottom - r}`,
+`A ${r} ${r} 0 0 1 ${right - r} ${bottom}`,
+`H ${x + r}`,
+`A ${r} ${r} 0 0 1 ${x} ${bottom - r}`,
+`V ${y + r}`,
+`A ${r} ${r} 0 0 1 ${x + r} ${y}`,
+`Z`,
+].join(" ");
+};
+
+const outerPath = `M 0 0 H ${cameraLayout.width} V ${cameraLayout.height} H 0 Z`;
+const innerPath = roundedRectPath(frameLeft, frameTop, frameWidth, frameHeight, safeRadius);
+const path = `${outerPath} ${innerPath}`;
+
+return (
+<Svg width={cameraLayout.width} height={cameraLayout.height}>
+<Path d={path} fill="black" fillRule="evenodd" />
+</Svg>
+);
+})()}
+>
+<BlurView intensity={46} tint="default" style={{ flex: 1 }} />
+</MaskedView>
+) : (
+/* Fallback blur before we know exact layout dimensions. */
+<Box pointerEvents="none" position="absolute" top={0} left={0} right={0} bottom={0}>
+<BlurView intensity={46} tint="default" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "12%" }} />
+<BlurView intensity={46} tint="default" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "16%" }} />
+<BlurView intensity={46} tint="default" style={{ position: "absolute", top: "12%", bottom: "16%", left: 0, width: "10.5%" }} />
+<BlurView intensity={46} tint="default" style={{ position: "absolute", top: "12%", bottom: "16%", right: 0, width: "10.5%" }} />
+</Box>
+)}
+
+<LinearGradient
+colors={["rgba(8, 12, 24, 0.28)", "rgba(8, 12, 24, 0.06)", "rgba(8, 12, 24, 0.00)"]}
+start={{ x: 0.5, y: 0 }}
+end={{ x: 0.5, y: 1 }}
+style={{ position: "absolute", top: 0, left: 0, right: 0, height: 196 }}
+/>
+
+<LinearGradient
+colors={["rgba(8, 12, 24, 0.00)", "rgba(8, 12, 24, 0.08)", "rgba(8, 12, 24, 0.34)"]}
+start={{ x: 0.5, y: 0 }}
+end={{ x: 0.5, y: 1 }}
+style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 260 }}
 />
 
 <Box
 position="absolute"
-left={0}
-right={0}
-bottom={0}
-height="19%"
-bg="rgba(0,0,0,0.94)"
+top="12%"
+left="10.5%"
+right="10.5%"
+bottom="16%"
+borderRadius={34}
+borderWidth={1}
+borderColor={isFramingReady ? "rgba(34,197,94,0.40)" : "rgba(255,255,255,0.08)"}
 />
 
-<Box position="absolute" top={50} left={16} right={16}>
+{/* Corner markers communicate where to place the product label for detection. */}
+<Box position="absolute" top="12%" left="10.5%" right="10.5%" bottom="16%" borderRadius={34}>
+<Box position="absolute" top={10} left={10} w={34} h={34} borderTopWidth={3} borderLeftWidth={3} borderColor={isFramingReady ? "rgba(34,197,94,0.95)" : "rgba(255,255,255,0.76)"} borderTopLeftRadius={18} />
+<Box position="absolute" top={10} right={10} w={34} h={34} borderTopWidth={3} borderRightWidth={3} borderColor={isFramingReady ? "rgba(34,197,94,0.95)" : "rgba(255,255,255,0.76)"} borderTopRightRadius={18} />
+<Box position="absolute" bottom={10} left={10} w={34} h={34} borderBottomWidth={3} borderLeftWidth={3} borderColor={isFramingReady ? "rgba(34,197,94,0.95)" : "rgba(255,255,255,0.76)"} borderBottomLeftRadius={18} />
+<Box position="absolute" bottom={10} right={10} w={34} h={34} borderBottomWidth={3} borderRightWidth={3} borderColor={isFramingReady ? "rgba(34,197,94,0.95)" : "rgba(255,255,255,0.76)"} borderBottomRightRadius={18} />
+</Box>
+
+<Box position="absolute" left={0} right={0} bottom={16} px="$5">
+<Box alignItems="center" mb="$5">
 <Box
-flexDirection="row"
-alignItems="center"
-justifyContent="space-between"
-bg="rgba(7,12,18,0.45)"
-borderRadius="$full"
 px="$3"
 py="$2"
+borderRadius="$full"
+bg={isFramingReady ? "rgba(255,255,255,0.18)" : "rgba(14,24,34,0.34)"}
+borderWidth={1}
+borderColor="rgba(255,255,255,0.18)"
 >
+<Text fontSize={13} lineHeight={17} color="#FFFFFF" fontFamily="RobotoMedium">
+{isFramingReady ? "Ready to scan" : "Align product in frame"}
+</Text>
+</Box>
+</Box>
+
+<Box
+flexDirection="row"
+alignItems="flex-end"
+justifyContent="space-between"
+px="$1"
+>
+{/* Back, shutter, and torch controls keep the detection flow in one place. */}
 <Pressable
 onPress={() => {
 navigation.goBack();
 }}
-p="$2"
-borderRadius="$full"
->
-<Feather name="x" size={20} color="#FFFFFF" />
-</Pressable>
-
-<Text color="#FFFFFF" fontFamily="RobotoMedium" fontSize={16}>
-PHOTO
-</Text>
-
-<Box width={36} alignItems="flex-end">
-<Feather name="aperture" size={18} color="#FFFFFF" />
-</Box>
-</Box>
-
-<Text mt="$3" fontSize={15} lineHeight={20} color="#FFFFFF" fontFamily="RobotoMedium" textAlign="center">
-Center the product name and ingredients in the guide.
-</Text>
-</Box>
-
-<Box
-position="absolute"
-top="11%"
-left="5%"
-right="5%"
-bottom="10%"
-borderWidth={2}
-borderColor="rgba(255,255,255,0.2)"
-borderRadius={18}
-/>
-
-<Box
-position="absolute"
-top="19%"
-left="12%"
-right="12%"
-height="58%"
-borderWidth={6}
-borderColor={isFramingReady ? "#56D32F" : "#E76767"}
-borderRadius={16}
-/>
-
-<Box position="absolute" left={0} right={0} bottom={26} px="$5">
-<Box alignItems="center" mb="$3">
-<Box
-px="$3"
-py="$2"
-borderRadius="$full"
-bg={isFramingReady ? "rgba(39,132,64,0.82)" : "rgba(151,54,54,0.82)"}
->
-<Text fontSize={15} lineHeight={20} color="#FFFFFF" fontFamily="RobotoMedium">
-{isFramingReady ? "Ready" : "Move product into frame"}
-</Text>
-</Box>
-</Box>
-
-<Box
-flexDirection="row"
-alignItems="center"
-justifyContent="space-between"
-bg="rgba(6,11,16,0.42)"
-borderRadius={30}
-px="$4"
-py="$3"
->
-<Pressable
-onPress={() => {
-void openGallery();
-}}
-width={50}
-height={50}
-borderRadius={12}
-bg="rgba(255,255,255,0.18)"
-borderWidth={1}
-borderColor="rgba(255,255,255,0.28)"
+width={56}
+height={56}
+borderRadius={28}
+bg="rgba(255,255,255,0.92)"
 alignItems="center"
 justifyContent="center"
 >
-<Feather name="image" size={20} color="#FFFFFF" />
+<Feather name="arrow-left" size={22} color="#374151" />
 </Pressable>
 
 <Pressable
@@ -608,40 +649,55 @@ onPress={() => {
 void capturePhoto();
 }}
 disabled={isCapturingPhoto || isResolvingProduct || isProcessingEvaluation}
-alignSelf="center"
-width={88}
-height={88}
-borderRadius={44}
-borderWidth={5}
-borderColor="#FFFFFF"
-bg="rgba(255,255,255,0.1)"
+width={86}
+height={86}
+borderRadius={43}
+borderWidth={4}
+borderColor="rgba(255,255,255,0.95)"
+bg="rgba(255,255,255,0.14)"
 alignItems="center"
 justifyContent="center"
 >
 <Box
-width={68}
-height={68}
-borderRadius={34}
+width={64}
+height={64}
+borderRadius={32}
 bg={isCapturingPhoto || isResolvingProduct ? "#D5DAE2" : "#FFFFFF"}
 />
 </Pressable>
 
 <Pressable
 onPress={() => {
-setCameraFacing((currentFacing) => (currentFacing === "back" ? "front" : "back"));
+setIsTorchEnabled((currentValue) => !currentValue);
 }}
-width={50}
-height={50}
-borderRadius={12}
-bg="rgba(255,255,255,0.18)"
-borderWidth={1}
-borderColor="rgba(255,255,255,0.28)"
+width={56}
+height={56}
+borderRadius={28}
+bg="rgba(255,255,255,0.92)"
 alignItems="center"
 justifyContent="center"
 >
-<Feather name="refresh-ccw" size={20} color="#FFFFFF" />
+<Feather name={isTorchEnabled ? "sun" : "sunrise"} size={20} color="#374151" />
 </Pressable>
 </Box>
+
+<Pressable
+onPress={() => {
+void openGallery();
+}}
+alignSelf="center"
+mt="$4"
+px="$4"
+py="$2"
+borderRadius="$full"
+bg="rgba(255,255,255,0.14)"
+borderWidth={1}
+borderColor="rgba(255,255,255,0.18)"
+>
+<Text color="#FFFFFF" fontSize={13} lineHeight={16} fontFamily="RobotoMedium">
+Upload from gallery
+</Text>
+</Pressable>
 </Box>
 </Box>
 );

@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import LottieView from "lottie-react-native";
 import * as ImagePicker from "expo-image-picker";
+import { Asset } from "expo-asset";
 import {
 	NavigationProp,
 	RouteProp,
@@ -15,7 +16,6 @@ import {
 import {
 	Box,
 	HStack,
-	Pressable,
 	ScrollView,
 	Text,
 	VStack,
@@ -31,6 +31,25 @@ import { ProfileImageUploadFile } from "../../services/profileService";
 import NavBarTop from "../../components/general/NavBarTop";
 import ProfileNameAgeSection from "../../components/profile/ProfileNameAgeSection";
 import ProfileImageSection from "../../components/profile/ProfileImageSection";
+import AvatarPickerModal, { AvatarOption } from "../../components/profile/AvatarPickerModal";
+
+const AVATAR_OPTIONS: AvatarOption[] = [
+	{ id: "avatar-base", source: require("../../../assets/avatars/avatar.png") },
+	{ id: "avatar-girl", source: require("../../../assets/avatars/girl.png") },
+	{ id: "avatar-muslim", source: require("../../../assets/avatars/muslim.png") },
+	{ id: "avatar-teacher", source: require("../../../assets/avatars/teacher.png") },
+	{ id: "avatar-tourist", source: require("../../../assets/avatars/tourist.png") },
+	{ id: "avatar-woman", source: require("../../../assets/avatars/woman.png") },
+	{ id: "avatar-1", source: require("../../../assets/avatars/avatar (1).png") },
+	{ id: "avatar-15", source: require("../../../assets/avatars/avatar (1.5).png") },
+	{ id: "avatar-2", source: require("../../../assets/avatars/avatar (2).png") },
+	{ id: "avatar-3", source: require("../../../assets/avatars/avatar (3).png") },
+	{ id: "avatar-4", source: require("../../../assets/avatars/avatar (4).png") },
+	{ id: "avatar-5", source: require("../../../assets/avatars/avatar (5).png") },
+	{ id: "avatar-6", source: require("../../../assets/avatars/avatar (6).png") },
+	{ id: "avatar-7", source: require("../../../assets/avatars/avatar (7).png") },
+	{ id: "avatar-8", source: require("../../../assets/avatars/avatar (8).png") },
+];
 
 export default function CreateProfile() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -45,6 +64,8 @@ export default function CreateProfile() {
 	const [lastName, setLastName] = useState(prefilledLastName);
 	const [age, setAge] = useState("");
 	const [profileImage, setProfileImage] = useState<ProfileImageUploadFile | undefined>(undefined);
+	const [selectedAvatarId, setSelectedAvatarId] = useState<string | null>(null);
+	const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
 	const [conditionIds, setConditionIds] = useState<string[]>([]);
 	const [allergenIds, setAllergenIds] = useState<string[]>([]);
 	const [preferenceIds, setPreferenceIds] = useState<string[]>([]);
@@ -191,6 +212,15 @@ export default function CreateProfile() {
 		}
 	};
 
+	const handlePrimarySavePress = () => {
+		if (!profileImage) {
+			setIsAvatarPickerOpen(true);
+			return;
+		}
+
+		void handleSubmitProfile();
+	};
+
 	const handlePickProfileImage = async () => {
 		const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -215,12 +245,26 @@ export default function CreateProfile() {
 		const asset = picked.assets[0];
 		const inferredName = asset.fileName ?? `profile-${Date.now()}.jpg`;
 		const inferredType = asset.mimeType ?? "image/jpeg";
+		setSelectedAvatarId(null);
 
 		setProfileImage({
 			uri: asset.uri,
 			name: inferredName,
 			type: inferredType,
 		});
+	};
+
+	const handleChooseAvatar = async (avatar: AvatarOption) => {
+		const avatarAsset = Asset.fromModule(avatar.source);
+		await avatarAsset.downloadAsync();
+
+		setProfileImage({
+			uri: avatarAsset.localUri ?? avatarAsset.uri,
+			name: "Selected avatar",
+			type: "image/png",
+		});
+		setSelectedAvatarId(avatar.id);
+		setIsAvatarPickerOpen(false);
 	};
 
 	return (
@@ -342,6 +386,9 @@ export default function CreateProfile() {
 							<ProfileImageSection
 								profileImage={profileImage}
 								onPickImage={handlePickProfileImage}
+								onPickAvatar={() => {
+									setIsAvatarPickerOpen(true);
+								}}
 								isDisabled={loading}
 							/>
 						) : null}
@@ -361,7 +408,7 @@ export default function CreateProfile() {
 								<Box flex={1}>
 									<CreateButton
 										label={loading ? "Saving..." : step === 5 ? "Save Profile" : "Next"}
-										onPress={step === 5 ? handleSubmitProfile : handleNext}
+										onPress={step === 5 ? handlePrimarySavePress : handleNext}
 										disabled={loading}
 										isPulsing={false}
 									/>
@@ -370,6 +417,23 @@ export default function CreateProfile() {
 					) : null}
 				</VStack>
 			</ScrollView>
+
+			<AvatarPickerModal
+				isOpen={isAvatarPickerOpen}
+				onClose={() => {
+					setIsAvatarPickerOpen(false);
+				}}
+				avatarOptions={AVATAR_OPTIONS}
+				selectedAvatarId={selectedAvatarId}
+				onSelectAvatar={(avatar) => {
+					void handleChooseAvatar(avatar);
+				}}
+				onContinueWithoutImage={() => {
+					setIsAvatarPickerOpen(false);
+					void handleSubmitProfile();
+				}}
+				loading={loading}
+			/>
 		</KeyboardAvoidingView>
 	);
 }
