@@ -18,11 +18,19 @@ import PreferencesOverview from "../../components/preferences/AllPreferences";
 import AllConditions from "../../components/conditions/AllConditions";
 import SingleCondition from "../../components/conditions/SingleCondition";
 import AllAllergens from "../../components/allergens/AllAllergens";
+import type { UniversalSearchResult } from "../../components/general/UniversalSearch";
 import {
   weatherService,
   CurrentUvSnapshot,
 } from "../../services/weatherService";
 import profileApiService, { Profile } from "../../services/profileService";
+import {
+  evaluationContextService,
+  productService,
+  getLocalEvaluations,
+  type LocalEvaluation,
+  type Product,
+} from "../../services";
 import {
   consumePendingSystemErrorEvent,
   subscribeSystemErrorEvents,
@@ -60,6 +68,10 @@ export default function LandingScreen() {
     null,
   );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchResults, setSearchResults] = React.useState<UniversalSearchResult[]>([]);
+  const [localEvaluations, setLocalEvaluations] = React.useState<LocalEvaluation[]>([]);
+  const searchRequestIdRef = React.useRef(0);
 
   const loadProfiles = React.useCallback(async () => {
     try {
@@ -111,6 +123,227 @@ export default function LandingScreen() {
       setIsUvLoading(false);
     }
   }, []);
+
+  const normalizeQuery = React.useCallback((value: string) => value.trim().toLowerCase(), []);
+
+  const matchesQuery = React.useCallback((value: string | undefined, query: string) => {
+    if (!value) {
+      return false;
+    }
+
+    return value.toLowerCase().includes(query);
+  }, []);
+
+  const buildResultsFromLocal = React.useCallback(
+    (query: string): UniversalSearchResult[] => {
+      if (!query) {
+        return [];
+      }
+
+      const results: UniversalSearchResult[] = [];
+
+      profileDetails.forEach((profile) => {
+        const fullName = [profile.first_name?.trim(), profile.last_name?.trim()]
+          .filter(Boolean)
+          .join(" ");
+
+        if (matchesQuery(fullName, query) || matchesQuery(profile.first_name, query)) {
+          results.push({
+            key: `profile-${profile.id}`,
+            title: fullName || profile.first_name || "Profile",
+            subtitle: "Profile",
+            tag: "Profile",
+            meta: { type: "profile", profileId: profile.id },
+          });
+        }
+      });
+
+      const productById = new Map<string, LocalEvaluation>();
+
+      localEvaluations.forEach((evaluation) => {
+        const evaluationMatches = [
+          evaluation.productName,
+          evaluation.profileName,
+          typeof evaluation.resultJson?.summary === "string" ? evaluation.resultJson.summary : "",
+          typeof evaluation.resultJson?.status === "string" ? evaluation.resultJson.status : "",
+        ].some((value) => matchesQuery(value, query));
+
+        if (evaluationMatches) {
+          results.push({
+            key: `evaluation-${evaluation.evaluationContextId}`,
+            title: evaluation.productName || "Unknown product",
+            subtitle: evaluation.profileName || "Unknown profile",
+            tag: "Evaluation",
+            meta: {
+              type: "evaluation",
+              evaluationContextId: evaluation.evaluationContextId,
+              profileId: evaluation.profileId,
+            },
+          });
+        }
+
+        const existing = productById.get(evaluation.productId);
+        if (!existing || new Date(existing.createdAt).getTime() < new Date(evaluation.createdAt).getTime()) {
+          productById.set(evaluation.productId, evaluation);
+        }
+      });
+
+      productById.forEach((evaluation) => {
+        if (!matchesQuery(evaluation.productName, query)) {
+          return;
+        }
+
+        results.push({
+          key: `product-${evaluation.productId}`,
+          title: evaluation.productName || "Product",
+          subtitle: "Product",
+          tag: "Product",
+          meta: {
+            type: "product",
+            productId: evaluation.productId,
+            evaluationContextId: evaluation.evaluationContextId,
+          },
+        });
+      });
+
+      return results.slice(0, 25);
+    },
+    [localEvaluations, matchesQuery, profileDetails],
+  );
+
+  const buildResultsFromServer = React.useCallback(
+    (
+      query: string,
+      contexts: { id: string; profileId: string; productId: string; resultJson: Record<string, unknown> }[],
+      profilesSource: Profile[],
+      products: Product[],
+    ): UniversalSearchResult[] => {
+      if (!query) {
+        return [];
+      }
+
+      const results: UniversalSearchResult[] = [];
+      const profileMap = new Map(profilesSource.map((profile) => [profile.id, profile]));
+      const productMap = new Map(products.map((product) => [product.id, product]));
+
+      profilesSource.forEach((profile) => {
+        const fullName = [profile.first_name?.trim(), profile.last_name?.trim()]
+          .filter(Boolean)
+          .join(" ");
+
+        if (matchesQuery(fullName, query) || matchesQuery(profile.first_name, query)) {
+          results.push({
+            key: `profile-${profile.id}`,
+            title: fullName || profile.first_name || "Profile",
+            subtitle: "Profile",
+            tag: "Profile",
+            meta: { type: "profile", profileId: profile.id },
+          });
+        }
+      });
+
+      const productIds = new Set<string>();
+
+      contexts.forEach((context) => {
+        const profile = profileMap.get(context.profileId);
+        const product = productMap.get(context.productId);
+        const summary = typeof context.resultJson?.summary === "string" ? context.resultJson.summary : "";
+        const status = typeof context.resultJson?.status === "string" ? context.resultJson.status : "";
+
+        const evaluationMatches = [
+          product?.name ?? "",
+          profile?.first_name ?? "",
+          summary,
+          status,
+        ].some((value) => matchesQuery(value, query));
+
+        if (evaluationMatches) {
+          results.push({
+            key: `evaluation-${context.id}`,
+            title: product?.name ?? "Unknown product",
+            subtitle: profile?.first_name?.trim() || "Unknown profile",
+            tag: "Evaluation",
+            meta: { type: "evaluation", evaluationContextId: context.id, profileId: context.profileId },
+          });
+        }
+
+        productIds.add(context.productId);
+      });
+
+      productIds.forEach((productId) => {
+        const product = productMap.get(productId);
+        if (!product || !matchesQuery(product.name, query)) {
+          return;
+        }
+
+        results.push({
+          key: `product-${product.id}`,
+          title: product.name,
+          subtitle: "Product",
+          tag: "Product",
+          meta: { type: "product", productId: product.id },
+        });
+      });
+
+      return results.slice(0, 25);
+    },
+    [matchesQuery],
+  );
+
+  React.useEffect(() => {
+    void getLocalEvaluations().then(setLocalEvaluations).catch(() => setLocalEvaluations([]));
+  }, []);
+
+  React.useEffect(() => {
+    const normalizedQuery = normalizeQuery(searchQuery);
+    if (!normalizedQuery) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchResults(buildResultsFromLocal(normalizedQuery));
+
+    const requestId = (searchRequestIdRef.current += 1);
+
+    const refreshFromServer = async () => {
+      try {
+        const [contexts, profilesSource] = await Promise.all([
+          evaluationContextService.getMyContexts(),
+          profileApiService.getMyProfile(),
+        ]);
+
+        const uniqueProductIds = Array.from(new Set(contexts.map((context) => context.productId)));
+        const products = await Promise.all(
+          uniqueProductIds.map(async (productId) => {
+            try {
+              return await productService.getProductById(productId);
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        if (searchRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        const serverResults = buildResultsFromServer(
+          normalizedQuery,
+          contexts,
+          profilesSource,
+          products.filter((item): item is Product => Boolean(item)),
+        );
+
+        if (serverResults.length > 0) {
+          setSearchResults(serverResults);
+        }
+      } catch {
+        // ignore server refresh errors
+      }
+    };
+
+    void refreshFromServer();
+  }, [buildResultsFromLocal, buildResultsFromServer, normalizeQuery, searchQuery]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -365,7 +598,54 @@ export default function LandingScreen() {
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
       >
-        <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
+        <NavBarTop
+          notificationCount={2}
+          onPressAvatar={handleSignOut}
+          searchQuery={searchQuery}
+          searchResults={searchResults}
+          onSearchQueryChange={setSearchQuery}
+          onSearchResultPress={(result) => {
+            const meta = result.meta;
+            if (!meta) {
+              return;
+            }
+
+            if (meta.type === "evaluation" && meta.evaluationContextId) {
+              navigation.navigate("EvaluationResultScreen", {
+                evaluationContextId: meta.evaluationContextId,
+              });
+              return;
+            }
+
+            if (meta.type === "profile" && meta.profileId) {
+              const profileToEdit = profileDetails.find((profile) => profile.id === meta.profileId);
+
+              navigation.navigate("EditProfileScreen", {
+                profileId: profileToEdit?.id,
+                profileName: profileToEdit?.first_name || undefined,
+                profileImageUri: profileToEdit?.profile_image ?? undefined,
+                profilePreferenceNames:
+                  profileToEdit?.preferences?.map((item) => item.name) ?? [],
+                profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
+                profileIsMain: profileToEdit?.main_profile ?? false,
+              });
+              return;
+            }
+
+            if (meta.type === "product") {
+              if (meta.evaluationContextId) {
+                navigation.navigate("EvaluationResultScreen", {
+                  evaluationContextId: meta.evaluationContextId,
+                });
+                return;
+              }
+
+              navigation.navigate("CameraScreen", {
+                profileId: profileId ?? activeProfile?.id,
+              });
+            }
+          }}
+        />
 
         <Box px="$2" mt="$3" pt="$8">
           <SwitchProfile

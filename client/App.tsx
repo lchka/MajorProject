@@ -70,7 +70,7 @@ export default function App() {
     RobotoMedium: Roboto_500Medium,
   });
   const [authResolved, setAuthResolved] = useState(false);
-  const [initialRouteName, setInitialRouteName] = useState<keyof AuthStackParamList>("WelcomeScreen");
+  const [initialRouteName, setInitialRouteName] = useState<keyof AuthStackParamList | null>(null);
 
   useEffect(() => {
     if (PREVIEW_EVALUATION_LOADING) {
@@ -115,6 +115,8 @@ export default function App() {
             setInitialRouteName("LandingScreen");
           }
         }
+      } catch {
+        setInitialRouteName("WelcomeScreen");
       } finally {
         setAuthResolved(true);
       }
@@ -130,7 +132,7 @@ export default function App() {
 
   if (!fontsLoaded) return null;
 
-  if (!authResolved) {
+  if (!authResolved || !initialRouteName) {
     return (
       <GluestackUIProvider config={config}>
         <GestureHandlerRootView style={styles.container}>

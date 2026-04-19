@@ -210,7 +210,7 @@ export default function HistoryScreen() {
       >
         <NavBarTop notificationCount={0} />
 
-        <Box px="$2" pt="$8" pb="$2" mb="$2" bg="$backgroundLight0">
+        <Box px="$2" pt="$8" pb="$2" mb="$2">
           <SwitchProfile
             profiles={profileSwitcherItems}
             activeProfileId={activeProfile?.id}
