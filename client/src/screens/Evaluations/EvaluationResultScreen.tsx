@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
 import { NavigationProp, RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import CreateEvaluations from "./ShowEvaluation";
-import LoadingScreen from "../../components/general/loadingScreen";
+import LoadingScreen from "../../components/loadingscreens/loadingScreen";
 import { type DifferentProfileItem } from "../../components/profile/DifferentProfile";
 import {
   evaluationContextService,

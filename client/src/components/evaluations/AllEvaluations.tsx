@@ -9,7 +9,7 @@ import { Box, Image, Pressable, ScrollView, Text, VStack, HStack } from "@gluest
 import { resolveMediaUrl } from "../../config/api";
 import SearchEvaluations from "../general/SearchEvaluations";
 import WarningChip, { normalizeWarningStatus } from "../general/WarningChip";
-import LoadingScreen from "../general/loadingScreen";
+import LoadingScreen from "../loadingscreens/loadingScreen";
 import SwitchProfile from "../profile/SwitchProfile";
 import { SortDropdown, type PastAnalysisSortOption } from "../actions/PastAnalysisDropdown";
 import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
