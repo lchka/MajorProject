@@ -192,6 +192,17 @@ export class AuthService {
       throw new HttpError(401, "Invalid or expired token");
     }
   }
+
+  // get current user by ID
+  async getCurrentUser(userId: string) {
+    const user = await userRepository.findById(userId);
+    
+    if (!user) {
+      throw new HttpError(404, "User not found");
+    }
+
+    return user;
+  }
 }
 
 export default new AuthService();

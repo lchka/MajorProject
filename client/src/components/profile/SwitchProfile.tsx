@@ -1,6 +1,7 @@
 import React from "react";
-import type { ImageSourcePropType } from "react-native";
+import type { ImageSourcePropType, ViewStyle } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { MotiView } from "moti";
 import {
 	Box,
 	Image,
@@ -27,6 +28,8 @@ type SwitchProfileProps = {
 	title?: string;
 	greetingLabel?: string;
 	cardAvatarSource?: ImageSourcePropType;
+	hasScrolled?: boolean;
+	style?: ViewStyle;
 };
 
 // This formats the greeting name as the first name in caps.
@@ -64,6 +67,8 @@ export default function SwitchProfile({
 	title = "Change Profile",
 	greetingLabel,
 	cardAvatarSource = require("../../../assets/icon.png"),
+	hasScrolled = false,
+	style,
 }: SwitchProfileProps) {
 	// This is where the switch card colors are controlled in this file.
 	const switchCardBackgroundColor = "#ebf5ff";
@@ -139,9 +144,16 @@ export default function SwitchProfile({
 	return (
 		<>
 			{/* This is the main switch profile card on landing */}
-			<Box>
+			{/* MotiView handles all margin animation: base padding + scroll-triggered additional margin */}
+			<MotiView
+				from={{ marginTop: 20 }}
+				animate={{ marginTop: hasScrolled ? 52 : 20 }}
+				transition={{ type: "timing", duration: 300 }}
+				style={style}
+			>
+				<Box>
 				<Pressable
-					mx="$2"
+					mx="$4"
 					style={[
 						styles.switchProfileCard,
 						{
@@ -198,8 +210,9 @@ export default function SwitchProfile({
 				</Box>
 				</Pressable>
 			</Box>
+		</MotiView>
 
-			{/* This is the profile choice overlay modal */}
+		{/* This is the profile choice overlay modal */}
 			<ProfileChoice
 				isOpen={isOpen}
 				isClosing={isClosing}

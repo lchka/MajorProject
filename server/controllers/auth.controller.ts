@@ -64,6 +64,30 @@ export class AuthController {
       next(error);
     }
   }
+
+  async getCurrentUser(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> {
+    try {
+      // userId is set by auth middleware
+      const userId = (req as any).userId;
+      
+      if (!userId) {
+        throw new Error("User ID not found in request");
+      }
+
+      const user = await authService.getCurrentUser(userId);
+
+      res.status(SUCCESS_RES).json({
+        message: "User retrieved successfully",
+        user,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new AuthController();

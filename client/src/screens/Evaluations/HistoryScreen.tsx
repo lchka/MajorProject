@@ -7,6 +7,7 @@ import AllEvaluations, {
   EvaluationHistoryCard,
 } from "../../components/evaluations/AllEvaluations";
 import SwitchProfile from "../../components/profile/SwitchProfile";
+import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
 import { evaluationContextService, productService, profileService, getLocalEvaluations } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
 import type { EvaluationContext } from "../../services/evaluationContextService";
@@ -21,6 +22,8 @@ export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "HistoryScreen">>();
   const routeProfileId = route.params?.profileId;
+
+  const { hasScrolled, onScroll, scrollEventThrottle } = useScrollPastThreshold(5);
 
   const [loading, setLoading] = React.useState(true);
   const [historyItems, setHistoryItems] = React.useState<EvaluationHistoryCard[]>([]);
@@ -214,42 +217,42 @@ export default function HistoryScreen() {
         opacity={0.25}
       />
 
-      {/* SwitchProfile is made sticky via stickyHeaderIndices=[1] */}
-      {/* This keeps the profile switcher card fixed at the top during scroll */}
+      {/* SwitchProfile with scroll trigger - animates marginTop on scroll */}
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
         stickyHeaderIndices={[1]}
       >
         <NavBarTop notificationCount={0} />
 
-        {/* Sticky index 1: SwitchProfile card stays at top */}
-        <Box px="$2" pt="$8" pb="$2" mb="$2">
-          <SwitchProfile
-            profiles={profileSwitcherItems}
-            activeProfileId={activeProfile?.id}
-            onSelectProfile={(profileId) => {
-              navigation.setParams({ profileId });
-            }}
-            onAddProfile={() => {
-              navigation.navigate("ProfileScreen");
-            }}
-            onEditProfile={(profileId) => {
-              const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
+        {/* Profile switcher with scroll animation - sticky at top */}
+        <SwitchProfile
+          profiles={profileSwitcherItems}
+          activeProfileId={activeProfile?.id}
+          onSelectProfile={(profileId) => {
+            navigation.setParams({ profileId });
+          }}
+          onAddProfile={() => {
+            navigation.navigate("ProfileScreen");
+          }}
+          onEditProfile={(profileId) => {
+            const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
 
-              navigation.navigate("EditProfileScreen", {
-                profileId: profileToEdit?.id,
-                profileName: profileToEdit?.first_name || undefined,
-                profileImageUri: profileToEdit?.profile_image ?? undefined,
-                profilePreferenceNames:
-                  profileToEdit?.preferences?.map((item) => item.name) ?? [],
-                profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
-                profileIsMain: profileToEdit?.main_profile ?? false,
-              });
-            }}
-            title="Switch Profile"
-          />
-        </Box>
+            navigation.navigate("EditProfileScreen", {
+              profileId: profileToEdit?.id,
+              profileName: profileToEdit?.first_name || undefined,
+              profileImageUri: profileToEdit?.profile_image ?? undefined,
+              profilePreferenceNames:
+                profileToEdit?.preferences?.map((item) => item.name) ?? [],
+              profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
+              profileIsMain: profileToEdit?.main_profile ?? false,
+            });
+          }}
+          title="Switch Profile"
+          hasScrolled={hasScrolled}
+        />
 
         <AllEvaluations
           items={historyItems}

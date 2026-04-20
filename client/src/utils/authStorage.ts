@@ -5,7 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const AUTH_TOKEN_KEY = 'authToken';
+export const AUTH_TOKEN_KEY = 'authToken';
 
 /**
  * Save authentication token to device storage
@@ -21,7 +21,7 @@ export const saveAuthToken = async (token: string): Promise<void> => {
 };
 
 /**
- * Retrieve authentication token from device storage
+ * Retrieve authentication token from device storagenpm start -- --reset-cache
  * Used to check if user is logged in and for API requests
  */
 export const getAuthToken = async (): Promise<string | null> => {

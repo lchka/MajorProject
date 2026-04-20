@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import authController from "../controllers/auth.controller.js";
 import { validate } from "../middleware/validateRequest.js";
+import { authMiddleware } from "../middleware/auth.middleware.js";
 import {
   registerSchema,
   loginSchema,
@@ -48,5 +49,16 @@ router.post(
  * @access  Public
  */
 router.post("/logout", authController.logout.bind(authController));
+
+/**
+ * @route   GET /api/auth/me
+ * @desc    Get current user profile
+ * @access  Private
+ */
+router.get(
+  "/me",
+  authMiddleware,
+  authController.getCurrentUser.bind(authController),
+);
 
 export default router;

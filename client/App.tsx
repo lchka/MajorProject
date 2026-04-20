@@ -16,19 +16,19 @@ import HistoryScreen from "./src/screens/Evaluations/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Alert } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableScreens } from "react-native-screens";
 import { AuthStackParamList } from "./src/types/navigation";
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { authService } from './src/services/authService';
 import type { NavigationContainerRef } from '@react-navigation/native';
 import { setUnauthorizedHandler } from './src/config/api';
-import { clearAuthToken } from './src/utils/authStorage';
-
+import { clearAuthToken, AUTH_TOKEN_KEY } from './src/utils/authStorage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // Fonts
 import { useFonts, DancingScript_400Regular } from '@expo-google-fonts/dancing-script';
 import { Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
@@ -71,6 +71,7 @@ export default function App() {
   });
   const [authResolved, setAuthResolved] = useState(false);
   const [initialRouteName, setInitialRouteName] = useState<keyof AuthStackParamList | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (PREVIEW_EVALUATION_LOADING) {
@@ -110,8 +111,13 @@ export default function App() {
             await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
             setInitialRouteName("LoginScreen");
           } else {
-            // Other errors (network issues, etc.), still go to LandingScreen but will show error to user
+            // Other errors (network issues, 404, etc.), show banner and go to LandingScreen
             console.log("[Auth] Non-401 error, defaulting to LandingScreen");
+            const errorStatus = error?.response?.status;
+            const errorMessage = errorStatus === 404 
+              ? "Backend API endpoint not found (404). Please check the server configuration."
+              : `Auth validation failed: ${error?.message || "Unknown error"}`;
+            setAuthError(errorMessage);
             setInitialRouteName("LandingScreen");
           }
         }
@@ -129,6 +135,15 @@ export default function App() {
   useEffect(() => {
     setUnauthorizedHandler(navigateToLogin);
   }, []);
+
+  // Show error banner if auth validation failed
+  useEffect(() => {
+    if (authError && authResolved) {
+      Alert.alert("Auth Error", authError, [
+        { text: "Dismiss", onPress: () => setAuthError(null) }
+      ]);
+    }
+  }, [authError, authResolved]);
 
   if (!fontsLoaded) return null;
 

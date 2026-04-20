@@ -11,6 +11,7 @@ import WarningChip, { normalizeWarningStatus } from "../general/WarningChip";
 import LoadingScreen from "../general/loadingScreen";
 import SwitchProfile from "../profile/SwitchProfile";
 import { SortDropdown, type PastAnalysisSortOption } from "../actions/PastAnalysisDropdown";
+import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
 
 /**
  * AllEvaluations Component
@@ -165,6 +166,9 @@ export default function AllEvaluations({
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>("Newest First (DEFAULT)");
 
+  // Track scroll position to conditionally apply margin to SwitchProfile
+  const { hasScrolled, onScroll, scrollEventThrottle } = useScrollPastThreshold(5);
+
   // Update cached switcher items when new items arrive
   React.useEffect(() => {
     if (profileSwitcherItems && profileSwitcherItems.length > 0) {
@@ -217,21 +221,7 @@ export default function AllEvaluations({
 
   // Main content - wrapped in Box for consistent padding
   const content = (
-    <Box px="$0" pt="$3" style={{ paddingBottom: androidBottomInset }}>
-      {/* Profile Switcher - allows users to view evaluations from different profiles */}
-      {shouldShowSwitcher ? (
-        <Box mb="$5">
-          <SwitchProfile
-            profiles={effectiveSwitcherItems}
-            activeProfileId={activeProfileId}
-            onSelectProfile={onSelectProfile}
-            onAddProfile={onAddProfile}
-            onEditProfile={onEditProfile}
-            title="Switch Profile"
-          />
-        </Box>
-      ) : null}
-
+    <Box style={{ paddingBottom: androidBottomInset }}>
       {/* Header with title and sort button */}
       <HStack mb="$4" alignItems="center" justifyContent="space-between">
         <Text fontSize={22} fontFamily="RobotoMedium" color="#0F172A">
@@ -499,17 +489,47 @@ export default function AllEvaluations({
     </Box>
   );
 
-  // If using external scroll, return content directly (parent handles scrolling)
+  // If using external scroll, return content with switcher
   if (useExternalScroll) {
-    return content;
+    return (
+      <>
+        {shouldShowSwitcher ? (
+          <SwitchProfile
+            profiles={effectiveSwitcherItems}
+            activeProfileId={activeProfileId}
+            onSelectProfile={onSelectProfile}
+            onAddProfile={onAddProfile}
+            onEditProfile={onEditProfile}
+            title="Switch Profile"
+            hasScrolled={hasScrolled}
+            style={{ marginTop: -20 }}
+          />
+        ) : null}
+        {content}
+      </>
+    );
   }
 
-  // Otherwise, wrap content in ScrollView with sticky header support
+  // Otherwise, wrap content in ScrollView with switcher as direct child
   return (
     <ScrollView
       stickyHeaderIndices={shouldShowSwitcher ? [0] : []}
       showsVerticalScrollIndicator={false}
+      onScroll={onScroll}
+      scrollEventThrottle={scrollEventThrottle}
     >
+      {shouldShowSwitcher ? (
+        <SwitchProfile
+          profiles={effectiveSwitcherItems}
+          activeProfileId={activeProfileId}
+          onSelectProfile={onSelectProfile}
+          onAddProfile={onAddProfile}
+          onEditProfile={onEditProfile}
+          title="Switch Profile"
+          hasScrolled={hasScrolled}
+          style={{ marginTop: -20 }}
+        />
+      ) : null}
       {content}
     </ScrollView>
   );

@@ -22,6 +22,7 @@ import PreferencesOverview from "../../components/preferences/AllPreferences";
 import AllConditions from "../../components/conditions/AllConditions";
 import SingleCondition from "../../components/conditions/SingleCondition";
 import AllAllergens from "../../components/allergens/AllAllergens";
+import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
 import {
   weatherService,
   CurrentUvSnapshot,
@@ -88,6 +89,9 @@ export default function LandingScreen() {
     null,
   );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
+
+  // Track scroll position to conditionally apply margin to SwitchProfile
+  const { hasScrolled, onScroll, scrollEventThrottle } = useScrollPastThreshold(5);
 
   // Fetches all profiles for the current user from the API
   // Sets active profile to the main profile or first profile if main doesn't exist
@@ -415,22 +419,23 @@ export default function LandingScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
         stickyHeaderIndices={[1]} // Keep header fixed when scrolling
       >
         {/* Top navigation bar - sticky, stays fixed while scrolling */}
         <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
 
         {/* Profile switcher section */}
-        <Box mt="$3" pt="$8">
-          <SwitchProfile
-            profiles={profiles.map((profile) => ({
-              id: profile.id,
-              name: profile.name,
-              avatarSource: profile.avatarUri
-                ? { uri: profile.avatarUri }
-                : undefined,
-              isMain: profile.isMain,
-            }))}
+        <SwitchProfile
+          profiles={profiles.map((profile) => ({
+            id: profile.id,
+            name: profile.name,
+            avatarSource: profile.avatarUri
+              ? { uri: profile.avatarUri }
+              : undefined,
+            isMain: profile.isMain,
+          }))}
             activeProfileId={profileId ?? undefined}
             onSelectProfile={(selectedProfileId) => {
               setProfileId(selectedProfileId);
@@ -475,8 +480,9 @@ export default function LandingScreen() {
                 profileIsMain: targetProfileIsMain,
               });
             }}
+            hasScrolled={hasScrolled}
           />
-        </Box>
+
         <Box mx="$2">
           {/* Past evaluations - only render after profiles are loaded to prevent null profileId */}
           {!isProfilesLoading && (

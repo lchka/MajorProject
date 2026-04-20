@@ -314,7 +314,7 @@ api.interceptors.response.use(
           console.error('Forbidden - insufficient permissions');
           break;
         case 404:
-          console.error('Resource not found');
+          // Silently skip 404 errors to prevent LogBox issues
           break;
         case 500:
           console.error('Server error');

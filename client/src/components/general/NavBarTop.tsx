@@ -29,13 +29,11 @@ export default function NavBarTop({
   onPressAvatar,
 }: NavBarTopProps) {
   const shouldShowNotifications = showNotifications && !isFirstProfileSetup;
-  const topPadding = 22;
+  const topPadding = 10;
 
   return (
     <Box>
       <Box
-        pb="$2"
-        mb="$0"
         px="$0"
         style={{
           flexDirection: "row",
