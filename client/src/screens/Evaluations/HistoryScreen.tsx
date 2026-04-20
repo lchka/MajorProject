@@ -1,17 +1,21 @@
 import React from "react";
-import { NavigationProp, RouteProp, useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import { NavigationProp, RouteProp, StackActions, useNavigation, useRoute } from "@react-navigation/native";
 import { Box, ScrollView } from "@gluestack-ui/themed";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
   EvaluationHistoryCard,
 } from "../../components/evaluations/AllEvaluations";
-import { evaluationContextService, productService, profileService } from "../../services";
+import SwitchProfile from "../../components/profile/SwitchProfile";
+import { evaluationContextService, productService, profileService, getLocalEvaluations } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
 import type { EvaluationContext } from "../../services/evaluationContextService";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
+import type { LocalEvaluation } from "../../services";
 import { styles } from "../../style/LandingPageStyle";
+
+let cachedProfiles: Profile[] = [];
 
 export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -20,11 +24,51 @@ export default function HistoryScreen() {
 
   const [loading, setLoading] = React.useState(true);
   const [historyItems, setHistoryItems] = React.useState<EvaluationHistoryCard[]>([]);
-  const [profiles, setProfiles] = React.useState<Profile[]>([]);
+  const [profiles, setProfiles] = React.useState<Profile[]>(cachedProfiles);
 
   const loadHistory = React.useCallback(async () => {
-    setLoading(true);
+    // FAST PATH: Load from local storage first
+    let hasLocalData = false;
+    try {
+      const localEvaluations = await getLocalEvaluations();
+      const scopedLocal = routeProfileId
+        ? localEvaluations.filter((evaluation) => evaluation.profileId === routeProfileId)
+        : localEvaluations;
 
+      hasLocalData = scopedLocal.length > 0;
+
+      const sortedLocal = [...scopedLocal].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      const localItems = sortedLocal.map((evaluation: LocalEvaluation) => ({
+        evaluationContextId: evaluation.evaluationContextId,
+        productName: evaluation.productName || "Unknown product",
+        profileName: evaluation.profileName || "Unknown profile",
+        createdAt: evaluation.createdAt,
+        status:
+          typeof evaluation.resultJson?.status === "string"
+            ? evaluation.resultJson.status
+            : undefined,
+        summary:
+          typeof evaluation.resultJson?.summary === "string"
+            ? evaluation.resultJson.summary
+            : undefined,
+        imageUri: evaluation.imageUri ?? null,
+      } satisfies EvaluationHistoryCard));
+
+      setHistoryItems(localItems);
+      
+      // Only stop loading if we have local data
+      if (hasLocalData) {
+        setLoading(false);
+      }
+    } catch {
+      setHistoryItems([]);
+      // Continue loading from server if local storage fails
+    }
+
+    // Fetch fresh data from server (always do this if no local data, or in background if local data exists)
     try {
       const [contexts, myProfiles] = await Promise.all([
         evaluationContextService.getMyContexts(),
@@ -103,20 +147,32 @@ export default function HistoryScreen() {
       });
 
       setProfiles(Array.from(profileMap.values()));
-      setHistoryItems(items);
+      setHistoryItems(items); // Update with server data
+      
+      // Always set loading to false after server fetch completes
+      setLoading(false);
     } catch {
-      setProfiles([]);
-      setHistoryItems([]);
-    } finally {
+      // If server fetch fails, still stop loading and show what we have
       setLoading(false);
     }
   }, [routeProfileId]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      void loadHistory();
-    }, [loadHistory]),
-  );
+  React.useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
+  React.useEffect(() => {
+    // Load profiles once for the switcher and keep them cached
+    profileService
+      .getMyProfile()
+      .then((myProfiles) => {
+        cachedProfiles = myProfiles;
+        setProfiles(myProfiles);
+      })
+      .catch(() => {
+        setProfiles((current) => (current.length > 0 ? current : []));
+      });
+  }, []);
 
   const activeProfile = React.useMemo(
     () =>
@@ -161,33 +217,42 @@ export default function HistoryScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
       >
         <NavBarTop notificationCount={0} />
+
+        <Box px="$2" pt="$8" pb="$2" mb="$2">
+          <SwitchProfile
+            profiles={profileSwitcherItems}
+            activeProfileId={activeProfile?.id}
+            onSelectProfile={(profileId) => {
+              navigation.setParams({ profileId });
+            }}
+            onAddProfile={() => {
+              navigation.navigate("ProfileScreen");
+            }}
+            onEditProfile={(profileId) => {
+              const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
+
+              navigation.navigate("EditProfileScreen", {
+                profileId: profileToEdit?.id,
+                profileName: profileToEdit?.first_name || undefined,
+                profileImageUri: profileToEdit?.profile_image ?? undefined,
+                profilePreferenceNames:
+                  profileToEdit?.preferences?.map((item) => item.name) ?? [],
+                profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
+                profileIsMain: profileToEdit?.main_profile ?? false,
+              });
+            }}
+            title="Switch Profile"
+          />
+        </Box>
 
         <AllEvaluations
           items={historyItems}
           loading={loading}
-          profileSwitcherItems={profileSwitcherItems}
-          activeProfileId={activeProfile?.id}
-          onSelectProfile={(profileId) => {
-            navigation.navigate("HistoryScreen", { profileId });
-          }}
-          onAddProfile={() => {
-            navigation.navigate("ProfileScreen");
-          }}
-          onEditProfile={(profileId) => {
-            const profileToEdit = profiles.find((profile) => profile.id === profileId) ?? activeProfile;
-
-            navigation.navigate("EditProfileScreen", {
-              profileId: profileToEdit?.id,
-              profileName: profileToEdit?.first_name || undefined,
-              profileImageUri: profileToEdit?.profile_image ?? undefined,
-              profilePreferenceNames:
-                profileToEdit?.preferences?.map((item) => item.name) ?? [],
-              profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
-              profileIsMain: profileToEdit?.main_profile ?? false,
-            });
-          }}
+          useExternalScroll
+          showProfileSwitcher={false}
           onPressItem={(item) => {
             navigation.navigate("EvaluationResultScreen", {
               evaluationContextId: item.evaluationContextId,
@@ -204,6 +269,11 @@ export default function HistoryScreen() {
             : undefined
         }
         onPressHome={() => {
+          if (navigation.canGoBack()) {
+            navigation.dispatch(StackActions.popToTop());
+            return;
+          }
+
           navigation.navigate("LandingScreen");
         }}
         onPressProfile={() => {

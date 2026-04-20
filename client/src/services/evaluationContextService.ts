@@ -82,6 +82,10 @@ export const evaluationContextService = {
   deleteById: async (id: string): Promise<void> => {
     await api.delete(`/evaluation-contexts/${id}`);
   },
+  reevaluate: async (id: string): Promise<EvaluationContext> => {
+    const response = await api.post(`/evaluation-contexts/${id}/reevaluate`);
+    return response.data;
+  },
 };
 
 export default evaluationContextService;

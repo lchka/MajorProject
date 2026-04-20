@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Dimensions, Image } from "react-native";
 import LottieView from "lottie-react-native";
 import { MotiView } from "moti";
@@ -16,9 +15,7 @@ import {
 import AntDesign from "@expo/vector-icons/AntDesign";
 import CreateButton from "../../components/Buttons/CreateButton";
 import { AuthStackParamList } from "../../types/navigation";
-
-// AsyncStorage key used to detect an existing signed-in session.
-const AUTH_TOKEN_KEY = "authToken";
+import { getAuthToken } from "../../utils/authStorage";
 
 // Device height used for full-screen intro + welcome panel slide animation.
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -100,7 +97,7 @@ export default function WelcomeScreen() {
     // Checks storage once on mount and redirects if token exists.
     const redirectAuthorizedUsers = async () => {
       // Session token fetched from async storage.
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+      const token = await getAuthToken();
       if (token) {
         navigation.replace("LandingScreen");
       }

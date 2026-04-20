@@ -3,12 +3,13 @@ import type { ImageSourcePropType } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
-import { Box, Image, Pressable, Text, VStack, HStack } from "@gluestack-ui/themed";
+import { Box, Image, Pressable, ScrollView, Text, VStack, HStack } from "@gluestack-ui/themed";
 import { resolveMediaUrl } from "../../config/api";
 import SearchEvaluations from "../general/SearchEvaluations";
 import WarningChip, { normalizeWarningStatus } from "../general/WarningChip";
 import LoadingScreen from "../general/loadingScreen";
 import SwitchProfile from "../profile/SwitchProfile";
+import { SortDropdown, type PastAnalysisSortOption } from "../actions/PastAnalysisDropdown";
 
 export type EvaluationHistoryCard = {
   evaluationContextId: string;
@@ -36,6 +37,8 @@ type AllEvaluationsProps = {
   onSelectProfile?: (profileId: string) => void;
   onAddProfile?: () => void;
   onEditProfile?: (profileId?: string) => void;
+  useExternalScroll?: boolean;
+  showProfileSwitcher?: boolean;
 };
 
 const ITEMS_PER_PAGE = 7;
@@ -51,6 +54,47 @@ const formatDate = (value: string): string => {
   });
 };
 
+const sortEvaluations = (
+  evaluations: EvaluationHistoryCard[],
+  sortOption: PastAnalysisSortOption
+): EvaluationHistoryCard[] => {
+  const entries = [...evaluations];
+
+  if (sortOption === "Newest First (DEFAULT)") {
+    return entries.sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return bTime - aTime;
+    });
+  }
+
+  if (sortOption === "Oldest First") {
+    return entries.sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return aTime - bTime;
+    });
+  }
+
+  if (sortOption === "Brand A-Z") {
+    return entries.sort((a, b) => a.productName.localeCompare(b.productName));
+  }
+
+  if (sortOption === "Skin Concern") {
+    return entries.sort((a, b) => (a.summary || "").localeCompare(b.summary || ""));
+  }
+
+  if (sortOption === "Missing History?") {
+    return entries.sort((a, b) => {
+      const aMissing = !a.summary || a.summary.trim().length === 0 ? 0 : 1;
+      const bMissing = !b.summary || b.summary.trim().length === 0 ? 0 : 1;
+      return aMissing - bMissing;
+    });
+  }
+
+  return entries;
+};
+
 export default function AllEvaluations({
   items,
   loading = false,
@@ -60,32 +104,55 @@ export default function AllEvaluations({
   onSelectProfile,
   onAddProfile,
   onEditProfile,
+  useExternalScroll = false,
+  showProfileSwitcher = true,
 }: AllEvaluationsProps) {
-  const hasProfileSwitcher = Boolean(profileSwitcherItems && profileSwitcherItems.length > 0);
+  const [cachedSwitcherItems, setCachedSwitcherItems] = React.useState<ProfileSwitcherItem[]>(
+    profileSwitcherItems ?? [],
+  );
+  const hasProfileSwitcher = Boolean(
+    (profileSwitcherItems && profileSwitcherItems.length > 0) ||
+      cachedSwitcherItems.length > 0,
+  );
+  const shouldShowSwitcher = showProfileSwitcher && hasProfileSwitcher;
+  const effectiveSwitcherItems =
+    profileSwitcherItems && profileSwitcherItems.length > 0
+      ? profileSwitcherItems
+      : cachedSwitcherItems;
   const [currentPage, setCurrentPage] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [isSortOpen, setIsSortOpen] = React.useState(false);
+  const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>("Newest First (DEFAULT)");
+
+  React.useEffect(() => {
+    if (profileSwitcherItems && profileSwitcherItems.length > 0) {
+      setCachedSwitcherItems(profileSwitcherItems);
+    }
+  }, [profileSwitcherItems]);
 
   const filteredItems = React.useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    if (!normalizedQuery) {
-      return items;
+    let results = items;
+    
+    if (normalizedQuery) {
+      results = results.filter((item) => {
+        const haystack = [
+          item.productName,
+          item.profileName,
+          item.summary,
+          item.status,
+          formatDate(item.createdAt),
+        ]
+          .filter((value): value is string => Boolean(value))
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(normalizedQuery);
+      });
     }
 
-    return items.filter((item) => {
-      const haystack = [
-        item.productName,
-        item.profileName,
-        item.summary,
-        item.status,
-        formatDate(item.createdAt),
-      ]
-        .filter((value): value is string => Boolean(value))
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(normalizedQuery);
-    });
-  }, [items, searchQuery]);
+    return sortEvaluations(results, sortOption);
+  }, [items, searchQuery, sortOption]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
 
@@ -101,28 +168,61 @@ export default function AllEvaluations({
     return filteredItems.slice(start, start + ITEMS_PER_PAGE);
   }, [currentPage, filteredItems]);
 
-  return (
-    <Box px="$2" >
-      {hasProfileSwitcher ? (
-        <Box mb="$2">
+  const content = (
+    <>
+      <Box px="$2" mb="$2">
+        {shouldShowSwitcher ? (
           <SwitchProfile
-            profiles={profileSwitcherItems ?? []}
+            profiles={effectiveSwitcherItems}
             activeProfileId={activeProfileId}
             onSelectProfile={onSelectProfile}
             onAddProfile={onAddProfile}
             onEditProfile={onEditProfile}
             title="Switch Profile"
           />
-        </Box>
-      ) : null}
+        ) : null}
+      </Box>
 
-      {/* Header */}
-      <HStack mt="$1" mb="$4" alignItems="center" justifyContent="space-between">
+      <Box px="$2">
+        {/* Header */}
+        <HStack mt="$1" mb="$4" alignItems="center" justifyContent="space-between">
         <Text fontSize={22} fontFamily="RobotoMedium" color="#0F172A">
-          All Evaluations
+          All Past Analysis
         </Text>
-        <Ionicons name="time-outline" size={22} color="#64748B" />
+        <Pressable
+          onPress={() => setIsSortOpen(!isSortOpen)}
+          flexDirection="row"
+          alignItems="center"
+        >
+          <Ionicons name="ellipsis-horizontal" size={22} color="#64748B" />
+        </Pressable>
       </HStack>
+
+      {/* Click-outside backdrop */}
+      {isSortOpen && (
+        <Pressable
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          onPress={() => setIsSortOpen(false)}
+          zIndex={1}
+        />
+      )}
+
+      {/* Sort Dropdown */}
+      {isSortOpen && (
+        <Box mb="$4" zIndex={2}>
+          <SortDropdown
+            selectedValue={sortOption}
+            onSelect={(value) => {
+              setSortOption(value);
+              setIsSortOpen(false);
+            }}
+          />
+        </Box>
+      )}
 
       <Box mb="$4">
         <SearchEvaluations
@@ -276,50 +376,102 @@ export default function AllEvaluations({
           })}
 
           {totalPages > 1 ? (
-            <HStack mt="$2" alignItems="center" justifyContent="space-between">
-              <Pressable
-                onPress={() => {
-                  setCurrentPage((previous) => Math.max(0, previous - 1));
-                }}
-                disabled={currentPage === 0}
-                px="$3"
-                py="$1.5"
-                borderRadius="$full"
-                borderWidth={1}
-                borderColor={currentPage === 0 ? "#DCE3EC" : "#BFD0E3"}
-                bg={currentPage === 0 ? "#F3F6FA" : "#EAF2FB"}
-                opacity={currentPage === 0 ? 0.65 : 1}
-              >
-                <Text fontSize={12} color="#475569" fontFamily="RobotoMedium">
-                  Previous
-                </Text>
-              </Pressable>
+            <VStack my="$4" pb="$5" alignItems="center" space="md">
+              <HStack alignItems="center" space="md">
+                <Pressable
+                  onPress={() => {
+                    setCurrentPage((previous) => Math.max(0, previous - 1));
+                  }}
+                  disabled={currentPage === 0}
+                  px="$4"
+                  py="$2.5"
+                  borderRadius={20}
+                  borderWidth={1}
+                  borderColor={currentPage === 0 ? "#E2E8F0" : "#BFD0E3"}
+                  bg={currentPage === 0 ? "#F8FAFC" : "#EBF2FB"}
+                  opacity={currentPage === 0 ? 0.5 : 1}
+                >
+                  <HStack alignItems="center" space="sm">
+                    <Feather
+                      name="chevron-left"
+                      size={16}
+                      color={currentPage === 0 ? "#94A3B8" : "#475569"}
+                    />
+                    <Text
+                      fontSize={13}
+                      color={currentPage === 0 ? "#94A3B8" : "#475569"}
+                      fontFamily="RobotoMedium"
+                    >
+                      Previous
+                    </Text>
+                  </HStack>
+                </Pressable>
 
-              <Text fontSize={12} color="#64748B" fontFamily="RobotoMedium">
-                {`Page ${currentPage + 1} of ${totalPages}`}
-              </Text>
+                <HStack
+                  px="$4"
+                  py="$2"
+                  borderRadius={20}
+                  bg="#F1F5F9"
+                  alignItems="center"
+                >
+                  <Text fontSize={12} color="#475569" fontFamily="RobotoMedium">
+                    Page{" "}
+                  </Text>
+                  <Text fontSize={13} color="#0F172A" fontFamily="RobotoMedium">
+                    {currentPage + 1}
+                  </Text>
+                  <Text fontSize={12} color="#475569" fontFamily="RobotoMedium">
+                    {" "}of {totalPages}
+                  </Text>
+                </HStack>
 
-              <Pressable
-                onPress={() => {
-                  setCurrentPage((previous) => Math.min(totalPages - 1, previous + 1));
-                }}
-                disabled={currentPage === totalPages - 1}
-                px="$3"
-                py="$1.5"
-                borderRadius="$full"
-                borderWidth={1}
-                borderColor={currentPage === totalPages - 1 ? "#DCE3EC" : "#BFD0E3"}
-                bg={currentPage === totalPages - 1 ? "#F3F6FA" : "#EAF2FB"}
-                opacity={currentPage === totalPages - 1 ? 0.65 : 1}
-              >
-                <Text fontSize={12} color="#475569" fontFamily="RobotoMedium">
-                  Next
-                </Text>
-              </Pressable>
-            </HStack>
+                <Pressable
+                  onPress={() => {
+                    setCurrentPage((previous) => Math.min(totalPages - 1, previous + 1));
+                  }}
+                  disabled={currentPage === totalPages - 1}
+                  px="$4"
+                  py="$2.5"
+                  borderRadius={20}
+                  borderWidth={1}
+                  borderColor={currentPage === totalPages - 1 ? "#E2E8F0" : "#BFD0E3"}
+                  bg={currentPage === totalPages - 1 ? "#F8FAFC" : "#EBF2FB"}
+                  opacity={currentPage === totalPages - 1 ? 0.5 : 1}
+                >
+                  <HStack alignItems="center" space="sm">
+                    <Text
+                      fontSize={13}
+                      color={currentPage === totalPages - 1 ? "#94A3B8" : "#475569"}
+                      fontFamily="RobotoMedium"
+                    >
+                      Next
+                    </Text>
+                    <Feather
+                      name="chevron-right"
+                      size={16}
+                      color={currentPage === totalPages - 1 ? "#94A3B8" : "#475569"}
+                    />
+                  </HStack>
+                </Pressable>
+              </HStack>
+            </VStack>
           ) : null}
         </VStack>
       )}
-    </Box>
+      </Box>
+    </>
+  );
+
+  if (useExternalScroll) {
+    return <Box>{content}</Box>;
+  }
+
+  return (
+    <ScrollView
+      stickyHeaderIndices={shouldShowSwitcher ? [0] : []}
+      showsVerticalScrollIndicator={false}
+    >
+      {content}
+    </ScrollView>
   );
 }

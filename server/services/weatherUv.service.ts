@@ -1,4 +1,9 @@
-import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../utils/HttpError.js";
+import {
+  BAD_REQUEST,
+  HttpError,
+  INTERNAL_SERVER_ERROR,
+  SERVICE_UNAVAILABLE,
+} from "../utils/HttpError.js";
 
 export type CurrentUvSnapshot = {
   lat: number;
@@ -28,9 +33,45 @@ type OpenMeteoCurrentResponse = {
   };
 };
 
+type CachedUvSnapshot = {
+  snapshot: CurrentUvSnapshot;
+  cachedAtUnix: number;
+};
+
 export class WeatherUvService {
   private readonly currentWeatherUrl = "https://api.openweathermap.org/data/2.5/weather";
   private readonly openMeteoUrl = "https://api.open-meteo.com/v1/forecast";
+  private readonly cacheTtlSeconds = 30 * 60;
+  private readonly uvSnapshotCache = new Map<string, CachedUvSnapshot>();
+
+  private getCacheKey(lat: number, lon: number): string {
+    // Round to reduce duplicate keys for near-identical coordinates.
+    return `${lat.toFixed(3)}:${lon.toFixed(3)}`;
+  }
+
+  private getCachedSnapshot(lat: number, lon: number): CurrentUvSnapshot | null {
+    const cacheKey = this.getCacheKey(lat, lon);
+    const cached = this.uvSnapshotCache.get(cacheKey);
+    if (!cached) {
+      return null;
+    }
+
+    const ageSeconds = Math.floor(Date.now() / 1000) - cached.cachedAtUnix;
+    if (ageSeconds > this.cacheTtlSeconds) {
+      this.uvSnapshotCache.delete(cacheKey);
+      return null;
+    }
+
+    return cached.snapshot;
+  }
+
+  private setCachedSnapshot(lat: number, lon: number, snapshot: CurrentUvSnapshot): void {
+    const cacheKey = this.getCacheKey(lat, lon);
+    this.uvSnapshotCache.set(cacheKey, {
+      snapshot,
+      cachedAtUnix: Math.floor(Date.now() / 1000),
+    });
+  }
 
   private getOptionalOpenWeatherKey(): string | null {
     const apiKey = process.env.OPENWEATHERMAP_API_KEY?.trim();
@@ -152,7 +193,23 @@ export class WeatherUvService {
 
   async getCurrentUvByCoordinates(lat: number, lon: number): Promise<CurrentUvSnapshot> {
     this.validateCoordinateRange(lat, lon);
-    const snapshot = await this.fetchOpenMeteoUv(lat, lon);
+    let snapshot: CurrentUvSnapshot;
+
+    try {
+      snapshot = await this.fetchOpenMeteoUv(lat, lon);
+      this.setCachedSnapshot(lat, lon, snapshot);
+    } catch {
+      const cachedSnapshot = this.getCachedSnapshot(lat, lon);
+      if (!cachedSnapshot) {
+        throw new HttpError(
+          SERVICE_UNAVAILABLE,
+          "UV data provider is temporarily unavailable. Please try again shortly.",
+        );
+      }
+
+      snapshot = cachedSnapshot;
+    }
+
     const apiKey = this.getOptionalOpenWeatherKey();
 
     if (!apiKey) {

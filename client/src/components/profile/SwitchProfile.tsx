@@ -1,7 +1,6 @@
 import React from "react";
 import type { ImageSourcePropType } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { MotiView } from "moti";
 import {
 	Box,
 	Image,
@@ -127,17 +126,7 @@ export default function SwitchProfile({
 	return (
 		<>
 			{/* This is the main switch profile card on landing */}
-			<MotiView
-				animateInitialState={false}
-				animate={{ marginTop: isSticky ? 16 : 8 }}
-				transition={{
-					type: "spring",
-					delay: 0,
-					damping: 22,
-					stiffness: 260,
-					mass: 0.35,
-				}}
-			>
+			<Box>
 				<Pressable
 					mx="$2"
 					style={[
@@ -195,7 +184,7 @@ export default function SwitchProfile({
 					<Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
 				</Box>
 				</Pressable>
-			</MotiView>
+			</Box>
 
 			{/* This is the profile choice overlay modal */}
 			<ProfileChoice

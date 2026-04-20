@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { authService } from "../services";
+import { saveAuthToken } from "../utils/authStorage";
 import type { AuthResponse } from "../services";
 
 WebBrowser.maybeCompleteAuthSession();
-
-const AUTH_TOKEN_KEY = "authToken";
 const GOOGLE_AUTH_DEBUG_PREFIX = "[GoogleAuthDebug]";
 
 type UseGoogleAuthOptions = {
@@ -86,7 +84,7 @@ export const useGoogleAuth = (
 
       try {
         const authResponse = await authService.googleLogin({ token });
-        await AsyncStorage.setItem(AUTH_TOKEN_KEY, authResponse.token);
+        await saveAuthToken(authResponse.token);
 
         if (options?.onLoginSuccess) {
           await options.onLoginSuccess(authResponse);

@@ -4,16 +4,19 @@ import { Box, Image, Pressable, ScrollView, Text } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
-import { NavigationProp, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import {
   SortDropdown,
   type PastAnalysisSortOption,
 } from "../actions/PastAnalysisDropdown";
 import WarningChip from "../general/WarningChip";
-import { getLocalEvaluations, type LocalEvaluation } from "../../services";
+import { getLocalEvaluations, type LocalEvaluation, evaluationContextService, productService, profileService } from "../../services";
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
 import type { AuthStackParamList } from "../../types/navigation";
+import type { EvaluationContext } from "../../services/evaluationContextService";
+import type { Product } from "../../services/productService";
+import type { Profile } from "../../services/profileService";
 
 const DEFAULT_SORT_OPTION: PastAnalysisSortOption = "Newest First (DEFAULT)";
 
@@ -136,6 +139,9 @@ type PastAnalysisProps = {
   refreshIntervalMs?: number;
 };
 
+const analysisCache = new Map<string, AnalysisCard[]>();
+const analysisSignatureCache = new Map<string, string>();
+
 export default function PastAnalysis({
   profileId,
   profileName,
@@ -147,10 +153,21 @@ export default function PastAnalysis({
   const [analysisPage, setAnalysisPage] = React.useState(0);
   const [analysisViewportWidth, setAnalysisViewportWidth] = React.useState(0);
   const [analysisCards, setAnalysisCards] = React.useState<AnalysisCard[]>([]);
-  const [analysisLoading, setAnalysisLoading] = React.useState(true);
+  const [analysisLoading, setAnalysisLoading] = React.useState(false);
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>(DEFAULT_SORT_OPTION);
   const cardsSignatureRef = React.useRef<string>("");
+  const cacheKey = profileId ?? "all";
+
+  React.useEffect(() => {
+    const cachedCards = analysisCache.get(cacheKey);
+    const cachedSignature = analysisSignatureCache.get(cacheKey);
+
+    if (cachedCards && cachedCards.length > 0) {
+      setAnalysisCards(cachedCards);
+      cardsSignatureRef.current = cachedSignature ?? "";
+    }
+  }, [cacheKey]);
 
   React.useEffect(() => {
     setAnalysisPage(0);
@@ -165,11 +182,75 @@ export default function PastAnalysis({
 
   const loadPastAnalysis = React.useCallback(async () => {
     try {
+      let evaluations: LocalEvaluation[] = [];
+      
+      // First, try loading from local storage
       const localEvaluations = await getLocalEvaluations();
-      const scopedEvaluations = profileId
+      const scopedLocal = profileId
         ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
         : localEvaluations;
-      const sortedEvaluations = sortEvaluations(scopedEvaluations, sortOption);
+
+      evaluations = scopedLocal;
+
+      // If no local evaluations, fetch from server
+      if (evaluations.length === 0) {
+        try {
+          const [contexts, myProfiles] = await Promise.all([
+            evaluationContextService.getMyContexts(),
+            profileService.getMyProfile(),
+          ]);
+
+          const scopedContexts = profileId
+            ? contexts.filter((context) => context.profileId === profileId)
+            : contexts;
+
+          if (scopedContexts.length > 0) {
+            const uniqueProductIds = Array.from(new Set(scopedContexts.map((context) => context.productId)));
+            const profileMap = new Map<string, Profile>(
+              myProfiles.map((profile) => [profile.id, profile]),
+            );
+
+            const products = await Promise.all(
+              uniqueProductIds.map(async (productId) => {
+                try {
+                  return await productService.getProductById(productId);
+                } catch {
+                  return null;
+                }
+              }),
+            );
+
+            const productMap = new Map<string, Product>(
+              products
+                .filter((item): item is Product => Boolean(item))
+                .map((product) => [product.id, product]),
+            );
+
+            // Convert EvaluationContext to LocalEvaluation format
+            evaluations = scopedContexts.map((context: EvaluationContext) => {
+              const product = productMap.get(context.productId);
+              const profile = profileMap.get(context.profileId);
+
+              return {
+                evaluationContextId: context.id,
+                profileId: context.profileId,
+                productId: context.productId,
+                promptId: context.promptId,
+                resultJson: context.resultJson,
+                productName: product?.name ?? "Unknown product",
+                profileName: profile?.first_name?.trim() || "Unknown profile",
+                imageUri: product?.product_image ?? null,
+                createdAt: context.createdAt,
+              } satisfies LocalEvaluation;
+            });
+          }
+        } catch (serverError) {
+          console.warn("[PastAnalysis] Failed to fetch from server:", serverError);
+          // Continue with empty evaluations
+        }
+      }
+
+      const sortedEvaluations = sortEvaluations(evaluations, sortOption);
 
       const cards = sortedEvaluations.map((evaluation) => {
         return {
@@ -187,32 +268,38 @@ export default function PastAnalysis({
       if (nextSignature !== cardsSignatureRef.current) {
         cardsSignatureRef.current = nextSignature;
         setAnalysisCards(cards);
+        analysisCache.set(cacheKey, cards);
+        analysisSignatureCache.set(cacheKey, nextSignature);
       }
     } catch {
       if (cardsSignatureRef.current !== "[]") {
         cardsSignatureRef.current = "[]";
         setAnalysisCards([]);
+        analysisCache.set(cacheKey, []);
+        analysisSignatureCache.set(cacheKey, "[]");
       }
     }
-  }, [profileId, sortOption]);
+  }, [cacheKey, profileId, sortOption]);
 
-  useFocusEffect(
-    React.useCallback(() => {
+  React.useEffect(() => {
+    if (analysisCards.length === 0) {
       setAnalysisLoading(true);
+    }
 
-      void loadPastAnalysis().finally(() => {
-        setAnalysisLoading(false);
-      });
+    void loadPastAnalysis().finally(() => {
+      setAnalysisLoading(false);
+    });
+  }, [analysisCards.length, loadPastAnalysis]);
 
-      const intervalId = setInterval(() => {
-        void loadPastAnalysis();
-      }, refreshIntervalMs);
+  React.useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadPastAnalysis();
+    }, refreshIntervalMs);
 
-      return () => {
-        clearInterval(intervalId);
-      };
-    }, [loadPastAnalysis, refreshIntervalMs]),
-  );
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [loadPastAnalysis, refreshIntervalMs]);
 
   const analysisPages = React.useMemo(() => {
     const pageSize = 9;

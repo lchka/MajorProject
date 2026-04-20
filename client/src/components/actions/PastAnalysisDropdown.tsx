@@ -89,7 +89,7 @@ export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
           mb="$3"
           fontFamily="RobotoMedium"
         >
-          Organize your past analysis
+          Organise your past analysis
         </Text>
 
         <VStack space="xs">

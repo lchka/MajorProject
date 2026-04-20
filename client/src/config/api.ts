@@ -1,9 +1,15 @@
 import axios from 'axios';
 import { NativeModules, Platform } from 'react-native';
 import Constants from 'expo-constants';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuthToken } from '../utils/authStorage';
 
-const AUTH_TOKEN_KEY = 'authToken';
+// FIX: Global handler for 401 responses - will be set by App.tsx
+let handleUnauthorized: (() => Promise<void>) | null = null;
+
+export const setUnauthorizedHandler = (handler: () => Promise<void>) => {
+  handleUnauthorized = handler;
+};
+
 // Prevent rapid duplicate overlays when multiple requests fail at once.
 const SYSTEM_ERROR_EVENT_COOLDOWN_MS = 8000;
 
@@ -257,7 +263,7 @@ const api = axios.create({
 // Request interceptor - Add auth token to requests
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
+    const token = await getAuthToken();
     if (token) {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
@@ -274,7 +280,7 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
     if (isGeminiSystemFailure(error)) {
       emitSystemError({
         title: 'System Error',
@@ -294,8 +300,15 @@ api.interceptors.response.use(
       // Server responded with error status
       switch (error.response.status) {
         case 401:
-          // Handle unauthorized (e.g., redirect to login)
+          // FIX: Handle unauthorized (401) by calling the registered handler
           console.error('Unauthorized - please login');
+          if (handleUnauthorized) {
+            try {
+              await handleUnauthorized();
+            } catch (err) {
+              console.error('[API] Failed to handle unauthorized:', err);
+            }
+          }
           break;
         case 403:
           console.error('Forbidden - insufficient permissions');

@@ -12,7 +12,7 @@ import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { saveAuthToken } from "../../utils/authStorage";
 import {
   Box,
   HStack,
@@ -37,7 +37,6 @@ import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
 import { MotiView } from "moti";
 
-const AUTH_TOKEN_KEY = "authToken";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
 
 WebBrowser.maybeCompleteAuthSession();
@@ -363,7 +362,7 @@ export default function RegisterScreen() {
         c_password: confirmPassword,
       });
 
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
+      await saveAuthToken(response.token);
 
       console.log("Registration successful:", response);
 

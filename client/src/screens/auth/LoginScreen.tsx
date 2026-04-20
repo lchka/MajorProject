@@ -1,16 +1,11 @@
 // React & Gluestack imports
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { saveAuthToken } from "../../utils/authStorage";
 import {
   Box,
   HStack,
@@ -18,22 +13,23 @@ import {
   InputField,
   Pressable,
   ScrollView,
-  Spinner,
   Text,
   VStack,
 } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
-import { authService } from "../../services";
-import profileService from "../../services/profileService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  authService,
+  profileService,
+  type AuthResponse,
+} from "../../services";
 import { loginSchema } from "../../models/auth.schema";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
-import useGoogleAuth from "../../hooks/googleAuth.hook";
-import { AuthResponse } from "../../services";
+import { useGoogleAuth } from "../../hooks/googleAuth.hook";
 import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 
-const AUTH_TOKEN_KEY = "authToken";
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
@@ -79,8 +75,8 @@ export default function LoginScreen() {
 
   const { promptGoogleAuth, loading: googleLoading } = useGoogleAuth({
     onLoginSuccess: async (response) => {
+      // FIX: Removed success alert, navigate directly to landing/profile page
       await completeLoginFlow(response);
-      Alert.alert("Success!", "Google sign-in successful.");
     },
     onLoginError: (message) => {
       Alert.alert("Google Login Failed", message);
@@ -167,7 +163,7 @@ export default function LoginScreen() {
         password,
       });
 
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
+      await saveAuthToken(response.token);
 
       if (rememberMe) {
         await AsyncStorage.multiSet([
@@ -180,16 +176,10 @@ export default function LoginScreen() {
 
       console.log("Login successful:", response);
 
-      Alert.alert("Success!", "You have been signed in successfully.", [
-        {
-          text: "OK",
-          onPress: async () => {
-            await completeLoginFlow(response);
-            setEmail("");
-            setPassword("");
-          },
-        },
-      ]);
+      // FIX: Removed success alert, navigate directly to landing/profile page
+      await completeLoginFlow(response);
+      setEmail("");
+      setPassword("");
     } catch (error: any) {
       console.error("Login failed:", error);
 
@@ -387,10 +377,3 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F8FF",
-  },
-});
