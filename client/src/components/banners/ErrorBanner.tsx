@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { MotiView, AnimatePresence } from "moti";
 import { Box, Text, Pressable, HStack } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
@@ -28,7 +28,7 @@ export default function ErrorBanner({ error, onDismiss }: Props) {
           transition={{ type: "timing", duration: 250 }}
           style={{
             position: "absolute",
-            top: 60,
+            top: 16,
             left: 16,
             right: 16,
             zIndex: 999,

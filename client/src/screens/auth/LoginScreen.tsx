@@ -27,6 +27,7 @@ import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
 import ErrorBanner from "../../components/banners/ErrorBanner";
+
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
@@ -134,7 +135,7 @@ export default function LoginScreen() {
         preferLocalhost: isWeb,
         scheme: "client",
       });
-  console.log("REDIRECT URI:", githubRedirectUri);
+
   const [githubRequest, githubResponse, promptGithubAuth] =
     AuthSession.useAuthRequest(
       {
@@ -158,7 +159,6 @@ export default function LoginScreen() {
   useEffect(() => {
     if (githubResponse?.type !== "success") return;
     const code = githubResponse.params?.code;
-
     if (typeof code === "string") {
       console.log("[GitHubAuth] code", code);
     }
@@ -169,20 +169,15 @@ export default function LoginScreen() {
       try {
         const rememberValue = await AsyncStorage.getItem(REMEMBER_ME_KEY);
         const isRememberEnabled = rememberValue === "true";
-
         setRememberMe(isRememberEnabled);
-
         if (isRememberEnabled) {
           const savedEmail = await AsyncStorage.getItem(REMEMBERED_EMAIL_KEY);
-          if (savedEmail) {
-            setEmail(savedEmail);
-          }
+          if (savedEmail) setEmail(savedEmail);
         }
       } catch (storageError) {
         console.warn("Could not load remembered login", storageError);
       }
     };
-
     loadRememberedLogin();
   }, []);
 
@@ -223,8 +218,6 @@ export default function LoginScreen() {
         await AsyncStorage.multiRemove([REMEMBER_ME_KEY, REMEMBERED_EMAIL_KEY]);
       }
 
-      console.log("Login successful:", response);
-
       await completeLoginFlow(response);
       setEmail("");
       setPassword("");
@@ -232,7 +225,6 @@ export default function LoginScreen() {
       console.error("Login failed:", error);
 
       let errorMessage = "Login failed. Please try again.";
-
       const backendMessage = error.response?.data?.message?.toLowerCase() || "";
 
       if (
@@ -248,8 +240,7 @@ export default function LoginScreen() {
         typeof error.message === "string" &&
         error.message.includes("Network Error")
       ) {
-        errorMessage =
-          "Cannot connect to server. Please check your connection.";
+        errorMessage = "Cannot connect to server. Please check your connection.";
       }
 
       showError(errorMessage);
@@ -259,202 +250,204 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#F2F8FF" }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      {/* ErrorBanner rendered outside ScrollView so it floats over content */}
+    <Box flex={1} style={{ backgroundColor: "#F2F8FF" }}>
+      {/* ErrorBanner lives at root level — above KeyboardAvoidingView and ScrollView */}
       <ErrorBanner
         error={bannerError ? { message: bannerError } : null}
         onDismiss={() => setBannerError(null)}
       />
 
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: "flex-start",
-          paddingHorizontal: 20,
-          paddingVertical: 30,
-        }}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* Background circles */}
-        <Box
-          position="absolute"
-          top={-60}
-          right={-30}
-          w={180}
-          h={180}
-          borderRadius={999}
-          bg="#D8ECFF"
-          opacity={0.5}
-        />
-        <Box
-          position="absolute"
-          bottom={-40}
-          left={-20}
-          w={140}
-          h={140}
-          borderRadius={999}
-          bg="#BFDFFF"
-          opacity={0.25}
-        />
-
-        <NavBarTop isFirstProfileSetup showAvatar={false} showDivider />
-
-        <HStack
-          pt="$8"
-          alignItems="center"
-          justifyContent="space-between"
-          mb="$1.5"
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "flex-start",
+            paddingHorizontal: 20,
+            paddingVertical: 30,
+          }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text
-            size="3xl"
-            style={{
-              fontFamily: "Roboto",
-              color: "#1E293B",
-              flex: 1,
-            }}
+          {/* Background circles */}
+          <Box
+            position="absolute"
+            top={-60}
+            right={-30}
+            w={180}
+            h={180}
+            borderRadius={999}
+            bg="#D8ECFF"
+            opacity={0.5}
+          />
+          <Box
+            position="absolute"
+            bottom={-40}
+            left={-20}
+            w={140}
+            h={140}
+            borderRadius={999}
+            bg="#BFDFFF"
+            opacity={0.25}
+          />
+
+          <NavBarTop isFirstProfileSetup showAvatar={false} showDivider />
+
+          <HStack
+            pt="$8"
+            alignItems="center"
+            justifyContent="space-between"
+            mb="$1.5"
           >
-            Sign in to your account
-          </Text>
-          <Feather name="log-in" size={22} color="#5E7FA3" />
-        </HStack>
-
-        <HStack mb="$4">
-          <Text color="#64748B">Don&apos;t have an account? </Text>
-          <Pressable onPress={() => navigation.navigate("RegisterScreen")}>
-            <Text color="#2E5F8A" style={{ fontFamily: "RobotoMedium" }}>
-              Sign up
-            </Text>
-          </Pressable>
-        </HStack>
-
-        <VStack pt="$2" space="lg">
-          {/* Email */}
-          <VStack space="xs">
-            <Input size="lg" borderRadius="$full">
-              <InputField
-                placeholder="Email address"
-                value={email}
-                onChangeText={(value) => {
-                  setEmail(value);
-                  setTouched((prev) => ({ ...prev, email: true }));
-                }}
-                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                autoComplete="email"
-                editable={!loading}
-              />
-            </Input>
-            {touched.email && (
-              <ValidationAnimation value={email} rules={emailRules} />
-            )}
-          </VStack>
-
-          {/* Password */}
-          <VStack space="xs">
-            <Box position="relative">
-              <Input size="lg" borderRadius="$full">
-                <InputField
-                  placeholder="Password"
-                  value={password}
-                  onChangeText={(value) => {
-                    setPassword(value);
-                    setTouched((prev) => ({ ...prev, password: true }));
-                  }}
-                  onBlur={() =>
-                    setTouched((prev) => ({ ...prev, password: true }))
-                  }
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  autoComplete="password"
-                  editable={!loading}
-                  style={{ paddingRight: 44 }}
-                />
-              </Input>
-
-              <Pressable
-                position="absolute"
-                right="$5"
-                top={0}
-                bottom={0}
-                w="$10"
-                alignItems="center"
-                justifyContent="center"
-                hitSlop={10}
-                onPress={() => setShowPassword((prev) => !prev)}
-                disabled={loading}
-              >
-                <Feather
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={18}
-                  color="#6B7280"
-                />
-              </Pressable>
-            </Box>
-            {touched.password && (
-              <ValidationAnimation value={password} rules={passwordRules} />
-            )}
-          </VStack>
-
-          {/* Remember me / Forgot password */}
-          <HStack justifyContent="space-between" alignItems="center">
-            <Pressable
-              onPress={() => setRememberMe((prev) => !prev)}
-              disabled={loading}
+            <Text
+              size="3xl"
+              style={{
+                fontFamily: "Roboto",
+                color: "#1E293B",
+                flex: 1,
+              }}
             >
-              <HStack space="sm" alignItems="center">
-                <Box
-                  w="$5"
-                  h="$5"
-                  borderWidth={1}
-                  borderColor="#9BB9D8"
-                  borderRadius="$md"
-                  alignItems="center"
-                  justifyContent="center"
-                  bg={rememberMe ? "#4A90D9" : "transparent"}
-                >
-                  {rememberMe ? (
-                    <Feather name="check" size={12} color="white" />
-                  ) : null}
-                </Box>
-                <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>
-                  Remember me
-                </Text>
-              </HStack>
-            </Pressable>
+              Sign in to your account
+            </Text>
+            <Feather name="log-in" size={22} color="#5E7FA3" />
+          </HStack>
 
-            <Pressable disabled={loading}>
-              <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
-                Forgot Password?
+          <HStack mb="$4">
+            <Text color="#64748B">Don&apos;t have an account? </Text>
+            <Pressable onPress={() => navigation.navigate("RegisterScreen")}>
+              <Text color="#2E5F8A" style={{ fontFamily: "RobotoMedium" }}>
+                Sign up
               </Text>
             </Pressable>
           </HStack>
 
-          <CreateButton
-            label={loading || googleLoading ? "Signing in..." : "Login"}
-            onPress={handleLogin}
-            disabled={loading || googleLoading}
-          />
+          <VStack pt="$2" space="lg">
+            {/* Email */}
+            <VStack space="xs">
+              <Input size="lg" borderRadius="$full">
+                <InputField
+                  placeholder="Email address"
+                  value={email}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    setTouched((prev) => ({ ...prev, email: true }));
+                  }}
+                  onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoComplete="email"
+                  editable={!loading}
+                />
+              </Input>
+              {touched.email && (
+                <ValidationAnimation value={email} rules={emailRules} />
+              )}
+            </VStack>
 
-          <SocialAuth
-            onGooglePress={() => void promptGoogleAuth()}
-            onGithubPress={async () => {
-              if (!GITHUB_CLIENT_ID) {
-                showError("Missing GitHub client ID.");
-                return;
-              }
-              if (!githubRequest) {
-                showError("GitHub auth not ready.");
-                return;
-              }
-              await promptGithubAuth();
-            }}
-          />
-        </VStack>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            {/* Password */}
+            <VStack space="xs">
+              <Box position="relative">
+                <Input size="lg" borderRadius="$full">
+                  <InputField
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      setTouched((prev) => ({ ...prev, password: true }));
+                    }}
+                    onBlur={() =>
+                      setTouched((prev) => ({ ...prev, password: true }))
+                    }
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoComplete="password"
+                    editable={!loading}
+                    style={{ paddingRight: 44 }}
+                  />
+                </Input>
+
+                <Pressable
+                  position="absolute"
+                  right="$5"
+                  top={0}
+                  bottom={0}
+                  w="$10"
+                  alignItems="center"
+                  justifyContent="center"
+                  hitSlop={10}
+                  onPress={() => setShowPassword((prev) => !prev)}
+                  disabled={loading}
+                >
+                  <Feather
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color="#6B7280"
+                  />
+                </Pressable>
+              </Box>
+              {touched.password && (
+                <ValidationAnimation value={password} rules={passwordRules} />
+              )}
+            </VStack>
+
+            {/* Remember me / Forgot password */}
+            <HStack justifyContent="space-between" alignItems="center">
+              <Pressable
+                onPress={() => setRememberMe((prev) => !prev)}
+                disabled={loading}
+              >
+                <HStack space="sm" alignItems="center">
+                  <Box
+                    w="$5"
+                    h="$5"
+                    borderWidth={1}
+                    borderColor="#9BB9D8"
+                    borderRadius="$md"
+                    alignItems="center"
+                    justifyContent="center"
+                    bg={rememberMe ? "#4A90D9" : "transparent"}
+                  >
+                    {rememberMe ? (
+                      <Feather name="check" size={12} color="white" />
+                    ) : null}
+                  </Box>
+                  <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>
+                    Remember me
+                  </Text>
+                </HStack>
+              </Pressable>
+
+              <Pressable disabled={loading}>
+                <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
+                  Forgot Password?
+                </Text>
+              </Pressable>
+            </HStack>
+
+            <CreateButton
+              label={loading || googleLoading ? "Signing in..." : "Login"}
+              onPress={handleLogin}
+              disabled={loading || googleLoading}
+            />
+
+            <SocialAuth
+              onGooglePress={() => void promptGoogleAuth()}
+              onGithubPress={async () => {
+                if (!GITHUB_CLIENT_ID) {
+                  showError("Missing GitHub client ID.");
+                  return;
+                }
+                if (!githubRequest) {
+                  showError("GitHub auth not ready.");
+                  return;
+                }
+                await promptGithubAuth();
+              }}
+            />
+          </VStack>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Box>
   );
 }
