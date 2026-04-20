@@ -1,3 +1,5 @@
+// Main landing/home screen component for the application
+// Displays user profile information, evaluations, conditions, preferences, and allergens
 import React from "react";
 import {
   NavigationProp,
@@ -5,6 +7,8 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import { Box, ScrollView } from "@gluestack-ui/themed";
+import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { clearAuthToken } from "../../utils/authStorage";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import QuickStartPanel from "../../components/general/QuickStartPanel";
@@ -22,7 +26,9 @@ import {
   weatherService,
   CurrentUvSnapshot,
 } from "../../services/weatherService";
-import profileApiService, { Profile } from "../../services/profileService";
+import { profileService, Profile } from "../../services/profileService";
+import { allergenService } from "../../services/allergenService";
+import { preferenceService } from "../../services/preferenceService";
 import {
   consumePendingSystemErrorEvent,
   subscribeSystemErrorEvents,
@@ -30,46 +36,74 @@ import {
 import { AuthStackParamList } from "../../types/navigation";
 import { styles } from "../../style/LandingPageStyle";
 
+// Default coordinates for UV index lookup (Dublin, Ireland)
 const DEFAULT_UV_LAT = 53.3498;
 const DEFAULT_UV_LON = -6.2603;
 
+/**
+ * LandingScreen Component
+ * Main dashboard screen showing profile data, health metrics, and quick-start options
+ */
 export default function LandingScreen() {
+  // Navigation and safe area handling
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+  const insets = useSafeAreaInsets();
+  // Android bottom inset for navigation bar; iOS uses full screen spanning
+  const androidBottomInset =
+    Platform.OS === "android" ? Math.max(insets.bottom, 12) : 0;
+
+  // Profile state management
   const [profileId, setProfileId] = React.useState<string | null>(null);
   const [profileDetails, setProfileDetails] = React.useState<Profile[]>([]);
-  const [isProfilesLoading, setIsProfilesLoading] = React.useState(true); // FIX: Track initial profile load
+  const [isProfilesLoading, setIsProfilesLoading] = React.useState(true); // Track initial profile load
+  const [profiles, setProfiles] = React.useState<
+    { id: string; name: string; avatarUri?: string; isMain: boolean }[]
+  >([]);
+
+  // Allergen and allergen list management
   const [availableAllergens, setAvailableAllergens] = React.useState<
     { id: string; name: string }[]
   >([]);
-  const [isRemovingPreference, setIsRemovingPreference] = React.useState(false);
-  const [isPreferenceEditMode, setIsPreferenceEditMode] = React.useState(false);
   const [isRemovingAllergen, setIsRemovingAllergen] = React.useState(false);
   const [isAllergenEditMode, setIsAllergenEditMode] = React.useState(false);
+
+  // Preference management
+  const [isRemovingPreference, setIsRemovingPreference] = React.useState(false);
+  const [isPreferenceEditMode, setIsPreferenceEditMode] = React.useState(false);
+
+  // Condition modal state
   const [selectedCondition, setSelectedCondition] = React.useState<{
     name: string;
     description?: string;
   } | null>(null);
+
+  // System error overlay state for displaying API errors
   const [systemErrorOverlay, setSystemErrorOverlay] = React.useState<{
     title: string;
     message: string;
   } | null>(null);
-  const [profiles, setProfiles] = React.useState<
-    { id: string; name: string; avatarUri?: string; isMain: boolean }[]
-  >([]);
+
+  // UV index data and loading state
   const [uvSnapshot, setUvSnapshot] = React.useState<CurrentUvSnapshot | null>(
     null,
   );
   const [isUvLoading, setIsUvLoading] = React.useState(false);
 
+  // Fetches all profiles for the current user from the API
+  // Sets active profile to the main profile or first profile if main doesn't exist
   const loadProfiles = React.useCallback(async () => {
     setIsProfilesLoading(true);
 
     try {
-      const fetchedProfiles = await profileApiService.getMyProfile();
+      // Fetch all profiles for the user
+      const fetchedProfiles = await profileService.getMyProfile();
+      // Determine fallback profile: prefer main profile, otherwise use first profile
       const fallbackProfile =
         fetchedProfiles.find((item) => item.main_profile) ?? fetchedProfiles[0];
 
+      // Store full profile details for data access
       setProfileDetails(fetchedProfiles);
+      // Store simplified profile data for UI display
       setProfiles(
         fetchedProfiles.map((item) => ({
           id: item.id,
@@ -79,6 +113,7 @@ export default function LandingScreen() {
         })),
       );
 
+      // Update active profile ID: preserve current selection if it still exists, otherwise use fallback
       setProfileId((previousProfileId) => {
         if (
           previousProfileId &&
@@ -90,6 +125,7 @@ export default function LandingScreen() {
         return fallbackProfile?.id ?? null;
       });
     } catch {
+      // On error, clear all profile data
       setProfileDetails([]);
       setProfiles([]);
       setProfileId(null);
@@ -98,24 +134,30 @@ export default function LandingScreen() {
     }
   }, []);
 
+  // Fetches current UV index data from weather service at default Dublin coordinates
   const loadUv = React.useCallback(async () => {
     setIsUvLoading(true);
 
     try {
+      // Query UV index at specified coordinates
       const snapshot = await weatherService.getCurrentUv(
         DEFAULT_UV_LAT,
         DEFAULT_UV_LON,
       );
       setUvSnapshot(snapshot);
     } catch {
+      // On error, clear UV data to show fallback message
       setUvSnapshot(null);
     } finally {
       setIsUvLoading(false);
     }
   }, []);
 
+  // Runs when screen comes into focus (tab selection, navigation back)
+  // Refreshes all data: profiles, UV index, allergens, and system errors
   useFocusEffect(
     React.useCallback(() => {
+      // Check for pending system errors from previous operations
       const pendingSystemError = consumePendingSystemErrorEvent();
       if (pendingSystemError) {
         setSystemErrorOverlay({
@@ -124,10 +166,12 @@ export default function LandingScreen() {
         });
       }
 
+      // Refresh all data on screen focus
       void loadProfiles();
       void loadUv();
 
-      void profileApiService
+      // Fetch all available allergens for the allergen editor
+      void allergenService
         .getAllAllergens()
         .then((items) => {
           setAvailableAllergens(
@@ -140,43 +184,14 @@ export default function LandingScreen() {
     }, [loadProfiles, loadUv]),
   );
 
-  // FIX: Load profiles on initial mount (before focus effect)
+  // Load profiles on initial component mount (before focus effect)
   // This prevents PastAnalysis from rendering with null profileId after login
   React.useEffect(() => {
     void loadProfiles();
   }, [loadProfiles]);
 
-  const uvRecommendation = React.useMemo(() => {
-    if (isUvLoading && !uvSnapshot) {
-      return "Loading live UV data...";
-    }
-
-    if (!uvSnapshot) {
-      return "Live UV unavailable right now.";
-    }
-
-    const uv = uvSnapshot.uvIndex;
-    const weatherLabel = uvSnapshot.weatherMain ?? "Current conditions";
-    const temperatureLabel =
-      typeof uvSnapshot.temperatureCelsius === "number"
-        ? ` ${Math.round(uvSnapshot.temperatureCelsius)}°C`
-        : "";
-
-    if (uv <= 2) {
-      return `${weatherLabel}${temperatureLabel}. Minimal sun protection needed.`;
-    }
-
-    if (uv <= 5) {
-      return `${weatherLabel}${temperatureLabel}. Wear sunscreen and sunglasses.`;
-    }
-
-    if (uv <= 7) {
-      return `${weatherLabel}${temperatureLabel}. SPF 30+, hat, and shade recommended.`;
-    }
-
-    return `${weatherLabel}${temperatureLabel}. High UV: avoid peak sun and reapply SPF.`;
-  }, [isUvLoading, uvSnapshot]);
-
+  // Subscribe to system-wide error events and display them in an overlay modal
+  // This allows errors from background operations to be displayed to the user
   React.useEffect(() => {
     return subscribeSystemErrorEvents((event) => {
       setSystemErrorOverlay({
@@ -186,12 +201,14 @@ export default function LandingScreen() {
     });
   }, []);
 
-  // Clears local auth state and routes back to the login flow.
+  // Clears local authentication token and navigates back to login screen
   const handleSignOut = async () => {
     await clearAuthToken();
     navigation.navigate("LoginScreen");
   };
 
+  // Derives the currently active profile object from full profile details
+  // Falls back to main profile or first profile if selected profile no longer exists
   const activeProfile = React.useMemo(
     () =>
       profileDetails.find((profile) => profile.id === profileId) ??
@@ -200,51 +217,63 @@ export default function LandingScreen() {
     [profileDetails, profileId],
   );
 
+  // Extracts the first name of the active profile, with fallback to simplified name
   const activeProfileFirstName = React.useMemo(() => {
+    // Try to get explicit first name from profile details
     const explicitFirstName = activeProfile?.first_name?.trim();
     if (explicitFirstName) {
       return explicitFirstName;
     }
 
+    // Fallback to simplified profile name and extract first word
     const fallbackName =
-      profiles.find((profile) => profile.id === activeProfile?.id)?.name?.trim() ?? "";
+      profiles
+        .find((profile) => profile.id === activeProfile?.id)
+        ?.name?.trim() ?? "";
     return fallbackName.split(/\s+/)[0] ?? "";
   }, [activeProfile, profiles]);
 
+  // Extracts preference names for display in the UI
   const activeProfilePreferences = React.useMemo(() => {
     return activeProfile?.preferences?.map((item) => item.name) ?? [];
   }, [activeProfile]);
 
+  // Extracts condition names for display in the UI
   const activeProfileConditions = React.useMemo(() => {
     return activeProfile?.conditions?.map((item) => item.name) ?? [];
   }, [activeProfile]);
 
+  // Calculates completion statistics for display in QuickStartPanel
+  // Shows number of allergens, conditions, and preferences added
   const completionStats = React.useMemo(() => {
     const allergenCount = activeProfile?.allergens?.length ?? 0;
     const conditionCount = activeProfile?.conditions?.length ?? 0;
     const preferenceCount = activeProfile?.preferences?.length ?? 0;
-    return { allergens: allergenCount, conditions: conditionCount, preferences: preferenceCount };
+    return {
+      allergens: allergenCount,
+      conditions: conditionCount,
+      preferences: preferenceCount,
+    };
   }, [activeProfile]);
 
+  // Stores full condition details for use in condition modal
   const activeProfileConditionDetails = React.useMemo(() => {
     return activeProfile?.conditions ?? [];
   }, [activeProfile]);
 
+  // Removes an allergen from the active profile
+  // Uses optimistic UI update for immediate visual feedback before API confirmation
   const handleRemoveAllergen = React.useCallback(
     async (allergenId: string) => {
+      // Guard against invalid state or concurrent removal operations
       if (!activeProfile?.id || isRemovingAllergen) {
         return;
       }
 
+      // Save current state in case removal fails
       const previousProfileDetails = profileDetails;
 
-      const nextAllergenIds =
-        activeProfile.allergens
-          ?.filter((item) => item.id !== allergenId)
-          .map((item) => item.id) ?? [];
-      const dedupedAllergenIds = Array.from(new Set(nextAllergenIds));
-
-      // Optimistic UI update so removal feels immediate.
+      // Optimistic UI update: remove allergen immediately from local state
       setProfileDetails((previous) =>
         previous.map((profile) => {
           if (profile.id !== activeProfile.id) {
@@ -261,11 +290,16 @@ export default function LandingScreen() {
 
       try {
         setIsRemovingAllergen(true);
-        await profileApiService.updateProfile(activeProfile.id, {
-          allergenIds: dedupedAllergenIds,
-        });
+        // Use allergen service to remove allergen
+        await allergenService.removeAllergen(
+          activeProfile.id,
+          allergenId,
+          activeProfile.allergens,
+        );
+        // Reload profiles to ensure sync with server state
         void loadProfiles();
       } catch {
+        // Restore previous state on API error
         setProfileDetails(previousProfileDetails);
       } finally {
         setIsRemovingAllergen(false);
@@ -274,21 +308,19 @@ export default function LandingScreen() {
     [activeProfile, isRemovingAllergen, loadProfiles, profileDetails],
   );
 
+  // Removes a preference from the active profile
+  // Uses optimistic UI update for immediate visual feedback before API confirmation
   const handleRemovePreference = React.useCallback(
     async (preferenceId: string) => {
+      // Guard against invalid state or concurrent removal operations
       if (!activeProfile?.id || isRemovingPreference) {
         return;
       }
 
+      // Save current state in case removal fails
       const previousProfileDetails = profileDetails;
 
-      const nextPreferenceIds =
-        activeProfile.preferences
-          ?.filter((item) => item.id !== preferenceId)
-          .map((item) => item.id) ?? [];
-      const dedupedPreferenceIds = Array.from(new Set(nextPreferenceIds));
-
-      // Optimistic UI update so preference removal feels immediate.
+      // Optimistic UI update: remove preference immediately from local state
       setProfileDetails((previous) =>
         previous.map((profile) => {
           if (profile.id !== activeProfile.id) {
@@ -306,11 +338,16 @@ export default function LandingScreen() {
 
       try {
         setIsRemovingPreference(true);
-        await profileApiService.updateProfile(activeProfile.id, {
-          preferenceIds: dedupedPreferenceIds,
-        });
+        // Use preference service to remove preference
+        await preferenceService.removePreference(
+          activeProfile.id,
+          preferenceId,
+          activeProfile.preferences,
+        );
+        // Reload profiles to ensure sync with server state
         void loadProfiles();
       } catch {
+        // Restore previous state on API error
         setProfileDetails(previousProfileDetails);
       } finally {
         setIsRemovingPreference(false);
@@ -319,19 +356,20 @@ export default function LandingScreen() {
     [activeProfile, isRemovingPreference, loadProfiles, profileDetails],
   );
 
+  // Saves updated allergen list to API and reloads profile data
+  // Used by AllAllergens component when user adds/edits allergens
   const handleSaveAllergens = React.useCallback(
     async (allergenIds: string[]) => {
+      // Guard against invalid state or concurrent save operations
       if (!activeProfile?.id || isRemovingAllergen) {
         return;
       }
 
-      const dedupedAllergenIds = Array.from(new Set(allergenIds));
-
       try {
         setIsRemovingAllergen(true);
-        await profileApiService.updateProfile(activeProfile.id, {
-          allergenIds: dedupedAllergenIds,
-        });
+        // Use allergen service to save allergens
+        await allergenService.saveAllergens(activeProfile.id, allergenIds);
+        // Reload profiles to sync with server state
         await loadProfiles();
       } finally {
         setIsRemovingAllergen(false);
@@ -342,6 +380,7 @@ export default function LandingScreen() {
 
   return (
     <Box style={styles.screen}>
+      {/* Background decorative circles */}
       <Box
         position="absolute"
         top={-60}
@@ -362,17 +401,27 @@ export default function LandingScreen() {
         bg="#BFDFFF"
         opacity={0.25}
       />
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
-        showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]}
-      >
-        <NavBarTop
-          notificationCount={2}
-          onPressAvatar={handleSignOut}
-        />
 
-        <Box px="$2" mt="$3" pt="$8">
+      {/* Main scrollable content area */}
+      {/* Android bottom inset applied for navigation bar; iOS spans full screen */}
+      <ScrollView
+        style={{ marginHorizontal: 0, paddingHorizontal: 0 }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: 0,
+            paddingBottom: androidBottomInset,
+            paddingHorizontal: 0,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]} // Keep header fixed when scrolling
+      >
+        {/* Top navigation bar - sticky, stays fixed while scrolling */}
+        <NavBarTop notificationCount={2} onPressAvatar={handleSignOut} />
+
+        {/* Profile switcher section */}
+        <Box mt="$3" pt="$8">
           <SwitchProfile
             profiles={profiles.map((profile) => ({
               id: profile.id,
@@ -428,162 +477,176 @@ export default function LandingScreen() {
             }}
           />
         </Box>
-        {/* FIX: Only render PastAnalysis after profiles are loaded to prevent render with null profileId */}
-        {!isProfilesLoading && (
-          <Box px="$2">
-            <PastAnalysis profileId={profileId} profileName={activeProfileFirstName} />
-          </Box>
-        )}
-        <Box px="$2" mt="$3">
-          <ProdScanCta
-            onPress={() =>
-              navigation.navigate("CameraScreen", {
-                profileId: profileId ?? activeProfile?.id,
-              })
-            }
-          />
-        </Box>
-       
-        <Box px="$2" mt="$9">
-          <UvIndexCard
-            uvIndex={uvSnapshot?.uvIndex ?? 0}
-            recommendation={uvRecommendation}
-          />
-        </Box>
-         <Box px="$2" mt="$3">
-          <QuickStartPanel
-            profileFirstName={activeProfileFirstName}
-            allergenCount={completionStats.allergens}
-            conditionCount={completionStats.conditions}
-            preferenceCount={completionStats.preferences}
-            onPressAddAllergens={() =>
-              navigation.navigate("AllergenScreen", {
-                profileId: profileId ?? activeProfile?.id,
-              })
-            }
-            onPressAddConditions={() =>
-              navigation.navigate("ConditionScreen", {
-                profileId: profileId ?? activeProfile?.id,
-              })
-            }
-            onPressAddPreferences={() =>
-              navigation.navigate("PreferenceScreen", {
-                profileId: profileId ?? activeProfile?.id,
-              })
-            }
-          />
-        </Box>
-        <Box px="$2" mt="$4">
-          <Box
-            bg="$backgroundLight0"
-            borderRadius="$3xl"
-            p="$2"
-            borderWidth={1}
-            borderColor="$coolGray100"
-            shadowColor="#000"
-            shadowOpacity={0.05}
-            shadowRadius={10}
-            elevation={3}
-          >
-            <AllConditions
-              conditionNames={activeProfileConditions}
-              profileFirstName={activeProfile?.first_name}
-              onPressCondition={(conditionName) => {
-                const matchedCondition = activeProfileConditionDetails.find(
-                  (item) => item.name === conditionName,
-                );
+        <Box mx="$2">
+          {/* Past evaluations - only render after profiles are loaded to prevent null profileId */}
+          {!isProfilesLoading && (
+            <Box>
+              <PastAnalysis
+                profileId={profileId}
+                profileName={activeProfileFirstName}
+              />
+            </Box>
+          )}
 
-                setSelectedCondition({
-                  name: conditionName,
-                  description: matchedCondition?.description,
-                });
-              }}
-              onPressEdit={() =>
-                navigation.navigate("ConditionScreen", {
-                  profileId: profileId ?? undefined,
+          {/* Product scan call-to-action button */}
+          <Box mt="$3">
+            <ProdScanCta
+              onPress={() =>
+                navigation.navigate("CameraScreen", {
+                  profileId: profileId ?? activeProfile?.id,
                 })
               }
             />
           </Box>
-        </Box>
 
-        <Box px="$2" my="$4">
-          <Box
-            bg="$backgroundLight0"
-            borderRadius="$3xl"
-            p="$2"
-            borderWidth={1}
-            borderColor="$coolGray100"
-            shadowColor="#000"
-            shadowOpacity={0.05}
-            shadowRadius={10}
-            elevation={3}
-          >
-            <PreferencesOverview
-              profilePreferenceNames={activeProfilePreferences}
-              preferences={activeProfile?.preferences?.map((item) => ({
-                id: item.id,
-                name: item.name,
-              }))}
-              profileFirstName={activeProfile?.first_name}
-              onRemovePreference={handleRemovePreference}
-              isRemovingPreference={isRemovingPreference}
-              isEditMode={isPreferenceEditMode}
-              onToggleEditMode={() => {
-                setIsPreferenceEditMode((previous) => !previous);
-              }}
-              onCloseEditMode={() => {
-                setIsPreferenceEditMode(false);
-              }}
-              onAddPreference={() =>
-                navigation.navigate("PreferenceScreen", {
-                  profileId: profileId ?? undefined,
-                })
-              }
+          {/* UV index recommendation card */}
+          <Box mt="$9">
+            <UvIndexCard
+              uvIndex={uvSnapshot?.uvIndex ?? 0}
+              uvSnapshot={uvSnapshot}
+              isUvLoading={isUvLoading}
             />
           </Box>
-        </Box>
-        {/* remember to delete this once the navbar takes up the proper space */}
 
-        <Box px="$2" pb="$8">
-          <Box
-            bg="$backgroundLight0"
-            borderRadius="$3xl"
-            p="$2"
-            borderWidth={1}
-            borderColor="$coolGray100"
-            shadowColor="#000"
-            shadowOpacity={0.05}
-            shadowRadius={10}
-            elevation={3}
-          >
-            <AllAllergens
-              profileFirstName={activeProfile?.first_name}
-              allergens={activeProfile?.allergens?.map((item) => ({
-                id: item.id,
-                name: item.name,
-              }))}
-              availableAllergens={availableAllergens}
-              onRemoveAllergen={handleRemoveAllergen}
-              onSaveAllergens={handleSaveAllergens}
-              onOpenAddAllergen={() => {
+          {/* Quick start panel with completion stats */}
+          <Box mt="$3">
+            <QuickStartPanel
+              profileFirstName={activeProfileFirstName}
+              allergenCount={completionStats.allergens}
+              conditionCount={completionStats.conditions}
+              preferenceCount={completionStats.preferences}
+              onPressAddAllergens={() =>
                 navigation.navigate("AllergenScreen", {
-                  profileId: profileId ?? undefined,
-                });
-              }}
-              isRemovingAllergen={isRemovingAllergen}
-              isEditMode={isAllergenEditMode}
-              onToggleEditMode={() => {
-                setIsAllergenEditMode((previous) => !previous);
-              }}
-              onCloseEditMode={() => {
-                setIsAllergenEditMode(false);
-              }}
+                  profileId: profileId ?? activeProfile?.id,
+                })
+              }
+              onPressAddConditions={() =>
+                navigation.navigate("ConditionScreen", {
+                  profileId: profileId ?? activeProfile?.id,
+                })
+              }
+              onPressAddPreferences={() =>
+                navigation.navigate("PreferenceScreen", {
+                  profileId: profileId ?? activeProfile?.id,
+                })
+              }
             />
+          </Box>
+
+          {/* Conditions section with card styling */}
+          <Box mt="$4">
+            <Box
+              bg="$backgroundLight0"
+              borderRadius="$3xl"
+              p="$2"
+              borderWidth={1}
+              borderColor="$coolGray100"
+              shadowColor="#000"
+              shadowOpacity={0.05}
+              shadowRadius={10}
+              elevation={3}
+            >
+              <AllConditions
+                conditionNames={activeProfileConditions}
+                profileFirstName={activeProfile?.first_name}
+                onPressCondition={(conditionName) => {
+                  const matchedCondition = activeProfileConditionDetails.find(
+                    (item) => item.name === conditionName,
+                  );
+
+                  setSelectedCondition({
+                    name: conditionName,
+                    description: matchedCondition?.description,
+                  });
+                }}
+                onPressEdit={() =>
+                  navigation.navigate("ConditionScreen", {
+                    profileId: profileId ?? undefined,
+                  })
+                }
+              />
+            </Box>
+          </Box>
+
+          {/* Preferences section with card styling */}
+          <Box my="$4">
+            <Box
+              bg="$backgroundLight0"
+              borderRadius="$3xl"
+              borderWidth={1}
+              borderColor="$coolGray100"
+              shadowColor="#000"
+              shadowOpacity={0.05}
+              shadowRadius={10}
+              elevation={3}
+            >
+              <PreferencesOverview
+                profilePreferenceNames={activeProfilePreferences}
+                preferences={activeProfile?.preferences?.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                }))}
+                profileFirstName={activeProfile?.first_name}
+                onRemovePreference={handleRemovePreference}
+                isRemovingPreference={isRemovingPreference}
+                isEditMode={isPreferenceEditMode}
+                onToggleEditMode={() => {
+                  setIsPreferenceEditMode((previous) => !previous);
+                }}
+                onCloseEditMode={() => {
+                  setIsPreferenceEditMode(false);
+                }}
+                onAddPreference={() =>
+                  navigation.navigate("PreferenceScreen", {
+                    profileId: profileId ?? undefined,
+                  })
+                }
+              />
+            </Box>
+          </Box>
+
+          {/* Allergens section with card styling and bottom padding for navbar spacing */}
+          <Box pb="$8">
+            <Box
+              bg="$backgroundLight0"
+              borderRadius="$3xl"
+              py="$2"
+              borderWidth={1}
+              borderColor="$coolGray100"
+              shadowColor="#000"
+              shadowOpacity={0.05}
+              shadowRadius={10}
+              elevation={3}
+            >
+              <AllAllergens
+                profileFirstName={activeProfile?.first_name}
+                allergens={activeProfile?.allergens?.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                }))}
+                availableAllergens={availableAllergens}
+                onRemoveAllergen={handleRemoveAllergen}
+                onSaveAllergens={handleSaveAllergens}
+                onOpenAddAllergen={() => {
+                  navigation.navigate("AllergenScreen", {
+                    profileId: profileId ?? undefined,
+                  });
+                }}
+                isRemovingAllergen={isRemovingAllergen}
+                isEditMode={isAllergenEditMode}
+                onToggleEditMode={() => {
+                  setIsAllergenEditMode((previous) => !previous);
+                }}
+                onCloseEditMode={() => {
+                  setIsAllergenEditMode(false);
+                }}
+              />
+            </Box>
           </Box>
         </Box>
       </ScrollView>
 
+      {/* Condition detail modal - displays when user taps on a condition */}
       <SingleCondition
         isOpen={Boolean(selectedCondition)}
         conditionName={selectedCondition?.name}
@@ -593,6 +656,7 @@ export default function LandingScreen() {
         }}
       />
 
+      {/* System error modal - displays API errors and operation failures */}
       <SystemErrorModal
         isOpen={Boolean(systemErrorOverlay)}
         title={systemErrorOverlay?.title}
@@ -608,7 +672,8 @@ export default function LandingScreen() {
           setSystemErrorOverlay(null);
         }}
       />
-      {/* Sticky bottom navigation */}
+
+      {/* Sticky bottom navigation bar */}
       <NavBarBottom
         activeTab="home"
         historyProfileId={profileId ?? activeProfile?.id}

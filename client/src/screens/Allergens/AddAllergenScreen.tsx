@@ -11,7 +11,8 @@ import {
   Text,
 } from "@gluestack-ui/themed";
 import BackButton from "../../components/Buttons/BackButton";
-import profileApiService, { Profile } from "../../services/profileService";
+import { profileService, Profile } from "../../services/profileService";
+import { allergenService } from "../../services/allergenService";
 import { AuthStackParamList } from "../../types/navigation";
 
 type AllergenOption = {
@@ -81,8 +82,8 @@ export default function AddAllergen() {
       try {
         setIsLoading(true);
         const [fetchedProfiles, fetchedAllergens] = await Promise.all([
-          profileApiService.getMyProfile(),
-          profileApiService.getAllAllergens(),
+          profileService.getMyProfile(),
+          allergenService.getAllAllergens(),
         ]);
 
         if (!isMounted) {
@@ -135,9 +136,7 @@ export default function AddAllergen() {
 
     try {
       setIsSaving(true);
-      await profileApiService.updateProfile(activeProfileId, {
-        allergenIds: uniqueIds(draftSelectedIds),
-      });
+      await allergenService.saveAllergens(activeProfileId, draftSelectedIds);
       navigation.goBack();
     } finally {
       setIsSaving(false);

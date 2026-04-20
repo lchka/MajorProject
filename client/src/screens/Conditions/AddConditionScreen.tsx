@@ -11,7 +11,8 @@ import {
   Text,
 } from "@gluestack-ui/themed";
 import BackButton from "../../components/Buttons/BackButton";
-import profileApiService, { Profile } from "../../services/profileService";
+import { profileService, Profile } from "../../services/profileService";
+import { conditionService } from "../../services/conditionService";
 import { AuthStackParamList } from "../../types/navigation";
 
 function normalizeName(value: string) {
@@ -72,8 +73,8 @@ export default function AddCondition() {
       try {
         setIsLoading(true);
         const [fetchedProfiles, fetchedConditions] = await Promise.all([
-          profileApiService.getMyProfile(),
-          profileApiService.getAllConditions(),
+          profileService.getMyProfile(),
+          conditionService.getAllConditions(),
         ]);
 
         if (!isMounted) {

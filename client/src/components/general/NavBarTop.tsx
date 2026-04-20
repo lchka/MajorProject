@@ -2,7 +2,6 @@ import React from "react";
 import type { ImageSourcePropType } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Pressable } from "@gluestack-ui/themed";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NavLogo from "./NavLogo";
 import NotificationBadge from "./NotificationBadge";
 
@@ -30,15 +29,14 @@ export default function NavBarTop({
   onPressAvatar,
 }: NavBarTopProps) {
   const shouldShowNotifications = showNotifications && !isFirstProfileSetup;
-  const insets = useSafeAreaInsets();
-  const topPadding = insets.top + 22;
+  const topPadding = 22;
 
   return (
     <Box>
       <Box
         pb="$2"
         mb="$0"
-        px="$1.5"
+        px="$0"
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -62,7 +60,7 @@ export default function NavBarTop({
           {shouldShowNotifications ? (
             <Pressable
               onPress={onPressNotifications}
-              mx="$2"
+              mx="$0"
               style={{ position: "relative" }}
             >
               <Feather name="bell" size={32} color="#111111" />
@@ -71,7 +69,7 @@ export default function NavBarTop({
           ) : null}
         </Box>
       </Box>
-      <Box px="$4" my="$2"style={{ marginBottom: 0 }}>
+      <Box px="$0" my="$2" style={{ marginBottom: 0 }}>
         {showDivider ? (
           <Box style={{ height: 1, backgroundColor: "#12798d1e" }} />
         ) : null}

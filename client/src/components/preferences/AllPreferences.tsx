@@ -260,7 +260,6 @@ export default function AllPreferences({
 						flexDirection="row"
 						alignItems="center"
 						px="$3"
-						py="$1"
 						borderRadius={20}
 						bg="#EEF6FF"
 						borderWidth={1}
@@ -302,7 +301,7 @@ export default function AllPreferences({
 							</HStack>
 						</Box>
 
-						<Box style={{ marginTop: -4 }}>
+						<Box>
 							<EditButton
 								onPress={() => {
 									resetInactivityTimer();
@@ -324,8 +323,8 @@ export default function AllPreferences({
 							<Box
 								bg="#FFFFFF"
 								borderRadius={14}
-								px="$4"
-								py="$4"
+								
+
 								alignItems="center"
 								width="100%"
 							>

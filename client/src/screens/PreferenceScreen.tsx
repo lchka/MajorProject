@@ -11,7 +11,8 @@ import {
 	Text,
 } from "@gluestack-ui/themed";
 import BackButton from "../components/Buttons/BackButton";
-import profileService, { Profile } from "../services/profileService";
+import { profileService, Profile } from "../services/profileService";
+import { preferenceService } from "../services/preferenceService";
 import { AuthStackParamList } from "../types/navigation";
 
 type PreferenceOption = {
@@ -125,9 +126,7 @@ export default function PreferenceScreen() {
 
 		try {
 			setIsSaving(true);
-			await profileService.updateProfile(activeProfileId, {
-				preferenceIds: draftSelectedIds,
-			});
+			await preferenceService.savePreferences(activeProfileId, draftSelectedIds);
 			navigation.goBack();
 		} finally {
 			setIsSaving(false);

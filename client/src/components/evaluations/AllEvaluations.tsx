@@ -1,5 +1,6 @@
 import React from "react";
-import type { ImageSourcePropType } from "react-native";
+import { Platform, type ImageSourcePropType } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
@@ -142,6 +143,8 @@ export default function AllEvaluations({
   useExternalScroll = false,
   showProfileSwitcher = true,
 }: AllEvaluationsProps) {
+  const insets = useSafeAreaInsets();
+  const androidBottomInset = Platform.OS === "android" ? Math.max(insets.bottom, 12) : 0;
   // Cache profile switcher items to prevent UI flashing when data updates
   const [cachedSwitcherItems, setCachedSwitcherItems] = React.useState<ProfileSwitcherItem[]>(
     profileSwitcherItems ?? [],
@@ -214,7 +217,7 @@ export default function AllEvaluations({
 
   // Main content - wrapped in Box for consistent padding
   const content = (
-    <Box px="$4" >
+    <Box px="$0" pt="$3" style={{ paddingBottom: androidBottomInset }}>
       {/* Profile Switcher - allows users to view evaluations from different profiles */}
       {shouldShowSwitcher ? (
         <Box mb="$5">

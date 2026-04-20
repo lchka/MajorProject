@@ -292,7 +292,7 @@ export default function AllAllergens({
 							</Box>
 						</Box>
 
-						<Box style={{ marginTop: -4 }}>
+						<Box p="$2" style={{ marginTop: -4 }}>
 							<EditButton
 								onPress={() => {
 									resetInactivityTimer();
