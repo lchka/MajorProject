@@ -9,14 +9,25 @@ import ScanButton from "../Buttons/ScanButton";
 import { styles } from "../../style/LandingPageStyle";
 import { AuthStackParamList } from "../../types/navigation";
 
+/**
+ * Defines the available tabs in the bottom navigation
+ */
 type BottomTab = "home" | "upload" | "history" | "profile";
 
+/**
+ * Props for NavBarBottom component
+ * Allows external control of navigation + active state
+ */
 type NavBarBottomProps = {
 	homeIconColor?: string;
 	avatarSource?: ImageSourcePropType;
 	activeTab?: BottomTab;
+
+	// Optional profile IDs for contextual navigation
 	historyProfileId?: string;
 	cameraProfileId?: string;
+
+	// Optional override handlers (useful for custom behaviour)
 	onPressHome?: () => void;
 	onPressUpload?: () => void;
 	onPressHistory?: () => void;
@@ -24,6 +35,10 @@ type NavBarBottomProps = {
 	onPressProfile?: () => void;
 };
 
+/**
+ * Bottom navigation bar component
+ * Handles navigation between main app screens
+ */
 export default function NavBarBottom({
 	homeIconColor = "#66707A",
 	avatarSource = require("../../../assets/icon.png"),
@@ -35,8 +50,15 @@ export default function NavBarBottom({
 	onPressHistory,
 	onPressProfile,
 }: NavBarBottomProps) {
+	// React Navigation hook for screen navigation
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 
+	/**
+	 * Navigate to home screen
+	 * - Uses override if provided
+	 * - Otherwise pops to root if possible
+	 * - Falls back to LandingScreen
+	 */
 	const handleHomePress = React.useCallback(() => {
 		if (onPressHome) {
 			onPressHome();
@@ -51,6 +73,10 @@ export default function NavBarBottom({
 		navigation.navigate("LandingScreen");
 	}, [navigation, onPressHome]);
 
+	/**
+	 * Navigate to camera/upload screen
+	 * Passes profileId if available
+	 */
 	const handleUploadPress = React.useCallback(() => {
 		if (onPressUpload) {
 			onPressUpload();
@@ -63,6 +89,10 @@ export default function NavBarBottom({
 		);
 	}, [cameraProfileId, navigation, onPressUpload]);
 
+	/**
+	 * Navigate to history screen
+	 * Passes profileId for filtering history
+	 */
 	const handleHistoryPress = React.useCallback(() => {
 		if (onPressHistory) {
 			onPressHistory();
@@ -75,6 +105,9 @@ export default function NavBarBottom({
 		);
 	}, [navigation, onPressHistory, historyProfileId]);
 
+	/**
+	 * Navigate to profile edit screen
+	 */
 	const handleProfilePress = React.useCallback(() => {
 		if (onPressProfile) {
 			onPressProfile();
@@ -85,8 +118,12 @@ export default function NavBarBottom({
 	}, [navigation, onPressProfile]);
 
 	return (
+		// Outer container for bottom navigation
 		<Box style={styles.bottomNav}>
+			{/* Inner layout rail for icons */}
 			<Box style={styles.bottomNavRail}>
+				
+				{/* HOME TAB */}
 				<BottomIcon
 					label="HOME"
 					isActive={activeTab === "home"}
@@ -99,13 +136,19 @@ export default function NavBarBottom({
 						/>
 					}
 				/>
+
+				{/* GALLERY / UPLOAD TAB */}
 				<BottomIcon
 					label="GALLERY"
 					isActive={activeTab === "upload"}
 					onPress={handleUploadPress}
 					icon={<Feather name="upload-cloud" size={32} color="#66707A" />}
 				/>
+
+				{/* CENTRAL SCAN BUTTON (primary action) */}
 				<ScanButton onPress={handleUploadPress} />
+
+				{/* HISTORY TAB */}
 				<BottomIcon
 					label="HISTORY"
 					isActive={activeTab === "history"}
@@ -118,6 +161,8 @@ export default function NavBarBottom({
 						/>
 					}
 				/>
+
+				{/* PROFILE TAB (uses avatar image) */}
 				<BottomIcon
 					label="PROFILE"
 					isActive={activeTab === "profile"}
@@ -136,6 +181,10 @@ export default function NavBarBottom({
 	);
 }
 
+/**
+ * Reusable component for each bottom navigation item
+ * Handles icon + label + active indicator animation
+ */
 function BottomIcon({
 	label,
 	icon,
@@ -151,6 +200,8 @@ function BottomIcon({
 		<Pressable style={styles.bottomItem} onPress={onPress} hitSlop={10}>
 			<Box style={{ alignItems: "center" }}>
 				{icon}
+
+				{/* Animated underline indicator when active */}
 				{isActive ? (
 					<MotiView
 						from={{ width: 0, opacity: 0 }}
@@ -167,6 +218,8 @@ function BottomIcon({
 					<Box style={{ height: 2, marginTop: 4 }} />
 				)}
 			</Box>
+
+			{/* Label under icon */}
 			<Text fontSize={12} fontFamily="RobotoMedium" color="#66707A">
 				{label}
 			</Text>

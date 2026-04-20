@@ -249,9 +249,8 @@ export const styles = StyleSheet.create({
 		backgroundColor: "transparent",
 	},
 	bottomNavRail: {
-		height: 82,
-		backgroundColor: "#C6D8E5",
-		borderTopWidth: 1,
+		height: 90,
+		backgroundColor: "#bfe2fb",
 		borderTopColor: "#AEC3D3",
 		flexDirection: "row",
 		alignItems: "center",

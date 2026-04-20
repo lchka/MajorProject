@@ -34,7 +34,8 @@ export default function NavBarTop({
   return (
     <Box>
       <Box
-        px="$0"
+        mt="$4"
+        px="$3"
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -67,7 +68,7 @@ export default function NavBarTop({
           ) : null}
         </Box>
       </Box>
-      <Box px="$0" my="$2" style={{ marginBottom: 0 }}>
+      <Box px="$3" mt="$2" mb="$3" style={{ marginBottom: 0 }}>
         {showDivider ? (
           <Box style={{ height: 1, backgroundColor: "#12798d1e" }} />
         ) : null}
