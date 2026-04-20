@@ -28,11 +28,14 @@ export default function HistoryScreen() {
 
   const loadHistory = React.useCallback(async () => {
     // FAST PATH: Load from local storage first
+    let hasLocalData = false;
     try {
       const localEvaluations = await getLocalEvaluations();
       const scopedLocal = routeProfileId
         ? localEvaluations.filter((evaluation) => evaluation.profileId === routeProfileId)
         : localEvaluations;
+
+      hasLocalData = scopedLocal.length > 0;
 
       const sortedLocal = [...scopedLocal].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -55,13 +58,17 @@ export default function HistoryScreen() {
       } satisfies EvaluationHistoryCard));
 
       setHistoryItems(localItems);
-      setLoading(false);
+      
+      // Only stop loading if we have local data
+      if (hasLocalData) {
+        setLoading(false);
+      }
     } catch {
       setHistoryItems([]);
-      setLoading(false);
+      // Continue loading from server if local storage fails
     }
 
-    // OPTIONAL: Fetch fresh data from server in background (no loading state)
+    // Fetch fresh data from server (always do this if no local data, or in background if local data exists)
     try {
       const [contexts, myProfiles] = await Promise.all([
         evaluationContextService.getMyContexts(),
@@ -140,9 +147,13 @@ export default function HistoryScreen() {
       });
 
       setProfiles(Array.from(profileMap.values()));
-      setHistoryItems(items); // Update with server data if different
+      setHistoryItems(items); // Update with server data
+      
+      // Always set loading to false after server fetch completes
+      setLoading(false);
     } catch {
-      // Silently fail - user already has local data
+      // If server fetch fails, still stop loading and show what we have
+      setLoading(false);
     }
   }, [routeProfileId]);
 

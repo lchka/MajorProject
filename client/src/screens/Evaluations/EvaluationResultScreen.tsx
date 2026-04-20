@@ -161,27 +161,23 @@ export default function EvaluationResultScreen() {
   }, [evaluationVariants]);
 
   const handleReEvaluate = React.useCallback(async () => {
-    if (!context || !profile) {
+    if (!context) {
       return;
     }
 
     try {
       setIsReEvaluating(true);
-      const nextContext = await evaluationContextService.evaluateProduct({
-        productId: context.productId,
-        profileId: profile.id,
-        promptId: context.promptId ?? undefined,
-      });
+      const updatedContext = await evaluationContextService.reevaluate(context.id);
 
       navigation.navigate("EvaluationResultScreen", {
-        evaluationContextId: nextContext.id,
+        evaluationContextId: updatedContext.id,
       });
     } catch {
       Alert.alert("Re-evaluation failed", "Could not re-evaluate this product right now.");
     } finally {
       setIsReEvaluating(false);
     }
-  }, [context, navigation, profile]);
+  }, [context, navigation]);
 
   if (loading) {
     return <LoadingScreen staged={false} message="Loading evaluation..." />;
