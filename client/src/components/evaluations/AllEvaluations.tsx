@@ -1,6 +1,7 @@
 import React from "react";
-import { Platform, type ImageSourcePropType } from "react-native";
+import { Platform, type ImageSourcePropType, View, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SwipeListView } from "react-native-swipe-list-view";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
@@ -51,6 +52,7 @@ type AllEvaluationsProps = {
   items: EvaluationHistoryCard[]; // Array of evaluations to display
   loading?: boolean; // Whether data is loading
   onPressItem?: (item: EvaluationHistoryCard) => void; // Callback when evaluation card is tapped
+  onDeleteEvaluation?: (evaluationContextId: string) => void; // Callback when evaluation is swiped to delete
   profileSwitcherItems?: ProfileSwitcherItem[]; // Available profiles for switching
   activeProfileId?: string; // Currently selected profile ID
   onSelectProfile?: (profileId: string) => void; // Callback when profile is selected
@@ -129,6 +131,18 @@ const sortEvaluations = (
   return entries;
 };
 
+// Stylesheet for swipe actions
+const styles = StyleSheet.create({
+  deleteAction: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FF3B30",
+    width: 80,
+    borderRadius: 18,
+    marginRight: 2,
+  },
+});
+
 /**
  * Main component - renders evaluation history with search, sort, and pagination
  */
@@ -136,6 +150,7 @@ export default function AllEvaluations({
   items,
   loading = false,
   onPressItem,
+  onDeleteEvaluation,
   profileSwitcherItems,
   activeProfileId,
   onSelectProfile,
@@ -302,105 +317,120 @@ export default function AllEvaluations({
 
       {/* Evaluation cards list with pagination */}
       {!loading && filteredItems.length > 0 && (
-        <VStack space="md" pb="$8">
-          {paginatedItems.map((item, index) => {
-            const status = normalizeWarningStatus(item.status);
-            const imageUri = resolveMediaUrl(item.imageUri ?? null);
+        <Box>
+          <SwipeListView
+            data={paginatedItems}
+            keyExtractor={(item) => item.evaluationContextId}
+            renderItem={({ item, index }) => {
+              const status = normalizeWarningStatus(item.status);
+              const imageUri = resolveMediaUrl(item.imageUri ?? null);
 
-            return (
-              <MotiView
-                key={item.evaluationContextId}
-                from={{ opacity: 0, translateY: 8 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: "timing", duration: 250, delay: index * 40 }}
-              >
-                {/* Card for single evaluation */}
-                <Pressable
-                  onPress={() => onPressItem?.(item)}
-                  borderRadius={18}
-                  bg="white"
-                  borderWidth={1}
-                  borderColor="#E2E8F0"
-                  px="$3.5"
-                  py="$3.5"
-                  shadowColor="#000"
-                  shadowOpacity={0.05}
-                  shadowRadius={12}
-                  elevation={2}
+              return (
+                <MotiView
+                  from={{ opacity: 0, translateY: 8 }}
+                  animate={{ opacity: 1, translateY: 0 }}
+                  transition={{ type: "timing", duration: 250, delay: index * 40 }}
                 >
-                  <HStack space="md" alignItems="center">
-                    {/* Product image thumbnail */}
-                    <Box
-                      w={60}
-                      h={60}
-                      borderRadius={14}
-                      overflow="hidden"
-                      bg="#F1F5F9"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      {imageUri ? (
-                        <Image
-                          source={{ uri: imageUri }}
-                          alt={item.productName}
-                          style={{ width: "100%", height: "100%" }}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Feather name="image" size={18} color="#94A3B8" />
-                      )}
-                    </Box>
-
-                    {/* Card content - product name, profile, summary */}
-                    <VStack flex={1} space="xs">
-                      <Text
-                        numberOfLines={1}
-                        fontSize={15}
-                        fontFamily="RobotoMedium"
-                        color="#0F172A"
+                  <Pressable
+                    onPress={() => onPressItem?.(item)}
+                    borderRadius={18}
+                    bg="white"
+                    borderWidth={1}
+                    borderColor="#E2E8F0"
+                    px="$3.5"
+                    py="$3.5"
+                    shadowColor="#000"
+                    shadowOpacity={0.05}
+                    shadowRadius={12}
+                    elevation={2}
+                    mb="$3"
+                  >
+                    <HStack space="md" alignItems="center">
+                      {/* Product image thumbnail */}
+                      <Box
+                        w={60}
+                        h={60}
+                        borderRadius={14}
+                        overflow="hidden"
+                        bg="#F1F5F9"
+                        alignItems="center"
+                        justifyContent="center"
                       >
-                        {item.productName}
-                      </Text>
+                        {imageUri ? (
+                          <Image
+                            source={{ uri: imageUri }}
+                            alt={item.productName}
+                            style={{ width: "100%", height: "100%" }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Feather name="image" size={18} color="#94A3B8" />
+                        )}
+                      </Box>
 
-                      <Text
-                        numberOfLines={1}
-                        fontSize={12}
-                        color="#64748B"
-                      >
-                        {item.profileName}
-                      </Text>
+                      {/* Card content - product name, profile, summary */}
+                      <VStack flex={1} space="xs">
+                        <Text
+                          numberOfLines={1}
+                          fontSize={15}
+                          fontFamily="RobotoMedium"
+                          color="#0F172A"
+                        >
+                          {item.productName}
+                        </Text>
 
-                      {item.summary && (
                         <Text
                           numberOfLines={1}
                           fontSize={12}
-                          color="#94A3B8"
+                          color="#64748B"
                         >
-                          {item.summary}
+                          {item.profileName}
                         </Text>
-                      )}
-                    </VStack>
-                  </HStack>
 
-                  {/* Card footer - date, warning status, and chevron */}
-                  <HStack
-                    mt="$3"
-                    alignItems="center"
-                    justifyContent="space-between"
-                  >
-                    <Text fontSize={11} color="#94A3B8">
-                      {formatDate(item.createdAt)}
-                    </Text>
-
-                    <HStack alignItems="center" space="sm">
-                      <WarningChip status={status} />
-                      <Feather name="chevron-right" size={16} color="#94A3B8" />
+                        {item.summary && (
+                          <Text
+                            numberOfLines={1}
+                            fontSize={12}
+                            color="#94A3B8"
+                          >
+                            {item.summary}
+                          </Text>
+                        )}
+                      </VStack>
                     </HStack>
-                  </HStack>
-                </Pressable>
-              </MotiView>
-            );
-          })}
+
+                    {/* Card footer - date, warning status, and chevron */}
+                    <HStack
+                      mt="$3"
+                      alignItems="center"
+                      justifyContent="space-between"
+                    >
+                      <Text fontSize={11} color="#94A3B8">
+                        {formatDate(item.createdAt)}
+                      </Text>
+
+                      <HStack alignItems="center" space="sm">
+                        <WarningChip status={status} />
+                        <Feather name="chevron-right" size={16} color="#94A3B8" />
+                      </HStack>
+                    </HStack>
+                  </Pressable>
+                </MotiView>
+              );
+            }}
+            renderHiddenItem={({ item }) => (
+              <View style={styles.deleteAction}>
+                <Feather name="trash-2" size={24} color="#FFFFFF" />
+              </View>
+            )}
+            onSwipeValueChange={({ key, value }) => {
+              if (value < -80) {
+                onDeleteEvaluation?.(key);
+              }
+            }}
+            rightOpenValue={-80}
+            scrollEnabled={false}
+          />
 
           {/* Pagination controls - previous/next buttons and page indicator */}
           {totalPages > 1 ? (
@@ -484,7 +514,7 @@ export default function AllEvaluations({
               </HStack>
             </VStack>
           ) : null}
-        </VStack>
+        </Box>
       )}
     </Box>
   );
