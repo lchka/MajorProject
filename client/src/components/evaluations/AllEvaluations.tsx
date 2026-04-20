@@ -11,6 +11,21 @@ import LoadingScreen from "../general/loadingScreen";
 import SwitchProfile from "../profile/SwitchProfile";
 import { SortDropdown, type PastAnalysisSortOption } from "../actions/PastAnalysisDropdown";
 
+/**
+ * AllEvaluations Component
+ * 
+ * Displays a paginated, searchable, and sortable list of past product evaluations.
+ * Features:
+ * - Multi-profile support with profile switcher
+ * - Search by product name, profile, status, or date
+ * - Sort options: newest/oldest first, brand A-Z, skin concern, missing history
+ * - Pagination with next/previous navigation
+ * - Empty states for no evaluations or no search results
+ * - Loading state during data fetch
+ * - Animated card entries
+ */
+
+// Type for individual evaluation cards
 export type EvaluationHistoryCard = {
   evaluationContextId: string;
   productName: string;
@@ -21,6 +36,7 @@ export type EvaluationHistoryCard = {
   imageUri?: string | null;
 };
 
+// Type for profile selector
 type ProfileSwitcherItem = {
   id: string;
   name: string;
@@ -28,21 +44,28 @@ type ProfileSwitcherItem = {
   isMain?: boolean;
 };
 
+// Component props
 type AllEvaluationsProps = {
-  items: EvaluationHistoryCard[];
-  loading?: boolean;
-  onPressItem?: (item: EvaluationHistoryCard) => void;
-  profileSwitcherItems?: ProfileSwitcherItem[];
-  activeProfileId?: string;
-  onSelectProfile?: (profileId: string) => void;
-  onAddProfile?: () => void;
-  onEditProfile?: (profileId?: string) => void;
-  useExternalScroll?: boolean;
-  showProfileSwitcher?: boolean;
+  items: EvaluationHistoryCard[]; // Array of evaluations to display
+  loading?: boolean; // Whether data is loading
+  onPressItem?: (item: EvaluationHistoryCard) => void; // Callback when evaluation card is tapped
+  profileSwitcherItems?: ProfileSwitcherItem[]; // Available profiles for switching
+  activeProfileId?: string; // Currently selected profile ID
+  onSelectProfile?: (profileId: string) => void; // Callback when profile is selected
+  onAddProfile?: () => void; // Callback when add profile button is pressed
+  onEditProfile?: (profileId?: string) => void; // Callback when edit profile button is pressed
+  useExternalScroll?: boolean; // If true, don't render internal ScrollView
+  showProfileSwitcher?: boolean; // Whether to show the profile switcher
 };
 
+// Pagination constant
+// Pagination constant
 const ITEMS_PER_PAGE = 7;
 
+/**
+ * Formats a date string into a readable local date format.
+ * E.g., "2024-03-20" -> "20 Mar 2024"
+ */
 const formatDate = (value: string): string => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "Unknown date";
@@ -54,6 +77,15 @@ const formatDate = (value: string): string => {
   });
 };
 
+/**
+ * Sorts evaluations based on the selected sort option.
+ * Supports:
+ * - Newest First (DEFAULT): Most recent evaluations first
+ * - Oldest First: Oldest evaluations first
+ * - Brand A-Z: Alphabetical by product name
+ * - Skin Concern: Sorted by summary/skin concern
+ * - Missing History?: Evaluations without summary first
+ */
 const sortEvaluations = (
   evaluations: EvaluationHistoryCard[],
   sortOption: PastAnalysisSortOption
@@ -95,6 +127,9 @@ const sortEvaluations = (
   return entries;
 };
 
+/**
+ * Main component - renders evaluation history with search, sort, and pagination
+ */
 export default function AllEvaluations({
   items,
   loading = false,
@@ -107,6 +142,7 @@ export default function AllEvaluations({
   useExternalScroll = false,
   showProfileSwitcher = true,
 }: AllEvaluationsProps) {
+  // Cache profile switcher items to prevent UI flashing when data updates
   const [cachedSwitcherItems, setCachedSwitcherItems] = React.useState<ProfileSwitcherItem[]>(
     profileSwitcherItems ?? [],
   );
@@ -119,21 +155,26 @@ export default function AllEvaluations({
     profileSwitcherItems && profileSwitcherItems.length > 0
       ? profileSwitcherItems
       : cachedSwitcherItems;
+  
+  // Pagination and filtering state
   const [currentPage, setCurrentPage] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>("Newest First (DEFAULT)");
 
+  // Update cached switcher items when new items arrive
   React.useEffect(() => {
     if (profileSwitcherItems && profileSwitcherItems.length > 0) {
       setCachedSwitcherItems(profileSwitcherItems);
     }
   }, [profileSwitcherItems]);
 
+  // Filter and sort evaluations based on search query and sort option
   const filteredItems = React.useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     let results = items;
     
+    // Search across product name, profile, summary, status, and date
     if (normalizedQuery) {
       results = results.filter((item) => {
         const haystack = [
@@ -154,8 +195,10 @@ export default function AllEvaluations({
     return sortEvaluations(results, sortOption);
   }, [items, searchQuery, sortOption]);
 
+  // Calculate total pages for pagination
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / ITEMS_PER_PAGE));
 
+  // Reset to valid page when total pages changes
   React.useEffect(() => {
     setCurrentPage((previous) => {
       const maxPage = Math.max(0, totalPages - 1);
@@ -163,15 +206,18 @@ export default function AllEvaluations({
     });
   }, [totalPages]);
 
+  // Get the current page's items
   const paginatedItems = React.useMemo(() => {
     const start = currentPage * ITEMS_PER_PAGE;
     return filteredItems.slice(start, start + ITEMS_PER_PAGE);
   }, [currentPage, filteredItems]);
 
+  // Main content - wrapped in Box for consistent padding
   const content = (
-    <>
-      <Box px="$2" pt="$6" mb="$2">
-        {shouldShowSwitcher ? (
+    <Box px="$4" >
+      {/* Profile Switcher - allows users to view evaluations from different profiles */}
+      {shouldShowSwitcher ? (
+        <Box mb="$5">
           <SwitchProfile
             profiles={effectiveSwitcherItems}
             activeProfileId={activeProfileId}
@@ -180,12 +226,11 @@ export default function AllEvaluations({
             onEditProfile={onEditProfile}
             title="Switch Profile"
           />
-        ) : null}
-      </Box>
+        </Box>
+      ) : null}
 
-      <Box px="$2">
-        {/* Header */}
-        <HStack mt="$1" mb="$4" alignItems="center" justifyContent="space-between">
+      {/* Header with title and sort button */}
+      <HStack mb="$4" alignItems="center" justifyContent="space-between">
         <Text fontSize={22} fontFamily="RobotoMedium" color="#0F172A">
           All Past Analysis
         </Text>
@@ -198,20 +243,7 @@ export default function AllEvaluations({
         </Pressable>
       </HStack>
 
-      {/* Click-outside backdrop */}
-      {isSortOpen && (
-        <Pressable
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          onPress={() => setIsSortOpen(false)}
-          zIndex={1}
-        />
-      )}
-
-      {/* Sort Dropdown */}
+      {/* Sort dropdown menu - appears when sort button is tapped */}
       {isSortOpen && (
         <Box mb="$4" zIndex={2}>
           <SortDropdown
@@ -224,6 +256,7 @@ export default function AllEvaluations({
         </Box>
       )}
 
+      {/* Search input for filtering evaluations */}
       <Box mb="$4">
         <SearchEvaluations
           value={searchQuery}
@@ -232,13 +265,13 @@ export default function AllEvaluations({
         />
       </Box>
 
-      {/* Loading */}
+      {/* Loading state */}
       {loading ? <LoadingScreen compact staged={false} message="Loading history..." /> : null}
-
-      {/* Empty State */}
+      
+      {/* Empty state - no evaluations at all */}
       {!loading && items.length === 0 && (
         <Box
-          mt="$2"
+          mt="$4"
           borderRadius={18}
           p="$5"
           alignItems="center"
@@ -257,7 +290,7 @@ export default function AllEvaluations({
 
       {!loading && items.length > 0 && filteredItems.length === 0 && (
         <Box
-          mt="$2"
+          mt="$4"
           borderRadius={18}
           p="$5"
           alignItems="center"
@@ -274,9 +307,9 @@ export default function AllEvaluations({
         </Box>
       )}
 
-      {/* List */}
+      {/* Evaluation cards list with pagination */}
       {!loading && filteredItems.length > 0 && (
-        <VStack space="md" pb="$2">
+        <VStack space="md" pb="$8">
           {paginatedItems.map((item, index) => {
             const status = normalizeWarningStatus(item.status);
             const imageUri = resolveMediaUrl(item.imageUri ?? null);
@@ -288,6 +321,7 @@ export default function AllEvaluations({
                 animate={{ opacity: 1, translateY: 0 }}
                 transition={{ type: "timing", duration: 250, delay: index * 40 }}
               >
+                {/* Card for single evaluation */}
                 <Pressable
                   onPress={() => onPressItem?.(item)}
                   borderRadius={18}
@@ -302,7 +336,7 @@ export default function AllEvaluations({
                   elevation={2}
                 >
                   <HStack space="md" alignItems="center">
-                    {/* Image */}
+                    {/* Product image thumbnail */}
                     <Box
                       w={60}
                       h={60}
@@ -324,7 +358,7 @@ export default function AllEvaluations({
                       )}
                     </Box>
 
-                    {/* Content */}
+                    {/* Card content - product name, profile, summary */}
                     <VStack flex={1} space="xs">
                       <Text
                         numberOfLines={1}
@@ -355,7 +389,7 @@ export default function AllEvaluations({
                     </VStack>
                   </HStack>
 
-                  {/* Bottom Row */}
+                  {/* Card footer - date, warning status, and chevron */}
                   <HStack
                     mt="$3"
                     alignItems="center"
@@ -375,6 +409,7 @@ export default function AllEvaluations({
             );
           })}
 
+          {/* Pagination controls - previous/next buttons and page indicator */}
           {totalPages > 1 ? (
             <VStack my="$4" pb="$5" alignItems="center" space="md">
               <HStack alignItems="center" space="md">
@@ -458,14 +493,15 @@ export default function AllEvaluations({
           ) : null}
         </VStack>
       )}
-      </Box>
-    </>
+    </Box>
   );
 
+  // If using external scroll, return content directly (parent handles scrolling)
   if (useExternalScroll) {
-    return <Box>{content}</Box>;
+    return content;
   }
 
+  // Otherwise, wrap content in ScrollView with sticky header support
   return (
     <ScrollView
       stickyHeaderIndices={shouldShowSwitcher ? [0] : []}
