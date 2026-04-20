@@ -181,7 +181,12 @@ export default function CreateEvaluations({
 	onRetake,
 	onDelete,
 	onPressProfile,
-}: CreateEvaluationsProps) {
+}: CreateEvaluationsProps) {	const [showBanner, setShowBanner] = React.useState(true);
+
+	const handleRetakeWithBannerClose = React.useCallback(() => {
+		setShowBanner(false);
+		onRetake?.();
+	}, [onRetake]);
 	const ingredients = React.useMemo<IngredientRow[]>(() => {
 		if (!resultJson) {
 			return defaultIngredients;
@@ -319,21 +324,26 @@ export default function CreateEvaluations({
 				opacity={0.25}
 			/>
 
-			<NavBarTop notificationCount={0} />
+			<ScrollView
+				showsVerticalScrollIndicator={false}
+				stickyHeaderIndices={[1]}
+				contentContainerStyle={{ paddingBottom: 16, paddingHorizontal: 12 }}
+			>
+				<NavBarTop notificationCount={0} />
 
-			<Box flex={1} px="$3" pt="$2">
-				<DifferentProfile
-					profiles={profileSwitcherItems}
-					activeProfileId={activeProfileId}
-					onSelectProfile={onSelectDifferentProfile}
-					onAddProfile={onAddDifferentProfile}
-					onEditProfile={onEditDifferentProfile}
-					title="Profiles Used"
-					cardTitle="Different Profile"
-					cardAvatarSource={avatarSource}
-				/>
+				<Box bg="transparent">
+					<DifferentProfile
+						profiles={profileSwitcherItems}
+						activeProfileId={activeProfileId}
+						onSelectProfile={onSelectDifferentProfile}
+						onAddProfile={onAddDifferentProfile}
+						onEditProfile={onEditDifferentProfile}
+						title="Profiles Used"
+						cardTitle="Different Profile"
+						cardAvatarSource={avatarSource}
+					/>
+				</Box>
 
-				<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
 					<Box mb="$2" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
 						<DeleteButton
 							label="Delete"
@@ -341,7 +351,7 @@ export default function CreateEvaluations({
 							disabled={!onDelete}
 						/>
 						<ReEvaluateButton
-							onPress={onRetake}
+							onPress={handleRetakeWithBannerClose}
 							disabled={!onRetake}
 							width={128}
 						/>
@@ -357,8 +367,8 @@ export default function CreateEvaluations({
 					/>
 
 					<ProfileRetakeBanner
-						isVisible={profileMismatchDetected}
-						onRetake={onRetake}
+						isVisible={profileMismatchDetected && showBanner}
+						onRetake={handleRetakeWithBannerClose}
 					/>
 
 					{score !== null ? (
@@ -420,8 +430,7 @@ export default function CreateEvaluations({
 						</SectionCard>
 					) : null}
 
-				</ScrollView>
-			</Box>
+			</ScrollView>
 
 			<NavBarBottom
 				activeTab="history"

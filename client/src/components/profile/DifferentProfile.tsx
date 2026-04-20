@@ -113,7 +113,7 @@ export default function DifferentProfile({
 	return (
 		<>
 			<Pressable
-				my="$2"
+				my="$6"
 				mx="$2"
 				style={[
 					styles.switchProfileCard,

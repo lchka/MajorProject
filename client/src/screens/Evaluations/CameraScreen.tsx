@@ -18,6 +18,7 @@ import CreateEvaluations from "./ShowEvaluation";
 import ShowProduct from "./ShowProduct";
 import LoadingScreen from "../../components/general/loadingScreen";
 import SimpleLoadingScreen from "../../components/general/SimpleLoadingScreen";
+import ImagePreview from "../../components/evaluations/ImagePreview";
 import { type EvaluationProfileItem } from "../../components/profile/EvaluationProfile";
 import { type DifferentProfileItem } from "../../components/profile/DifferentProfile";
 import {
@@ -53,6 +54,7 @@ const [capturedUri, setCapturedUri] = React.useState<string | null>(null);
 const [isCapturingPhoto, setIsCapturingPhoto] = React.useState(false);
 const [isCameraReady, setIsCameraReady] = React.useState(false);
 const [isFramingReady, setIsFramingReady] = React.useState(false);
+const [showImagePreview, setShowImagePreview] = React.useState(false);
 const [isResolvingProduct, setIsResolvingProduct] = React.useState(false);
 const [isProcessingEvaluation, setIsProcessingEvaluation] = React.useState(false);
 const [activeProfile, setActiveProfile] = React.useState<Profile | null>(null);
@@ -256,17 +258,17 @@ throw new Error("No photo URI");
 }
 
 setCapturedUri(photo.uri);
+setShowImagePreview(true);
 setResolvedProduct(null);
 setEvaluationContext(null);
 setEvaluationVariants([]);
 setActiveEvaluationProfileId(undefined);
-void resolveProductFromPhoto(photo.uri);
 } catch {
 Alert.alert("Capture failed", "Could not capture this image. Please try again.");
 } finally {
 setIsCapturingPhoto(false);
 }
-}, [isCapturingPhoto, isProcessingEvaluation, isResolvingProduct, resolveProductFromPhoto]);
+}, [isCapturingPhoto, isProcessingEvaluation, isResolvingProduct]);
 
 const openGallery = React.useCallback(async () => {
 if (isResolvingProduct || isProcessingEvaluation) {
@@ -292,15 +294,15 @@ return;
 
 const imageUri = picked.assets[0].uri;
 setCapturedUri(imageUri);
+setShowImagePreview(true);
 setResolvedProduct(null);
 setEvaluationContext(null);
 setEvaluationVariants([]);
 setActiveEvaluationProfileId(undefined);
-void resolveProductFromPhoto(imageUri);
 } catch {
 Alert.alert("Upload failed", "Could not open your gallery right now. Please try again.");
 }
-}, [isProcessingEvaluation, isResolvingProduct, resolveProductFromPhoto]);
+}, [isProcessingEvaluation, isResolvingProduct]);
 
 React.useEffect(() => {
 if (!routeImageUri) {
@@ -308,12 +310,12 @@ return;
 }
 
 setCapturedUri(routeImageUri);
+setShowImagePreview(true);
 setResolvedProduct(null);
 setEvaluationContext(null);
 setEvaluationVariants([]);
 setActiveEvaluationProfileId(undefined);
-void resolveProductFromPhoto(routeImageUri);
-}, [resolveProductFromPhoto, routeImageUri]);
+}, [routeImageUri]);
 
 const evaluationProfileItems = React.useMemo<EvaluationProfileItem[]>(() => {
 return allProfiles.map((profile) => ({
@@ -395,6 +397,22 @@ setActiveProfile(null);
 );
 }
 
+if (capturedUri && showImagePreview) {
+return (
+<ImagePreview
+imageUri={capturedUri}
+onApprove={() => {
+setShowImagePreview(false);
+void resolveProductFromPhoto(capturedUri);
+}}
+onRetake={() => {
+setCapturedUri(null);
+setShowImagePreview(false);
+}}
+/>
+);
+}
+
 if (capturedUri && isResolvingProduct) {
 return <SimpleLoadingScreen message="Extracting ingredients..." />;
 }
@@ -407,8 +425,8 @@ if (capturedUri && resolvedProduct) {
 return (
 <>
 <ShowProduct
-product={resolvedProduct}
-capturedUri={capturedUri}
+product={resolvedProduct!}
+capturedUri={capturedUri!}
 isProcessing={isProcessingEvaluation}
 evaluationProfiles={evaluationProfileItems}
 defaultProfileId={activeProfile?.id}
@@ -468,7 +486,7 @@ if (!cameraPermission) {
 return <LoadingScreen staged={false} message="Preparing camera..." />;
 }
 
-if (!cameraPermission.granted) {
+if (!cameraPermission?.granted) {
 return (
 <Box flex={1} bg="#071018" alignItems="center" justifyContent="center" px="$6">
 <Feather name="camera-off" size={42} color="#E6F0FF" />
@@ -524,12 +542,13 @@ setIsCameraReady(true);
 pointerEvents="none"
 style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
 maskElement={(() => {
-const frameTop = cameraLayout.height * 0.12;
-const frameBottom = cameraLayout.height * 0.16;
-const frameLeft = cameraLayout.width * 0.105;
-const frameRight = cameraLayout.width * 0.105;
-const frameWidth = cameraLayout.width - frameLeft - frameRight;
-const frameHeight = cameraLayout.height - frameTop - frameBottom;
+const layout = cameraLayout!;
+const frameTop = layout.height * 0.12;
+const frameBottom = layout.height * 0.16;
+const frameLeft = layout.width * 0.105;
+const frameRight = layout.width * 0.105;
+const frameWidth = layout.width - frameLeft - frameRight;
+const frameHeight = layout.height - frameTop - frameBottom;
 const cornerRadius = 34;
 const safeRadius = Math.max(0, Math.min(cornerRadius, frameWidth / 2, frameHeight / 2));
 
@@ -551,12 +570,12 @@ return [
 ].join(" ");
 };
 
-const outerPath = `M 0 0 H ${cameraLayout.width} V ${cameraLayout.height} H 0 Z`;
+const outerPath = `M 0 0 H ${layout.width} V ${layout.height} H 0 Z`;
 const innerPath = roundedRectPath(frameLeft, frameTop, frameWidth, frameHeight, safeRadius);
 const path = `${outerPath} ${innerPath}`;
 
 return (
-<Svg width={cameraLayout.width} height={cameraLayout.height}>
+<Svg width={layout.width} height={layout.height}>
 <Path d={path} fill="black" fillRule="evenodd" />
 </Svg>
 );

@@ -214,6 +214,8 @@ export default function HistoryScreen() {
         opacity={0.25}
       />
 
+      {/* SwitchProfile is made sticky via stickyHeaderIndices=[1] */}
+      {/* This keeps the profile switcher card fixed at the top during scroll */}
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
         showsVerticalScrollIndicator={false}
@@ -221,6 +223,7 @@ export default function HistoryScreen() {
       >
         <NavBarTop notificationCount={0} />
 
+        {/* Sticky index 1: SwitchProfile card stays at top */}
         <Box px="$2" pt="$8" pb="$2" mb="$2">
           <SwitchProfile
             profiles={profileSwitcherItems}

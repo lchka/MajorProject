@@ -170,7 +170,7 @@ export default function AllEvaluations({
 
   const content = (
     <>
-      <Box px="$2" mb="$2">
+      <Box px="$2" pt="$6" mb="$2">
         {shouldShowSwitcher ? (
           <SwitchProfile
             profiles={effectiveSwitcherItems}

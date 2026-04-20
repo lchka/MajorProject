@@ -27,7 +27,6 @@ type SwitchProfileProps = {
 	title?: string;
 	greetingLabel?: string;
 	cardAvatarSource?: ImageSourcePropType;
-	isSticky?: boolean;
 };
 
 // This formats the greeting name as the first name in caps.
@@ -41,6 +40,21 @@ function toGreetingFirstName(name: string) {
 	return firstName.toUpperCase();
 }
 
+/**
+ * SwitchProfile - Profile switcher card component
+ * 
+ * **Sticky Behavior (parent-controlled):**
+ * To make this component sticky at the top during scroll, the parent ScrollView
+ * must include this component as the first child and set:
+ * ```tsx
+ * <ScrollView stickyHeaderIndices={[0]}>
+ *   <SwitchProfile {...props} />
+ *   {otherContent}
+ * </ScrollView>
+ * ```
+ * The ScrollView's `stickyHeaderIndices` prop keeps the specified child indices
+ * fixed at the top while scrolling. See HistoryScreen.tsx for usage example.
+ */
 export default function SwitchProfile({
 	profiles,
 	activeProfileId,
@@ -50,7 +64,6 @@ export default function SwitchProfile({
 	title = "Change Profile",
 	greetingLabel,
 	cardAvatarSource = require("../../../assets/icon.png"),
-	isSticky = false,
 }: SwitchProfileProps) {
 	// This is where the switch card colors are controlled in this file.
 	const switchCardBackgroundColor = "#ebf5ff";
