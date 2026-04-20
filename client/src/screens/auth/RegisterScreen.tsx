@@ -4,7 +4,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import { Easing } from "react-native-reanimated";
@@ -13,10 +12,10 @@ import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { saveAuthToken } from "../../utils/authStorage";
+import { RegisterInput } from "../../types/auth.types";
 import {
   Box,
   HStack,
-  Image,
   Input,
   InputField,
   Pressable,
@@ -26,12 +25,12 @@ import {
 } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import { authService } from "../../services";
-import profileService from "../../services/profileService";
+import { profileService } from "../../services/profileService";
 import { registerSchema } from "../../models/auth.schema";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
 import CreateButton from "../../components/Buttons/CreateButton";
-import useGoogleAuth from "../../hooks/googleAuth.hook";
+import { useGoogleAuth } from "../../hooks/googleAuth.hook";
 import type { AuthResponse } from "../../services";
 import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
@@ -54,13 +53,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stepDirection, setStepDirection] = useState<1 | -1>(1);
-  const [errors, setErrors] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+
   const [touched, setTouched] = useState({
     firstName: false,
     lastName: false,
@@ -148,7 +141,8 @@ export default function RegisterScreen() {
     {
       id: "last-name-length",
       label: "If entered, last name has at least 2 characters",
-      test: (value: string) => value.trim().length === 0 || value.trim().length >= 2,
+      test: (value: string) =>
+        value.trim().length === 0 || value.trim().length >= 2,
     },
   ];
 
@@ -161,7 +155,8 @@ export default function RegisterScreen() {
     {
       id: "email-format",
       label: "Email format is valid",
-      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+      test: (value: string) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
     },
   ];
 
@@ -178,22 +173,15 @@ export default function RegisterScreen() {
     },
   ];
 
-  const setFieldError = (field: keyof typeof errors, message: string) => {
-    setErrors((prev) => ({ ...prev, [field]: message }));
-  };
-
   const validateStepFields = (currentStep: number) => {
     if (currentStep === 1) {
       const firstNameError = validateFirstName(firstName);
       const lastNameError = validateLastName(lastName);
-      setFieldError("firstName", firstNameError);
-      setFieldError("lastName", lastNameError);
       return !firstNameError && !lastNameError;
     }
 
     if (currentStep === 2) {
       const emailError = validateEmail(email);
-      setFieldError("email", emailError);
       return !emailError;
     }
 
@@ -203,8 +191,6 @@ export default function RegisterScreen() {
         confirmPassword,
         password,
       );
-      setFieldError("password", passwordError);
-      setFieldError("confirmPassword", confirmPasswordError);
       return !passwordError && !confirmPasswordError;
     }
 
@@ -324,6 +310,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     const isValidForSubmit = validateStepFields(3);
+
     setTouched((prev) => ({
       ...prev,
       firstName: true,
@@ -333,34 +320,30 @@ export default function RegisterScreen() {
       confirmPassword: true,
     }));
 
-    if (!isValidForSubmit) {
-      return;
-    }
-
-    const result = registerSchema.safeParse({
-      first_name: firstName,
-      last_name: lastName.trim() ? lastName : undefined,
-      email,
-      password,
-      c_password: confirmPassword,
-    });
-
-    if (!result.success) {
-      const errors = result.error.issues.map((err) => err.message).join("\n");
-      Alert.alert("Validation Error", errors);
-      return;
-    }
+    if (!isValidForSubmit) return;
 
     try {
-      setLoading(true);
-
-      const response = await authService.register({
-        first_name: firstName.trim(),
-        last_name: lastName.trim() ? lastName.trim() : undefined,
-        email: email.toLowerCase().trim(),
+      const result = registerSchema.safeParse({
+        first_name: firstName,
+        last_name: lastName,
+        email,
         password,
         c_password: confirmPassword,
       });
+
+      if (!result.success) {
+        const message = result.error.issues.map((e) => e.message).join("\n");
+        Alert.alert("Validation Error", message);
+        return;
+      }
+
+      // use validated + cleaned data from Zod
+      const payload: RegisterInput = {
+        ...result.data,
+        last_name: result.data.last_name || undefined,
+      };
+
+      const response = await authService.register(payload);
 
       await saveAuthToken(response.token);
 
@@ -428,7 +411,7 @@ export default function RegisterScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Background circles (lighter, less intrusive) */}
+        {/* Background circles */}
         <Box
           position="absolute"
           top={-60}
@@ -451,6 +434,7 @@ export default function RegisterScreen() {
         />
 
         <NavBarTop isFirstProfileSetup showAvatar={false} showDivider />
+
         {/* Title */}
         <HStack
           pt="$8"
@@ -541,18 +525,16 @@ export default function RegisterScreen() {
                           onChangeText={(value) => {
                             setFirstName(value);
                             setTouched((prev) => ({ ...prev, firstName: true }));
-                            setFieldError("firstName", validateFirstName(value));
                           }}
                           onBlur={() => {
                             setTouched((prev) => ({ ...prev, firstName: true }));
-                            setFieldError(
-                              "firstName",
-                              validateFirstName(firstName),
-                            );
                           }}
                         />
                       </Input>
-                      <ValidationAnimation value={firstName} rules={firstNameRules} />
+                      <ValidationAnimation
+                        value={firstName}
+                        rules={firstNameRules}
+                      />
                     </VStack>
 
                     <VStack space="xs">
@@ -563,15 +545,16 @@ export default function RegisterScreen() {
                           onChangeText={(value) => {
                             setLastName(value);
                             setTouched((prev) => ({ ...prev, lastName: true }));
-                            setFieldError("lastName", validateLastName(value));
                           }}
                           onBlur={() => {
                             setTouched((prev) => ({ ...prev, lastName: true }));
-                            setFieldError("lastName", validateLastName(lastName));
                           }}
                         />
                       </Input>
-                      <ValidationAnimation value={lastName} rules={lastNameRules} />
+                      <ValidationAnimation
+                        value={lastName}
+                        rules={lastNameRules}
+                      />
                     </VStack>
                   </>
                 )}
@@ -586,11 +569,9 @@ export default function RegisterScreen() {
                           onChangeText={(value) => {
                             setEmail(value);
                             setTouched((prev) => ({ ...prev, email: true }));
-                            setFieldError("email", validateEmail(value));
                           }}
                           onBlur={() => {
                             setTouched((prev) => ({ ...prev, email: true }));
-                            setFieldError("email", validateEmail(email));
                           }}
                         />
                       </Input>
@@ -610,24 +591,16 @@ export default function RegisterScreen() {
                             value={password}
                             onChangeText={(value) => {
                               setPassword(value);
-                              setTouched((prev) => ({ ...prev, password: true }));
-                              setFieldError("password", validatePassword(value));
-                              if (
-                                touched.confirmPassword ||
-                                confirmPassword.length > 0
-                              ) {
-                                setFieldError(
-                                  "confirmPassword",
-                                  validateConfirmPassword(confirmPassword, value),
-                                );
-                              }
+                              setTouched((prev) => ({
+                                ...prev,
+                                password: true,
+                              }));
                             }}
                             onBlur={() => {
-                              setTouched((prev) => ({ ...prev, password: true }));
-                              setFieldError(
-                                "password",
-                                validatePassword(password),
-                              );
+                              setTouched((prev) => ({
+                                ...prev,
+                                password: true,
+                              }));
                             }}
                             style={{ paddingRight: 44 }}
                           />
@@ -651,7 +624,10 @@ export default function RegisterScreen() {
                           />
                         </Pressable>
                       </Box>
-                      <ValidationAnimation value={password} rules={passwordRules} />
+                      <ValidationAnimation
+                        value={password}
+                        rules={passwordRules}
+                      />
                     </VStack>
 
                     <VStack space="xs">
@@ -667,23 +643,12 @@ export default function RegisterScreen() {
                                 ...prev,
                                 confirmPassword: true,
                               }));
-                              setFieldError(
-                                "confirmPassword",
-                                validateConfirmPassword(value, password),
-                              );
                             }}
                             onBlur={() => {
                               setTouched((prev) => ({
                                 ...prev,
                                 confirmPassword: true,
                               }));
-                              setFieldError(
-                                "confirmPassword",
-                                validateConfirmPassword(
-                                  confirmPassword,
-                                  password,
-                                ),
-                              );
                             }}
                             style={{ paddingRight: 44 }}
                           />
@@ -697,7 +662,9 @@ export default function RegisterScreen() {
                           alignItems="center"
                           justifyContent="center"
                           hitSlop={10}
-                          onPress={() => setShowConfirmPassword((prev) => !prev)}
+                          onPress={() =>
+                            setShowConfirmPassword((prev) => !prev)
+                          }
                           disabled={loading}
                         >
                           <Feather
@@ -746,29 +713,7 @@ export default function RegisterScreen() {
             )}
           </MotiView>
         </Box>
-        
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F8FF",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    backgroundColor: "#F2F8FF",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 14,
-  },
-  cardShadow: {
-    shadowColor: "#4A90D9",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 14,
-    elevation: 3,
-  },
-});

@@ -1,7 +1,12 @@
 import React from "react";
 import { Alert } from "react-native";
 import { Box, Text } from "@gluestack-ui/themed";
-import { NavigationProp, RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import CreateEvaluations from "./ShowEvaluation";
 import LoadingScreen from "../../components/loadingscreens/loadingScreen";
 import { type DifferentProfileItem } from "../../components/profile/DifferentProfile";
@@ -17,7 +22,10 @@ import type { Profile } from "../../services/profileService";
 import type { AuthStackParamList } from "../../types/navigation";
 import { resolveMediaUrl } from "../../config/api";
 
-type EvaluationResultRoute = RouteProp<AuthStackParamList, "EvaluationResultScreen">;
+type EvaluationResultRoute = RouteProp<
+  AuthStackParamList,
+  "EvaluationResultScreen"
+>;
 
 type EvaluationVariant = {
   context: EvaluationContext;
@@ -35,7 +43,9 @@ export default function EvaluationResultScreen() {
   const [context, setContext] = React.useState<EvaluationContext | null>(null);
   const [product, setProduct] = React.useState<Product | null>(null);
   const [profile, setProfile] = React.useState<Profile | null>(null);
-  const [evaluationVariants, setEvaluationVariants] = React.useState<EvaluationVariant[]>([]);
+  const [evaluationVariants, setEvaluationVariants] = React.useState<
+    EvaluationVariant[]
+  >([]);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -48,12 +58,13 @@ export default function EvaluationResultScreen() {
           route.params.evaluationContextId,
         );
 
-        const [selectedProduct, selectedProfile, allContexts, myProfiles] = await Promise.all([
-          productService.getProductById(selectedContext.productId),
-          profileService.getProfileById(selectedContext.profileId),
-          evaluationContextService.getMyContexts(),
-          profileService.getMyProfile(),
-        ]);
+        const [selectedProduct, selectedProfile, allContexts, myProfiles] =
+          await Promise.all([
+            productService.getProductById(selectedContext.productId),
+            profileService.getProfileById(selectedContext.profileId),
+            evaluationContextService.getMyContexts(),
+            profileService.getMyProfile(),
+          ]);
 
         const selectedTimestamp = new Date(selectedContext.createdAt).getTime();
         const candidateContexts = allContexts.filter((item) => {
@@ -62,10 +73,15 @@ export default function EvaluationResultScreen() {
           }
 
           const itemTimestamp = new Date(item.createdAt).getTime();
-          return Math.abs(itemTimestamp - selectedTimestamp) <= RELATED_EVALUATION_WINDOW_MS;
+          return (
+            Math.abs(itemTimestamp - selectedTimestamp) <=
+            RELATED_EVALUATION_WINDOW_MS
+          );
         });
 
-        const contextList = candidateContexts.some((item) => item.id === selectedContext.id)
+        const contextList = candidateContexts.some(
+          (item) => item.id === selectedContext.id,
+        )
           ? candidateContexts
           : [selectedContext, ...candidateContexts];
 
@@ -77,7 +93,11 @@ export default function EvaluationResultScreen() {
         }
 
         const missingProfileIds = Array.from(
-          new Set(contextList.map((item) => item.profileId).filter((id) => !profileMap.has(id))),
+          new Set(
+            contextList
+              .map((item) => item.profileId)
+              .filter((id) => !profileMap.has(id)),
+          ),
         );
 
         if (missingProfileIds.length > 0) {
@@ -167,17 +187,29 @@ export default function EvaluationResultScreen() {
 
     try {
       setIsReEvaluating(true);
-      const updatedContext = await evaluationContextService.reevaluate(context.id);
+      const updatedContext = await evaluationContextService.reevaluate(
+        context.id,
+      );
 
-      navigation.navigate("EvaluationResultScreen", {
-        evaluationContextId: updatedContext.id,
-      });
+      setContext(updatedContext);
+
+      // optional but GOOD: update variants too
+      setEvaluationVariants((prev) => [
+        {
+          context: updatedContext,
+          profile: profile!, // safe because context exists
+        },
+        ...prev.filter((v) => v.context.id !== updatedContext.id),
+      ]);
     } catch {
-      Alert.alert("Re-evaluation failed", "Could not re-evaluate this product right now.");
+      Alert.alert(
+        "Re-evaluation failed",
+        "Could not re-evaluate this product right now.",
+      );
     } finally {
       setIsReEvaluating(false);
     }
-  }, [context, navigation]);
+  }, [context, profile]);
 
   if (loading) {
     return <LoadingScreen staged={false} message="Loading evaluation..." />;
@@ -189,8 +221,20 @@ export default function EvaluationResultScreen() {
 
   if (!context) {
     return (
-      <Box flex={1} bg="#F8FBFF" alignItems="center" justifyContent="center" px="$5">
-        <Text fontSize={16} lineHeight={20} color="#4E6074" fontFamily="RobotoMedium" textAlign="center">
+      <Box
+        flex={1}
+        bg="#F8FBFF"
+        alignItems="center"
+        justifyContent="center"
+        px="$5"
+      >
+        <Text
+          fontSize={16}
+          lineHeight={20}
+          color="#4E6074"
+          fontFamily="RobotoMedium"
+          textAlign="center"
+        >
           Could not load this evaluation result.
         </Text>
       </Box>
@@ -217,10 +261,15 @@ export default function EvaluationResultScreen() {
               if (navigation.canGoBack()) {
                 navigation.goBack();
               } else {
-                navigation.navigate("HistoryScreen", { profileId: context.profileId });
+                navigation.navigate("HistoryScreen", {
+                  profileId: context.profileId,
+                });
               }
             } catch {
-              Alert.alert("Delete failed", "Could not delete this evaluation right now.");
+              Alert.alert(
+                "Delete failed",
+                "Could not delete this evaluation right now.",
+              );
             }
           },
         },
@@ -248,16 +297,25 @@ export default function EvaluationResultScreen() {
         setContext(selectedVariant.context);
         setProfile(selectedVariant.profile);
       }}
-      currentProfileAllergens={profile?.allergens?.map((item) => item.name) ?? []}
-      currentProfileConditions={profile?.conditions?.map((item) => item.name) ?? []}
-      currentProfilePreferences={profile?.preferences?.map((item) => item.name) ?? []}
+      currentProfileAllergens={
+        profile?.allergens?.map((item) => item.name) ?? []
+      }
+      currentProfileConditions={
+        profile?.conditions?.map((item) => item.name) ?? []
+      }
+      currentProfilePreferences={
+        profile?.preferences?.map((item) => item.name) ?? []
+      }
       resultJson={context.resultJson}
       onDelete={handleDelete}
       onRetake={() => {
         void handleReEvaluate();
       }}
       onPressProfile={() => {
-        const fullName = [profile?.first_name?.trim(), profile?.last_name?.trim()]
+        const fullName = [
+          profile?.first_name?.trim(),
+          profile?.last_name?.trim(),
+        ]
           .filter(Boolean)
           .join(" ");
 
@@ -265,7 +323,8 @@ export default function EvaluationResultScreen() {
           profileId: profile?.id,
           profileName: fullName || profile?.first_name || undefined,
           profileImageUri: profile?.profile_image ?? undefined,
-          profilePreferenceNames: profile?.preferences?.map((item) => item.name) ?? [],
+          profilePreferenceNames:
+            profile?.preferences?.map((item) => item.name) ?? [],
           profileAge: profile?.age?.toString()?.trim() || undefined,
           profileIsMain: profile?.main_profile ?? false,
         });

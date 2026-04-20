@@ -13,7 +13,7 @@ import { clearAuthToken } from "../../utils/authStorage";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import QuickStartPanel from "../../components/landingpage/QuickStartPanel";
 import NavBarTop from "../../components/general/NavBarTop";
-import SystemErrorModal from "../../components/banners/SystemError";
+import SystemErrorModal from "../../components/banners/ErrorBanner";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import PastAnalysis from "../../components/evaluations/PastAnalysis";
 import { UvIndexCard } from "../../components/landingpage/UvIndexWidget";

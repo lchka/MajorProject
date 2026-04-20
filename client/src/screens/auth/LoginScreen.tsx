@@ -1,6 +1,6 @@
 // React & Gluestack imports
-import React, { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
@@ -18,18 +18,15 @@ import {
 } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  authService,
-  profileService,
-  type AuthResponse,
-} from "../../services";
+import { authService, profileService, type AuthResponse } from "../../services";
 import { loginSchema } from "../../models/auth.schema";
 import { AuthStackParamList } from "../../types/navigation";
 import SocialAuth from "../../components/actions/SocialAuth";
 import { useGoogleAuth } from "../../hooks/googleAuth.hook";
 import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
-
+import ValidationAnimation from "../../components/general/ValidationAnimation";
+import ErrorBanner from "../../components/banners/ErrorBanner";
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
@@ -45,14 +42,61 @@ export default function LoginScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ErrorBanner state
+  const [bannerError, setBannerError] = useState<string | null>(null);
+  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showError = (message: string) => {
+    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    setBannerError(message);
+    bannerTimerRef.current = setTimeout(() => setBannerError(null), 4500);
+  };
+
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+  });
+
+  // --- Validation rules ---
+
+  const emailRules = [
+    {
+      id: "email-required",
+      label: "Email is required",
+      test: (value: string) => value.trim().length > 0,
+    },
+    {
+      id: "email-format",
+      label: "Email format is valid",
+      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+    },
+  ];
+
+  const passwordRules = [
+    {
+      id: "password-required",
+      label: "Password is required",
+      test: (value: string) => value.length > 0,
+    },
+    {
+      id: "password-length",
+      label: "At least 8 characters",
+      test: (value: string) => value.length >= 8,
+    },
+  ];
+
+  // --- Auth helpers ---
+
   const completeLoginFlow = async (response: AuthResponse) => {
     let shouldGoToAnalyse = false;
-    let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
+    let profileIdForEdit: string | undefined =
+      response.user.profile_id ?? undefined;
 
     if (profileIdForEdit) {
       try {
         const profiles = await profileService.getMyProfile();
-        const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
+        const activeProfile =
+          profiles.find((item) => item.main_profile) ?? profiles[0];
         shouldGoToAnalyse = Boolean(activeProfile?.isComplete);
         profileIdForEdit = activeProfile?.id ?? profileIdForEdit;
       } catch {
@@ -75,11 +119,10 @@ export default function LoginScreen() {
 
   const { promptGoogleAuth, loading: googleLoading } = useGoogleAuth({
     onLoginSuccess: async (response) => {
-      // FIX: Removed success alert, navigate directly to landing/profile page
       await completeLoginFlow(response);
     },
     onLoginError: (message) => {
-      Alert.alert("Google Login Failed", message);
+      showError(message);
     },
   });
 
@@ -143,15 +186,21 @@ export default function LoginScreen() {
     loadRememberedLogin();
   }, []);
 
+  // Cleanup banner timer on unmount
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    };
+  }, []);
+
   const handleLogin = async () => {
-    const result = loginSchema.safeParse({
-      email,
-      password,
-    });
+    setTouched({ email: true, password: true });
+
+    const result = loginSchema.safeParse({ email, password });
 
     if (!result.success) {
       const errors = result.error.issues.map((err) => err.message).join("\n");
-      Alert.alert("Validation Error", errors);
+      showError(errors);
       return;
     }
 
@@ -176,7 +225,6 @@ export default function LoginScreen() {
 
       console.log("Login successful:", response);
 
-      // FIX: Removed success alert, navigate directly to landing/profile page
       await completeLoginFlow(response);
       setEmail("");
       setPassword("");
@@ -185,10 +233,17 @@ export default function LoginScreen() {
 
       let errorMessage = "Login failed. Please try again.";
 
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      const backendMessage = error.response?.data?.message?.toLowerCase() || "";
+
+      if (
+        backendMessage.includes("invalid credentials") ||
+        backendMessage.includes("wrong password")
+      ) {
+        errorMessage = "Incorrect email or password.";
+      } else if (backendMessage.includes("user not found")) {
+        errorMessage = "No account found with that email.";
       } else if (error.response?.status === 401) {
-        errorMessage = "Invalid email or password.";
+        errorMessage = "Incorrect email or password.";
       } else if (
         typeof error.message === "string" &&
         error.message.includes("Network Error")
@@ -197,7 +252,7 @@ export default function LoginScreen() {
           "Cannot connect to server. Please check your connection.";
       }
 
-      Alert.alert("Login Failed", errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -208,6 +263,12 @@ export default function LoginScreen() {
       style={{ flex: 1, backgroundColor: "#F2F8FF" }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {/* ErrorBanner rendered outside ScrollView so it floats over content */}
+      <ErrorBanner
+        error={bannerError ? { message: bannerError } : null}
+        onDismiss={() => setBannerError(null)}
+      />
+
       <ScrollView
         contentContainerStyle={{
           flexGrow: 1,
@@ -217,6 +278,7 @@ export default function LoginScreen() {
         }}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Background circles */}
         <Box
           position="absolute"
           top={-60}
@@ -269,27 +331,42 @@ export default function LoginScreen() {
         </HStack>
 
         <VStack pt="$2" space="lg">
+          {/* Email */}
           <VStack space="xs">
             <Input size="lg" borderRadius="$full">
               <InputField
                 placeholder="Email address"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setTouched((prev) => ({ ...prev, email: true }));
+                }}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoComplete="email"
                 editable={!loading}
               />
             </Input>
+            {touched.email && (
+              <ValidationAnimation value={email} rules={emailRules} />
+            )}
           </VStack>
 
+          {/* Password */}
           <VStack space="xs">
             <Box position="relative">
               <Input size="lg" borderRadius="$full">
                 <InputField
                   placeholder="Password"
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={(value) => {
+                    setPassword(value);
+                    setTouched((prev) => ({ ...prev, password: true }));
+                  }}
+                  onBlur={() =>
+                    setTouched((prev) => ({ ...prev, password: true }))
+                  }
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoComplete="password"
@@ -317,8 +394,12 @@ export default function LoginScreen() {
                 />
               </Pressable>
             </Box>
+            {touched.password && (
+              <ValidationAnimation value={password} rules={passwordRules} />
+            )}
           </VStack>
 
+          {/* Remember me / Forgot password */}
           <HStack justifyContent="space-between" alignItems="center">
             <Pressable
               onPress={() => setRememberMe((prev) => !prev)}
@@ -362,11 +443,11 @@ export default function LoginScreen() {
             onGooglePress={() => void promptGoogleAuth()}
             onGithubPress={async () => {
               if (!GITHUB_CLIENT_ID) {
-                Alert.alert("GitHub Login", "Missing GitHub client ID.");
+                showError("Missing GitHub client ID.");
                 return;
               }
               if (!githubRequest) {
-                Alert.alert("GitHub Login", "GitHub auth not ready.");
+                showError("GitHub auth not ready.");
                 return;
               }
               await promptGithubAuth();

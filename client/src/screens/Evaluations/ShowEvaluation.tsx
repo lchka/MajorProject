@@ -18,6 +18,8 @@ import ProfileSignals from "../../components/evaluations/ProfileSignals";
 import WhyThisResult from "../../components/evaluations/WhyThisResult";
 import type { EvaluationResultJson, EvaluationStatus } from "../../services/evaluationContextService";
 import { resolveMediaUrl } from "../../config/api";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { AuthStackParamList } from "../../types/navigation";
 import { styles } from "../../style/LandingPageStyle";
 
 type IngredientRow = {
@@ -181,12 +183,15 @@ export default function CreateEvaluations({
 	onRetake,
 	onDelete,
 	onPressProfile,
-}: CreateEvaluationsProps) {	const [showBanner, setShowBanner] = React.useState(true);
+}: CreateEvaluationsProps) {
+	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+	const [showBanner, setShowBanner] = React.useState(true);
 
 	const handleRetakeWithBannerClose = React.useCallback(() => {
 		setShowBanner(false);
 		onRetake?.();
 	}, [onRetake]);
+
 	const ingredients = React.useMemo<IngredientRow[]>(() => {
 		if (!resultJson) {
 			return defaultIngredients;
@@ -303,7 +308,7 @@ export default function CreateEvaluations({
 
 	return (
 		<Box style={styles.screen}>
-			<Box 
+			<Box
 				position="absolute"
 				top={-60}
 				right={-30}
@@ -344,98 +349,98 @@ export default function CreateEvaluations({
 					/>
 				</Box>
 
-					<Box mb="$2" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-						<DeleteButton
-							label="Delete"
-							onPress={onDelete}
-							disabled={!onDelete}
-						/>
-						<ReEvaluateButton
-							onPress={handleRetakeWithBannerClose}
-							disabled={!onRetake}
-							width={128}
-						/>
-					</Box>
-
-					<ImageEvaluation imageUri={imageUri} />
-
-					<ProdouctInfo
-						productName={productName}
-						summary={statusText}
-						status={statusTone}
-						isProcessing={isProcessing}
+				<Box mb="$2" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+					<DeleteButton
+						label="Delete"
+						onPress={onDelete}
+						disabled={!onDelete}
 					/>
-
-					<ProfileRetakeBanner
-						isVisible={profileMismatchDetected && showBanner}
-						onRetake={handleRetakeWithBannerClose}
+					<ReEvaluateButton
+						onPress={handleRetakeWithBannerClose}
+						disabled={!onRetake}
+						width={128}
 					/>
+				</Box>
 
-					{score !== null ? (
-						<SectionCard
-							title="AI Confidence Score"
-							icon={<Feather name="bar-chart-2" size={16} color="#42586F" />}
-							index={0}
-						>
-							<Text fontSize={26} lineHeight={30} fontFamily="RobotoMedium" color="#142131">
-								{`${score}/100`}
-							</Text>
-							<Box mt="$2" h={8} bg="#E8EDF3" borderRadius={999} overflow="hidden">
-								<MotiView
-									from={{ width: "0%" }}
-									animate={{ width: `${score}%` }}
-									transition={{ type: "timing", duration: 500 }}
-									style={{ height: 8, borderRadius: 999, backgroundColor: "#4A8EC9" }}
-								/>
+				<ImageEvaluation imageUri={imageUri} />
+
+				<ProdouctInfo
+					productName={productName}
+					summary={statusText}
+					status={statusTone}
+					isProcessing={isProcessing}
+				/>
+
+				<ProfileRetakeBanner
+					isVisible={profileMismatchDetected && showBanner}
+					onRetake={handleRetakeWithBannerClose}
+				/>
+
+				{score !== null ? (
+					<SectionCard
+						title="AI Confidence Score"
+						icon={<Feather name="bar-chart-2" size={16} color="#42586F" />}
+						index={0}
+					>
+						<Text fontSize={26} lineHeight={30} fontFamily="RobotoMedium" color="#142131">
+							{`${score}/100`}
+						</Text>
+						<Box mt="$2" h={8} bg="#E8EDF3" borderRadius={999} overflow="hidden">
+							<MotiView
+								from={{ width: "0%" }}
+								animate={{ width: `${score}%` }}
+								transition={{ type: "timing", duration: 500 }}
+								style={{ height: 8, borderRadius: 999, backgroundColor: "#4A8EC9" }}
+							/>
+						</Box>
+					</SectionCard>
+				) : null}
+
+				<RiskMap ingredients={ingredients} index={1} />
+
+				<DangerousIngredients items={resultJson?.dangerous_ingredients} index={2} />
+
+				<WhyThisResult reasons={reasons} index={3} />
+
+				<ProfileSignals
+					matchedAllergens={toStringArray(resultJson?.matched_allergens)}
+					matchedConditions={toStringArray(resultJson?.matched_conditions)}
+					matchedPreferences={toStringArray(resultJson?.matched_preferences)}
+					profileAllergens={currentProfileAllergens}
+					profileConditions={currentProfileConditions}
+					profilePreferences={currentProfilePreferences}
+					index={4}
+				/>
+
+				<AllIngredients items={toStringArray(resultJson?.all_ingredients)} index={5} />
+
+				<Citations resultJson={resultJson} index={6} />
+
+				{additionalEntries.length > 0 ? (
+					<SectionCard
+						title="Additional Result Data"
+						icon={<Feather name="info" size={16} color="#42586F" />}
+						index={7}
+					>
+						{additionalEntries.map(([key, value], index) => (
+							<Box key={key} mb={index === additionalEntries.length - 1 ? 0 : 10}>
+								<Text fontSize={12} lineHeight={16} color="#213145" fontFamily="RobotoMedium" mb={4}>
+									{formatLabel(key)}
+								</Text>
+								<Text fontSize={11} lineHeight={15} color="#556476" fontFamily="Roboto">
+									{safeJsonValue(value)}
+								</Text>
 							</Box>
-						</SectionCard>
-					) : null}
-
-					<RiskMap ingredients={ingredients} index={1} />
-
-					<DangerousIngredients items={resultJson?.dangerous_ingredients} index={2} />
-
-					<WhyThisResult reasons={reasons} index={3} />
-
-					<ProfileSignals
-						matchedAllergens={toStringArray(resultJson?.matched_allergens)}
-						matchedConditions={toStringArray(resultJson?.matched_conditions)}
-						matchedPreferences={toStringArray(resultJson?.matched_preferences)}
-						profileAllergens={currentProfileAllergens}
-						profileConditions={currentProfileConditions}
-						profilePreferences={currentProfilePreferences}
-						index={4}
-					/>
-
-					<AllIngredients items={toStringArray(resultJson?.all_ingredients)} index={5} />
-
-					<Citations resultJson={resultJson} index={6} />
-
-					{additionalEntries.length > 0 ? (
-						<SectionCard
-							title="Additional Result Data"
-							icon={<Feather name="info" size={16} color="#42586F" />}
-							index={7}
-						>
-							{additionalEntries.map(([key, value], index) => (
-								<Box key={key} mb={index === additionalEntries.length - 1 ? 0 : 10}>
-									<Text fontSize={12} lineHeight={16} color="#213145" fontFamily="RobotoMedium" mb={4}>
-										{formatLabel(key)}
-									</Text>
-									<Text fontSize={11} lineHeight={15} color="#556476" fontFamily="Roboto">
-										{safeJsonValue(value)}
-									</Text>
-								</Box>
-							))}
-						</SectionCard>
-					) : null}
+						))}
+					</SectionCard>
+				) : null}
 
 			</ScrollView>
 
 			<NavBarBottom
 				activeTab="history"
 				avatarSource={avatarSource}
-				onPressUpload={onRetake}
+				onPressUpload={() => navigation.navigate("CameraScreen")}
 				onPressProfile={onPressProfile}
 			/>
 		</Box>
