@@ -4,6 +4,7 @@ import { CreatePromptDto, UpdatePromptDto } from "../types/prompt.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 const promptService = new PromptService();
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 export class promptController {
   async createPrompt(

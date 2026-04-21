@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import userService from "../services/user.service.js";
 import { UpdateUserDto } from "../types/user.dto.js";
 import { SUCCESS_RES } from "../utils/HttpError.js";
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 export class UserController {
   // get current logged-in user

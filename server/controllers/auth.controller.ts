@@ -6,6 +6,7 @@ import {
   GoogleLoginInput,
 } from "../utils/validators/authValidator.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 export class AuthController {
   async register(
@@ -22,6 +23,7 @@ export class AuthController {
     }
   }
 
+  //logic method for auth
   async login(
     req: Request<Record<string, never>, Record<string, never>, LoginInput>,
     res: Response,
@@ -35,6 +37,7 @@ export class AuthController {
       next(error);
     }
   }
+  //google logic method for auth
 
   async googleLogin(
     req: Request<Record<string, never>, Record<string, never>, GoogleLoginInput>,
@@ -50,6 +53,7 @@ export class AuthController {
     }
   }
 
+  //logout method
   async logout(
     _req: Request,
     res: Response,
@@ -65,6 +69,7 @@ export class AuthController {
     }
   }
 
+  //get current user
   async getCurrentUser(
     req: Request,
     res: Response,
@@ -72,8 +77,7 @@ export class AuthController {
   ): Promise<void> {
     try {
       // userId is set by auth middleware
-      const userId = (req as any).userId;
-      
+     const userId = req.userId;
       if (!userId) {
         throw new Error("User ID not found in request");
       }

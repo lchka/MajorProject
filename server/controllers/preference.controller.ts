@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { PreferenceService } from "../services/preference.service.js";
 import { CreatePreferenceDto, UpdatePreferenceDto } from "../types/preference.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 const preferenceService = new PreferenceService();
 

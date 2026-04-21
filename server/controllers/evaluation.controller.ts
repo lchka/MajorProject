@@ -5,6 +5,7 @@ import {
   createEvaluationContextSchema,
 } from "../types/evaluationContext.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES, HttpError, NOT_FOUND } from "../utils/HttpError.js";
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 type ArchiveEvaluationBody = CreateEvaluationContextDto & {
   evaluationContextId?: string;

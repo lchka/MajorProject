@@ -21,6 +21,6 @@
     "noFallthroughCasesInSwitch": true,
     "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["**/*.ts"],
+ "include": ["**/*.ts", "**/*.d.ts"],
   "exclude": ["node_modules", "dist", "generated"]
 }

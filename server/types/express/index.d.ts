@@ -1,6 +1,7 @@
-// Extend Express Request type to include user from auth middleware
-declare namespace Express {
-  export interface Request {
+import "express";
+
+declare module "express-serve-static-core" {
+  interface Request {
     userId?: string;
     user?: {
       id: string;
@@ -15,3 +16,5 @@ declare namespace Express {
     file?: Express.Multer.File;
   }
 }
+
+export {};

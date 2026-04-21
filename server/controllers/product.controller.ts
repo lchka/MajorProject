@@ -13,7 +13,7 @@ import {
 } from "../utils/HttpError.js";
 
 const productService = new ProductService();
-
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 type ProductScanBody = {
 	name?: unknown;
 	brand?: unknown;
@@ -23,6 +23,8 @@ type ProductScanBody = {
 };
 
 export class ProductController {
+
+	//create product method using types
 	async createProduct(
 		req: Request<Record<string, never>, Record<string, never>, CreateProductDto>,
 		res: Response,
@@ -40,6 +42,7 @@ export class ProductController {
 			next(error);
 		}
 	}
+	//create product from capturing an image method using types
 
 	async createProductFromScan(
 		req: Request<Record<string, never>, Record<string, never>, ProductScanBody>,
@@ -92,6 +95,7 @@ export class ProductController {
 			next(error);
 		}
 	}
+	//all products method
 
 	async getAllProducts(
 		req: Request,
@@ -113,6 +117,7 @@ export class ProductController {
 			next(error);
 		}
 	}
+	// products by id method
 
 	async getProductById(
 		req: Request<{ id: string }>,

@@ -8,9 +8,12 @@ import {
 import { Permission, hasPermission } from "../types/permissions.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
+// handles evaluation context logic through the service layer
 const evaluationContextService = new EvaluationContextService();
 
 export class EvaluationContextController {
+
+	// creates a new evaluation context based on user input
 	async createEvaluationContext(
 		req: Request<Record<string, never>, Record<string, never>, CreateEvaluationContextDto>,
 		res: Response,
@@ -24,6 +27,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// runs evaluation logic on a product using the provided data
 	async evaluateProduct(
 		req: Request<Record<string, never>, Record<string, never>, EvaluateProductRequestDto>,
 		res: Response,
@@ -37,6 +41,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// gets all evaluation contexts, or just the user’s ones depending on permissions
 	async getAllEvaluationContexts(
 		_req: Request,
 		res: Response,
@@ -45,6 +50,7 @@ export class EvaluationContextController {
 		try {
 			const userRole = _req.user?.role?.name;
 			const userId = _req.userId ?? _req.user?.id;
+
 			const canViewAll = userRole
 				? hasPermission(userRole, Permission.PROFILE_VIEW_ALL)
 				: false;
@@ -54,12 +60,14 @@ export class EvaluationContextController {
 				: userId
 					? await evaluationContextService.getEvaluationContextsForUser(userId)
 					: [];
+
 			res.status(SUCCESS_RES).json(contexts);
 		} catch (error) {
 			next(error);
 		}
 	}
 
+	// gets a single evaluation context by id
 	async getEvaluationContextById(
 		req: Request<{ id: string }>,
 		res: Response,
@@ -73,6 +81,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// gets all contexts linked to a specific profile
 	async getEvaluationContextsByProfileId(
 		req: Request<{ profileId: string }>,
 		res: Response,
@@ -88,6 +97,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// gets contexts for a specific product, filtered by user if needed
 	async getEvaluationContextsByProductId(
 		req: Request<{ productId: string }>,
 		res: Response,
@@ -96,6 +106,7 @@ export class EvaluationContextController {
 		try {
 			const userRole = req.user?.role?.name;
 			const userId = req.userId ?? req.user?.id;
+
 			const canViewAll = userRole
 				? hasPermission(userRole, Permission.PROFILE_VIEW_ALL)
 				: false;
@@ -108,12 +119,14 @@ export class EvaluationContextController {
 							req.params.productId,
 						)
 					: [];
+
 			res.status(SUCCESS_RES).json(contexts);
 		} catch (error) {
 			next(error);
 		}
 	}
 
+	// gets all contexts for the currently logged in user
 	async getEvaluationContextsForUser(
 		req: Request,
 		res: Response,
@@ -121,6 +134,7 @@ export class EvaluationContextController {
 	): Promise<void> {
 		try {
 			const userId = req.userId ?? req.user?.id;
+
 			if (!userId) {
 				res.status(401).json({ message: "Unauthorized" });
 				return;
@@ -133,6 +147,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// updates an existing evaluation context
 	async updateEvaluationContext(
 		req: Request<{ id: string }, Record<string, never>, UpdateEvaluationContextDto>,
 		res: Response,
@@ -149,6 +164,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// re-runs the evaluation logic for an existing context
 	async reevaluateEvaluationContext(
 		req: Request<{ id: string }>,
 		res: Response,
@@ -162,6 +178,7 @@ export class EvaluationContextController {
 		}
 	}
 
+	// deletes an evaluation context
 	async deleteEvaluationContext(
 		req: Request<{ id: string }>,
 		res: Response,

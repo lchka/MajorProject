@@ -5,6 +5,7 @@ import { CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/
 import { uploadProfileImageToS3 } from "../lib/s3.js";
 
 const profileService = new ProfileService();
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 export class ProfileController {
     // create profile for the logged-in user

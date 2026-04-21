@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import allergenService from "../services/allergen.service.js";
 import { CreateAllergenDto, UpdateAllergenDto } from "../types/allergen.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 export class AllergenController {
     // create a new allergen

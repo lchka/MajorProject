@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import conditionService from "../services/condition.service.js";
 import { CreateConditionDto, UpdateConditionDto } from "../types/condition.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
 
 export class ConditionController {
 	// create a new condition
