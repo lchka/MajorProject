@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, type ImageSourcePropType, View, StyleSheet } from "react-native";
+import { Platform, type ImageSourcePropType, View, StyleSheet, Text as RNText } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SwipeListView } from "react-native-swipe-list-view";
 import Feather from "@expo/vector-icons/Feather";
@@ -89,12 +89,32 @@ const sortEvaluations = (
 
 const styles = StyleSheet.create({
   deleteAction: {
-    justifyContent: "center",
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-end",
     alignItems: "center",
     backgroundColor: "#FF3B30",
-    width: 80,
     borderRadius: 18,
-    marginRight: 2,
+    marginBottom: 12,
+    shadowColor: "#FF3B30",
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+    overflow: "hidden",
+  },
+  deleteActionButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 100,
+    alignSelf: "stretch",
+  },
+  deleteLabel: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+    marginTop: 4,
   },
 });
 
@@ -133,7 +153,6 @@ export default function AllEvaluations({
 
   const { hasScrolled, onScroll, scrollEventThrottle } = useScrollPastThreshold(5);
 
-  // Track deleted keys to prevent double-firing
   const deletedKeysRef = React.useRef<Set<string>>(new Set());
 
   React.useEffect(() => {
@@ -178,14 +197,11 @@ export default function AllEvaluations({
       if (deletedKeysRef.current.has(evaluationContextId)) return;
       deletedKeysRef.current.add(evaluationContextId);
 
-      // Optimistically remove from UI immediately
       onDeleteEvaluation?.(evaluationContextId);
 
-      // Delete from server in background
       try {
         await evaluationContextService.deleteById(evaluationContextId);
       } catch {
-        // Remove from deleted set so it could be retried
         deletedKeysRef.current.delete(evaluationContextId);
       }
     },
@@ -258,6 +274,10 @@ export default function AllEvaluations({
           <SwipeListView
             data={paginatedItems}
             keyExtractor={(item) => item.evaluationContextId}
+            previewRowKey={paginatedItems[0]?.evaluationContextId}
+            previewOpenValue={-100}
+            previewOpenDelay={800}
+            previewDuration={300}
             renderItem={({ item, index }) => {
               const status = normalizeWarningStatus(item.status);
               const imageUri = resolveMediaUrl(item.imageUri ?? null);
@@ -334,13 +354,29 @@ export default function AllEvaluations({
             }}
             renderHiddenItem={() => (
               <View style={styles.deleteAction}>
-                <Feather name="trash-2" size={24} color="#FFFFFF" />
+                <View style={styles.deleteActionButton}>
+                  <MotiView
+                    from={{ scale: 0.6, opacity: 0.4 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", damping: 12, stiffness: 180 }}
+                  >
+                    <Feather name="trash-2" size={28} color="#FFFFFF" />
+                  </MotiView>
+                  <MotiView
+                    from={{ opacity: 0, translateY: 4 }}
+                    animate={{ opacity: 1, translateY: 0 }}
+                    transition={{ type: "timing", duration: 180, delay: 60 }}
+                  >
+                    <RNText style={styles.deleteLabel}>DELETE</RNText>
+                  </MotiView>
+                </View>
               </View>
             )}
             onRowOpen={(rowKey) => {
               void handleDelete(rowKey);
             }}
-            rightOpenValue={-80}
+            rightOpenValue={-100}
+            swipeToOpenPercent={30}
             disableRightSwipe
             scrollEnabled={false}
           />

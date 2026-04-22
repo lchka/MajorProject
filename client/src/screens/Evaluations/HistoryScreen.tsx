@@ -263,7 +263,8 @@ export default function HistoryScreen() {
 
         {/* Sticky header: back button sits above SwitchProfile */}
         <Box>
-          <BackButton />        {/* Profile switcher with scroll animation - sticky at top */}
+          <BackButton />       
+           {/* Profile switcher with scroll animation - sticky at top */}
           <SwitchProfile
           hasBackButton
             profiles={profileSwitcherItems}
