@@ -1,4 +1,4 @@
-# 🌟 Lumiere — Major Project
+# ⭐ Lumiere — Major Project
 
 A full-stack TypeScript-first application for ingredient/allergen evaluation and product management.
 
@@ -19,6 +19,7 @@ MajorProject/
 ├── server/   # Backend (API, Prisma, database)
 ├── client/   # Mobile app (Expo / React Native)
 ├── package.json  # Root config
+├── LICENCE.md
 └── README.md
 ```
 
@@ -65,16 +66,7 @@ npm install
 ### Server — `server/.env`
 
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DB_NAME
-PORT=3000
-JWT_SECRET=your-secret
-
-# Optional
-SERPAPI_API_KEY=your-serpapi-key
-AWS_REGION=eu-west-1
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-AWS_S3_BUCKET=...
+mitigate to .env.example! 
 ```
 
 ### Client — `client/.env`
@@ -158,7 +150,7 @@ npm test
 - Apply migrations:
 
 ```bash
-npx prisma migrate deploy
+npx prisma migrate deploy && npm run seed
 ```
 
 - Set all required environment variables on your server
@@ -178,7 +170,7 @@ npm run start
 
 ---
 
-## 🐳 Docker (Optional)
+## 🐳 Docker (Optional for Local Testing)
 
 **Files:**
 - `server/docker-compose.yaml` (PostgreSQL)

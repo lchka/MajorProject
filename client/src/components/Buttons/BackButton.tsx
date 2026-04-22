@@ -37,7 +37,6 @@ export default function BackButton({
       alignSelf="flex-start"
       alignItems="center"
       justifyContent="center"
-      px="$5"
       py="$3"
       style={style}
       hitSlop={hitSlop}

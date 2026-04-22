@@ -131,7 +131,7 @@ export default function SingleCondition({
 
 							{/* Soothing Ingredients Section */}
 							{soothing.length > 0 && (
-								<Box mt="$2">
+								<Box mt="$2" px="$1">
 									<Text fontSize={14} fontFamily="RobotoMedium" color="#2E7D32" mb="$1">
 										Soothing Ingredients
 									</Text>
@@ -155,7 +155,7 @@ export default function SingleCondition({
 
 							{/* Warning Ingredients Section */}
 							{warning.length > 0 && (
-								<Box mt="$2">
+								<Box mt="$2" px="$1" pb="$2">
 									<Text fontSize={14} fontFamily="RobotoMedium" color="#CB3A52" mb="$1">
 										Warning Ingredients
 									</Text>

@@ -48,6 +48,7 @@ export class SerpApiImageService {
   private buildQuery(name: string, brand: string): string {
     // CHANGE: Added logging to trace query construction
     const primary = this.compactWords(`${brand} ${name}`);
+    //search query PROMPT
     const query = `${primary} product white background`.trim();
     const finalQuery = query.replace(/\s+/g, " ");
     console.log(`[SerpAPI] Query built - name: "${name}", brand: "${brand}" → "${finalQuery}"`);
@@ -145,7 +146,7 @@ export class SerpApiImageService {
       let contentType = String(imageResponse.headers["content-type"] || "image/jpeg").split(";")[0] || "image/jpeg";      
       
       // FIX: Handle CDN responses that return binary/octet-stream instead of proper image MIME type
-      // This occurs when CDN (e.g., DigitalOcean Spaces) serves images without proper content-type headers
+      // This occurs when CDN serves images without proper content-type headers
       if (contentType === "binary/octet-stream" || contentType === "application/octet-stream") {
         console.log(`[SerpAPI] CDN returned generic binary type, inferring from URL...`);
         // Try to infer proper image type from URL file extension

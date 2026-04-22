@@ -160,9 +160,9 @@ export default function SwitchProfile({
 							<Text fontSize={13} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
 								{greetingText}
 							</Text>
-							<Text pt="$2" fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">
+							{/* <Text pt="$2" fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">
 								Switch Profile
-							</Text>
+							</Text> */}
 						</Box>
 						<Box
 							w={40}
