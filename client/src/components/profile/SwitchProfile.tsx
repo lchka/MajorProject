@@ -197,7 +197,6 @@ export default function SwitchProfile({
 						Switch Profile
 					</Text>
 				</Box>
-				{/* This matches the scan CTA's arrow badge style. */}
 				<Box
 					w={40}
 					h={40}
