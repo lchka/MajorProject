@@ -2,7 +2,7 @@ import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Text } from "@gluestack-ui/themed";
-import type { DangerousIngredient } from "../../services/evaluationContextService";
+import type { DangerousIngredient } from "../../types/evaluationContext.type";
 
 type DangerousIngredientsProps = {
 	items?: DangerousIngredient[];

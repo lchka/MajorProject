@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import evaluationContextService, {
-  type EvaluationResultJson,
-} from "./evaluationContextService";
+import evaluationContextService from "./evaluationContextService";
+import type { EvaluationResultJson } from "../types/evaluationContext.type";
 
 const LOCAL_EVALUATIONS_KEY = "localEvaluations";
 const PENDING_ARCHIVE_KEY = "pendingArchivedEvaluations";

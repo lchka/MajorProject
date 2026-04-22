@@ -28,7 +28,7 @@ profileService,
 saveEvaluation,
 } from "../../services";
 import { isGeminiSystemFailure, resolveMediaUrl } from "../../config/api";
-import type { EvaluationContext } from "../../services/evaluationContextService";
+import type { EvaluationContext } from "../../types/evaluationContext.type";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
 import type { AuthStackParamList } from "../../types/navigation";

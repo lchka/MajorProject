@@ -16,7 +16,7 @@ import DifferentProfile, { type DifferentProfileItem } from "../../components/pr
 import ImageEvaluation from "../../components/evaluations/ImageEvaluation";
 import ProfileSignals from "../../components/evaluations/ProfileSignals";
 import WhyThisResult from "../../components/evaluations/WhyThisResult";
-import type { EvaluationResultJson, EvaluationStatus } from "../../services/evaluationContextService";
+import type { EvaluationResultJson, EvaluationStatus } from "../../types/evaluationContext.type";
 import { resolveMediaUrl } from "../../config/api";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { AuthStackParamList } from "../../types/navigation";

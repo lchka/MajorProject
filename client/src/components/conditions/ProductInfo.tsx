@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Text } from "@gluestack-ui/themed";
-import type { EvaluationStatus } from "../../services/evaluationContextService";
+import type { EvaluationStatus } from "../../types/evaluationContext.type";
 
 type ProductInfoProps = {
 	productName: string;

@@ -14,7 +14,7 @@ import { getLocalEvaluations, type LocalEvaluation, evaluationContextService, pr
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
 import type { AuthStackParamList } from "../../types/navigation";
-import type { EvaluationContext } from "../../services/evaluationContextService";
+import type { EvaluationContext } from "../../types/evaluationContext.type";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
 

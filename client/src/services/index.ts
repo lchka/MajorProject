@@ -30,7 +30,10 @@ export type {
   EvaluationResultJson,
   EvaluateProductInput,
   PersistEvaluationInput,
-} from './evaluationContextService';
+  EvaluationStatus,
+  DangerousIngredient,
+  CitationSource,
+} from '../types/evaluationContext.type';
 export type { Product, ProductImageUploadFile } from './productService';
 export type { CurrentUvSnapshot } from './weatherService';
 export type { LocalEvaluation } from './localEvaluationStorage';

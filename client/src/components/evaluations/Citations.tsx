@@ -3,7 +3,7 @@ import { Linking } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Pressable, Text } from "@gluestack-ui/themed";
-import type { EvaluationResultJson } from "../../services/evaluationContextService";
+import type { EvaluationResultJson } from "../../types/evaluationContext.type";
 
 type CitationsProps = {
   resultJson?: EvaluationResultJson | null;

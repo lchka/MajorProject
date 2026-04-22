@@ -22,7 +22,7 @@ import {
   getLocalEvaluations,
 } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
-import type { EvaluationContext } from "../../services/evaluationContextService";
+import type { EvaluationContext } from "../../types/evaluationContext.type";
 import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
 import type { LocalEvaluation } from "../../services";
