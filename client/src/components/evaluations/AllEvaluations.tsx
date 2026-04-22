@@ -63,7 +63,6 @@ const sortEvaluations = (
   sortOption: PastAnalysisSortOption
 ): EvaluationHistoryCard[] => {
   const entries = [...evaluations];
-
   if (sortOption === "Newest First (DEFAULT)") {
     return entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
@@ -83,7 +82,6 @@ const sortEvaluations = (
       return aMissing - bMissing;
     });
   }
-
   return entries;
 };
 
@@ -152,8 +150,8 @@ export default function AllEvaluations({
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>("Newest First (DEFAULT)");
 
   const { hasScrolled, onScroll, scrollEventThrottle } = useScrollPastThreshold(5);
-
   const deletedKeysRef = React.useRef<Set<string>>(new Set());
+  const swipeListRef = React.useRef<SwipeListView<EvaluationHistoryCard>>(null);
 
   React.useEffect(() => {
     if (profileSwitcherItems && profileSwitcherItems.length > 0) {
@@ -164,7 +162,6 @@ export default function AllEvaluations({
   const filteredItems = React.useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
     let results = items;
-
     if (normalizedQuery) {
       results = results.filter((item) => {
         const haystack = [item.productName, item.profileName, item.summary, item.status, formatDate(item.createdAt)]
@@ -174,7 +171,6 @@ export default function AllEvaluations({
         return haystack.includes(normalizedQuery);
       });
     }
-
     return sortEvaluations(results, sortOption);
   }, [items, searchQuery, sortOption]);
 
@@ -196,9 +192,7 @@ export default function AllEvaluations({
     async (evaluationContextId: string) => {
       if (deletedKeysRef.current.has(evaluationContextId)) return;
       deletedKeysRef.current.add(evaluationContextId);
-
       onDeleteEvaluation?.(evaluationContextId);
-
       try {
         await evaluationContextService.deleteById(evaluationContextId);
       } catch {
@@ -214,11 +208,7 @@ export default function AllEvaluations({
         <Text fontSize={22} fontFamily="RobotoMedium" color="#0F172A">
           All Past Analysis
         </Text>
-        <Pressable
-          onPress={() => setIsSortOpen(!isSortOpen)}
-          flexDirection="row"
-          alignItems="center"
-        >
+        <Pressable onPress={() => setIsSortOpen(!isSortOpen)} flexDirection="row" alignItems="center">
           <Ionicons name="ellipsis-horizontal" size={22} color="#64748B" />
         </Pressable>
       </HStack>
@@ -248,40 +238,36 @@ export default function AllEvaluations({
       {!loading && items.length === 0 && (
         <Box mt="$4" borderRadius={18} p="$5" alignItems="center" justifyContent="center" bg="#F8FBFF">
           <Feather name="clock" size={26} color="#94A3B8" />
-          <Text mt="$2" fontSize={15} fontFamily="RobotoMedium" color="#334155">
-            No evaluations yet
-          </Text>
-          <Text mt="$1" fontSize={13} color="#64748B">
-            Start scanning to build your history
-          </Text>
+          <Text mt="$2" fontSize={15} fontFamily="RobotoMedium" color="#334155">No evaluations yet</Text>
+          <Text mt="$1" fontSize={13} color="#64748B">Start scanning to build your history</Text>
         </Box>
       )}
 
       {!loading && items.length > 0 && filteredItems.length === 0 && (
         <Box mt="$4" borderRadius={18} p="$5" alignItems="center" justifyContent="center" bg="#F8FBFF">
           <Feather name="search" size={24} color="#94A3B8" />
-          <Text mt="$2" fontSize={15} fontFamily="RobotoMedium" color="#334155">
-            No evaluations match your search
-          </Text>
-          <Text mt="$1" fontSize={13} color="#64748B">
-            Try another product name, profile, or status
-          </Text>
+          <Text mt="$2" fontSize={15} fontFamily="RobotoMedium" color="#334155">No evaluations match your search</Text>
+          <Text mt="$1" fontSize={13} color="#64748B">Try another product name, profile, or status</Text>
         </Box>
       )}
 
       {!loading && filteredItems.length > 0 && (
         <Box>
           <SwipeListView
+            ref={swipeListRef}
             data={paginatedItems}
             keyExtractor={(item) => item.evaluationContextId}
             previewRowKey={paginatedItems[0]?.evaluationContextId}
-            previewOpenValue={-100}
-            previewOpenDelay={800}
-            previewDuration={300}
+            previewOpenValue={-60}
+            previewOpenDelay={1000}
+            previewDuration={400}
+            swipeToOpenPercent={15}
+            swipeToClosePercent={50}
+            tension={40}
+            friction={8}
             renderItem={({ item, index }) => {
               const status = normalizeWarningStatus(item.status);
               const imageUri = resolveMediaUrl(item.imageUri ?? null);
-
               return (
                 <MotiView
                   from={{ opacity: 0, translateY: 8 }}
@@ -303,46 +289,23 @@ export default function AllEvaluations({
                     mb="$3"
                   >
                     <HStack space="md" alignItems="center">
-                      <Box
-                        w={60}
-                        h={60}
-                        borderRadius={14}
-                        overflow="hidden"
-                        bg="#F1F5F9"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
+                      <Box w={60} h={60} borderRadius={14} overflow="hidden" bg="#F1F5F9" alignItems="center" justifyContent="center">
                         {imageUri ? (
-                          <Image
-                            source={{ uri: imageUri }}
-                            alt={item.productName}
-                            style={{ width: "100%", height: "100%" }}
-                            resizeMode="cover"
-                          />
+                          <Image source={{ uri: imageUri }} alt={item.productName} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
                         ) : (
                           <Feather name="image" size={18} color="#94A3B8" />
                         )}
                       </Box>
-
                       <VStack flex={1} space="xs">
-                        <Text numberOfLines={1} fontSize={15} fontFamily="RobotoMedium" color="#0F172A">
-                          {item.productName}
-                        </Text>
-                        <Text numberOfLines={1} fontSize={12} color="#64748B">
-                          {item.profileName}
-                        </Text>
+                        <Text numberOfLines={1} fontSize={15} fontFamily="RobotoMedium" color="#0F172A">{item.productName}</Text>
+                        <Text numberOfLines={1} fontSize={12} color="#64748B">{item.profileName}</Text>
                         {item.summary && (
-                          <Text numberOfLines={1} fontSize={12} color="#94A3B8">
-                            {item.summary}
-                          </Text>
+                          <Text numberOfLines={1} fontSize={12} color="#94A3B8">{item.summary}</Text>
                         )}
                       </VStack>
                     </HStack>
-
                     <HStack mt="$3" alignItems="center" justifyContent="space-between">
-                      <Text fontSize={11} color="#94A3B8">
-                        {formatDate(item.createdAt)}
-                      </Text>
+                      <Text fontSize={11} color="#94A3B8">{formatDate(item.createdAt)}</Text>
                       <HStack alignItems="center" space="sm">
                         <WarningChip status={status} />
                         <Feather name="chevron-right" size={16} color="#94A3B8" />
@@ -373,10 +336,12 @@ export default function AllEvaluations({
               </View>
             )}
             onRowOpen={(rowKey) => {
-              void handleDelete(rowKey);
+              // Wait for snap animation then delete
+              setTimeout(() => {
+                void handleDelete(rowKey);
+              }, 400);
             }}
             rightOpenValue={-100}
-            swipeToOpenPercent={30}
             disableRightSwipe
             scrollEnabled={false}
           />
@@ -387,19 +352,14 @@ export default function AllEvaluations({
                 <Pressable
                   onPress={() => setCurrentPage((previous) => Math.max(0, previous - 1))}
                   disabled={currentPage === 0}
-                  px="$4"
-                  py="$2.5"
-                  borderRadius={20}
-                  borderWidth={1}
+                  px="$4" py="$2.5" borderRadius={20} borderWidth={1}
                   borderColor={currentPage === 0 ? "#E2E8F0" : "#BFD0E3"}
                   bg={currentPage === 0 ? "#F8FAFC" : "#EBF2FB"}
                   opacity={currentPage === 0 ? 0.5 : 1}
                 >
                   <HStack alignItems="center" space="sm">
                     <Feather name="chevron-left" size={16} color={currentPage === 0 ? "#94A3B8" : "#475569"} />
-                    <Text fontSize={13} color={currentPage === 0 ? "#94A3B8" : "#475569"} fontFamily="RobotoMedium">
-                      Previous
-                    </Text>
+                    <Text fontSize={13} color={currentPage === 0 ? "#94A3B8" : "#475569"} fontFamily="RobotoMedium">Previous</Text>
                   </HStack>
                 </Pressable>
 
@@ -412,18 +372,13 @@ export default function AllEvaluations({
                 <Pressable
                   onPress={() => setCurrentPage((previous) => Math.min(totalPages - 1, previous + 1))}
                   disabled={currentPage === totalPages - 1}
-                  px="$4"
-                  py="$2.5"
-                  borderRadius={20}
-                  borderWidth={1}
+                  px="$4" py="$2.5" borderRadius={20} borderWidth={1}
                   borderColor={currentPage === totalPages - 1 ? "#E2E8F0" : "#BFD0E3"}
                   bg={currentPage === totalPages - 1 ? "#F8FAFC" : "#EBF2FB"}
                   opacity={currentPage === totalPages - 1 ? 0.5 : 1}
                 >
                   <HStack alignItems="center" space="sm">
-                    <Text fontSize={13} color={currentPage === totalPages - 1 ? "#94A3B8" : "#475569"} fontFamily="RobotoMedium">
-                      Next
-                    </Text>
+                    <Text fontSize={13} color={currentPage === totalPages - 1 ? "#94A3B8" : "#475569"} fontFamily="RobotoMedium">Next</Text>
                     <Feather name="chevron-right" size={16} color={currentPage === totalPages - 1 ? "#94A3B8" : "#475569"} />
                   </HStack>
                 </Pressable>

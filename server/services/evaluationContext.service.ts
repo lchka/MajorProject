@@ -1,12 +1,13 @@
+// import stuff we need
 import type { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma.js";
 import {
-	CreateEvaluationContextDto,
-	EvaluateProductRequestDto,
-	EvaluationContextResponseDto,
-	EvaluationResultJsonDto,
-	evaluationContextResponseSchema,
-	UpdateEvaluationContextDto,
+  CreateEvaluationContextDto,
+  EvaluateProductRequestDto,
+  EvaluationContextResponseDto,
+  EvaluationResultJsonDto,
+  evaluationContextResponseSchema,
+  UpdateEvaluationContextDto,
 } from "../types/evaluationContext.dto.js";
 import geminiEvaluationService from "./geminiEvaluation.service.js";
 import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError.js";
@@ -14,49 +15,55 @@ import { BAD_REQUEST, HttpError, NOT_FOUND } from "../utils/HttpError.js";
 type NamedEntity = { name: string };
 
 type ProfileWithRelations = {
-	id: string;
-	conditions: NamedEntity[];
-	allergens: NamedEntity[];
-	preferences: NamedEntity[];
+  id: string;
+  conditions: NamedEntity[];
+  allergens: NamedEntity[];
+  preferences: NamedEntity[];
 };
 
+// product info and ingredients
 type ProductWithIngredients = {
-	id: string;
-	name: string;
-	brand?: string;
-	category?: string;
-	ingredients: unknown;
+  id: string;
+  name: string;
+  brand?: string;
+  category?: string;
+  ingredients: unknown;
 };
 
+// prompt info
 type PromptRecord = {
-	id: string;
-	prompt_text: string;
-	category: string;
+  id: string;
+  prompt_text: string;
+  category: string;
 };
 
+// fake prisma type for what we use
 type PrismaRuntime = {
-	evaluationContext: {
-		create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
-		findUnique: (args: { where: { id: string }; select?: Record<string, unknown> }) => Promise<unknown | null>;
-		findMany: (args?: Record<string, unknown>) => Promise<unknown[]>;
-		update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
-		delete: (args: { where: { id: string } }) => Promise<unknown>;
-	};
-	profile: {
-		findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
-	};
-	product: {
-		findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
-	};
-	prompt: {
-		findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
-		findFirst: (args: Record<string, unknown>) => Promise<unknown | null>;
-	};
+  evaluationContext: {
+    create: (args: { data: Record<string, unknown> }) => Promise<unknown>;
+    findUnique: (args: { where: { id: string }; select?: Record<string, unknown> }) => Promise<unknown | null>;
+    findMany: (args?: Record<string, unknown>) => Promise<unknown[]>;
+    update: (args: { where: { id: string }; data: Record<string, unknown> }) => Promise<unknown>;
+    delete: (args: { where: { id: string } }) => Promise<unknown>;
+  };
+  profile: {
+    findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
+  };
+  product: {
+    findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
+  };
+  prompt: {
+    findUnique: (args: Record<string, unknown>) => Promise<unknown | null>;
+    findFirst: (args: Record<string, unknown>) => Promise<unknown | null>;
+  };
 };
 
+// use prisma as our fake type
 const prismaRuntime = prisma as unknown as PrismaRuntime;
 
+// main service for evaluation context
 export class EvaluationContextService {
+	// make sure category is a string, else return "Other"
 	private normalizeCategory(value: unknown): string {
 		if (typeof value !== "string") {
 			return "Other";
@@ -66,6 +73,7 @@ export class EvaluationContextService {
 		return trimmed.length > 0 ? trimmed : "Other";
 	}
 
+	// get the right prompt for a product
 	private async resolvePromptForProduct(
 		productCategory: string,
 		requestedPromptId?: string,
@@ -114,10 +122,12 @@ export class EvaluationContextService {
 		return undefined;
 	}
 
+	// turn db record into response dto
 	private toResponseDto(record: unknown): EvaluationContextResponseDto {
 		return evaluationContextResponseSchema.parse(record);
 	}
 
+	// clean up ingredients list
 	private normalizeIngredients(value: unknown): string[] {
 		if (!Array.isArray(value)) {
 			return [];
@@ -129,6 +139,7 @@ export class EvaluationContextService {
 			.filter((item) => item.length > 0);
 	}
 
+	// find which entities match ingredients
 	private findMatches(ingredients: string[], entities: NamedEntity[]): string[] {
 		const matches: string[] = [];
 
@@ -147,6 +158,7 @@ export class EvaluationContextService {
 		return [...new Set(matches)];
 	}
 
+	// fallback: simple rule-based result if ai fails
 	private buildRuleBasedResult(
 		ingredientTerms: string[],
 		profile: ProfileWithRelations,
@@ -198,6 +210,7 @@ export class EvaluationContextService {
 		};
 	}
 
+	// check if profile exists, else throw
 	private async assertProfileExists(id: string): Promise<void> {
 		const profile = await prismaRuntime.profile.findUnique({
 			where: { id },
@@ -209,6 +222,7 @@ export class EvaluationContextService {
 		}
 	}
 
+	// check if product exists, else throw
 	private async assertProductExists(id: string): Promise<void> {
 		const product = await prismaRuntime.product.findUnique({
 			where: { id },
@@ -220,6 +234,7 @@ export class EvaluationContextService {
 		}
 	}
 
+	// check if prompt exists, else throw
 	private async assertPromptExists(id: string): Promise<void> {
 		const prompt = await prismaRuntime.prompt.findUnique({
 			where: { id },
@@ -231,6 +246,7 @@ export class EvaluationContextService {
 		}
 	}
 
+	// check if evaluation context exists, else throw
 	private async assertEvaluationContextExists(id: string): Promise<void> {
 		const existing = await prismaRuntime.evaluationContext.findUnique({
 			where: { id },
@@ -241,6 +257,7 @@ export class EvaluationContextService {
 		}
 	}
 
+	// build the evaluation result, try ai, else fallback
 	private async buildEvaluationResult(
 		data: EvaluateProductRequestDto,
 	): Promise<{ resultJson: EvaluationResultJsonDto; promptId?: string }> {
@@ -306,6 +323,7 @@ export class EvaluationContextService {
 		return { resultJson, promptId: selectedPrompt?.id };
 	}
 
+	// make a new evaluation context
 	async createEvaluationContext(data: CreateEvaluationContextDto): Promise<EvaluationContextResponseDto> {
 		await this.assertProfileExists(data.profileId);
 		await this.assertProductExists(data.productId);
@@ -326,6 +344,7 @@ export class EvaluationContextService {
 		return this.toResponseDto(record);
 	}
 
+	// get one evaluation context by id
 	async getEvaluationContextById(id: string): Promise<EvaluationContextResponseDto> {
 		const record = await prismaRuntime.evaluationContext.findUnique({ where: { id } });
 
@@ -336,6 +355,7 @@ export class EvaluationContextService {
 		return this.toResponseDto(record);
 	}
 
+	// get all evaluation contexts
 	async getAllEvaluationContexts(): Promise<EvaluationContextResponseDto[]> {
 		const records = await prismaRuntime.evaluationContext.findMany({
 			orderBy: { createdAt: "desc" },
@@ -344,6 +364,7 @@ export class EvaluationContextService {
 		return records.map((record) => this.toResponseDto(record));
 	}
 
+	// get all contexts for a profile
 	async getEvaluationContextsByProfileId(profileId: string): Promise<EvaluationContextResponseDto[]> {
 		await this.assertProfileExists(profileId);
 
@@ -355,6 +376,7 @@ export class EvaluationContextService {
 		return records.map((record) => this.toResponseDto(record));
 	}
 
+	// get all contexts for a product
 	async getEvaluationContextsByProductId(productId: string): Promise<EvaluationContextResponseDto[]> {
 		await this.assertProductExists(productId);
 
@@ -366,6 +388,7 @@ export class EvaluationContextService {
 		return records.map((record) => this.toResponseDto(record));
 	}
 
+	// get all contexts for a product and user
 	async getEvaluationContextsByProductIdForUser(
 		userId: string,
 		productId: string,
@@ -385,6 +408,7 @@ export class EvaluationContextService {
 		return records.map((record) => this.toResponseDto(record));
 	}
 
+	// get all contexts for a user
 	async getEvaluationContextsForUser(userId: string): Promise<EvaluationContextResponseDto[]> {
 		const records = await prismaRuntime.evaluationContext.findMany({
 			where: {
@@ -398,6 +422,7 @@ export class EvaluationContextService {
 		return records.map((record) => this.toResponseDto(record));
 	}
 
+	// update an evaluation context
 	async updateEvaluationContext(
 		id: string,
 		data: UpdateEvaluationContextDto,
@@ -432,6 +457,7 @@ export class EvaluationContextService {
 		return this.toResponseDto(updated);
 	}
 
+	// delete an evaluation context
 	async deleteEvaluationContext(id: string): Promise<{ message: string }> {
 		await this.assertEvaluationContextExists(id);
 		await prismaRuntime.evaluationContext.delete({ where: { id } });
@@ -439,6 +465,7 @@ export class EvaluationContextService {
 		return { message: `Evaluation context with id '${id}' deleted successfully` };
 	}
 
+	// run evaluation and save context
 	async evaluateProduct(data: EvaluateProductRequestDto): Promise<EvaluationContextResponseDto> {
 		const { resultJson, promptId } = await this.buildEvaluationResult(data);
 		return this.createEvaluationContext({
@@ -449,6 +476,7 @@ export class EvaluationContextService {
 		});
 	}
 
+	// re-run evaluation for an existing context
 	async reevaluateEvaluationContext(id: string): Promise<EvaluationContextResponseDto> {
 		const existing = (await prismaRuntime.evaluationContext.findUnique({
 			where: { id },
@@ -476,4 +504,5 @@ export class EvaluationContextService {
 	}
 }
 
+// export a single instance
 export default new EvaluationContextService();

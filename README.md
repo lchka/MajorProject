@@ -43,7 +43,7 @@ Install **all** of the following:
 ## Repository Setup
 
 ```bash
-git clone YOUR_REPO_URL
+git clone https://github.com/lchka/MajorProject.git
 cd MajorProject
 
 # Install root dependencies
@@ -349,4 +349,4 @@ Or, if you see warnings about missing fonts (e.g., `RobotoMedium`), ensure your 
 - Always test after dependency updates
 - Treat seed data as critical to system integrity
 
-💡 *Tip: If something breaks, it's usually env vars, networking, or migrations — check those first.*
+💡 *Tip: If something breaks, it's usually env vars, networking, or migrations, check those first.*
