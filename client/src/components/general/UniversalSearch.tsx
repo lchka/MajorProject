@@ -2,7 +2,7 @@ import React from "react";
 import { TextInput } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Pressable, Text } from "@gluestack-ui/themed";
-
+// NOT USED ANYWHERE
 export type UniversalSearchResult = {
 	key: string;
 	title: string;

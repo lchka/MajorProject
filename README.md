@@ -1,39 +1,46 @@
 # 🌟 Lumiere — Major Project
 
-A full-stack application built with a modern TypeScript-first architecture.
+A full-stack TypeScript-first application for ingredient/allergen evaluation and product management.
 
 ---
 
 ## Tech Stack
 
-### Server
-- Node.js
-- Express
-- TypeScript
-- Prisma ORM
-- PostgreSQL
+**Server:** Node.js, Express, TypeScript, Prisma ORM, PostgreSQL
 
-### Client
-- Expo (React Native)
+**Client:** Expo (React Native), TypeScript
 
 ---
 
-## ⚙️ 1. Prerequisites
+## Project Structure
 
-Make sure you have the following installed:
+```
+MajorProject/
+├── server/   # Backend (API, Prisma, database)
+├── client/   # Mobile app (Expo / React Native)
+├── package.json  # Root config
+└── README.md
+```
+
+---
+
+## Prerequisites
+
+Install **all** of the following:
 
 - Node.js (v20 LTS recommended, v18+ minimum)
 - npm (v10+)
-- PostgreSQL
-- Expo Go (for mobile testing)
+- PostgreSQL (local or Docker)
+- Expo CLI (`npm install -g expo-cli`)
+- Expo Go app (on your mobile device)
 
-### Optional
-- Docker (for containerized environments)
-- EAS CLI (for production mobile builds)
+**Optional:**
+- Docker (for PostgreSQL or server containerization)
+- EAS CLI (`npm install -g eas-cli`) for production mobile builds
 
 ---
 
-## 📦 2. Repository Setup
+## Repository Setup
 
 ```bash
 git clone YOUR_REPO_URL
@@ -53,7 +60,7 @@ npm install
 
 ---
 
-## 🔐 3. Environment Variables
+## Environment Variables
 
 ### Server — `server/.env`
 
@@ -70,100 +77,97 @@ AWS_SECRET_ACCESS_KEY=...
 AWS_S3_BUCKET=...
 ```
 
----
-
 ### Client — `client/.env`
 
 ```env
 EXPO_PUBLIC_API_URL=http://YOUR_LOCAL_IP:3000/api
 ```
 
-### Common Configurations
+**API URL Reference:**
 
-| Environment            | API URL                          |
-|----------------------|----------------------------------|
-| Physical Device      | http://YOUR_LOCAL_IP:3000/api     |
-| Android Emulator     | http://10.0.2.2:3000/api         |
-| iOS Simulator        | http://localhost:3000/api        |
-
----
-
-### JSON-style Env (for some platforms)
-
-```json
-{
-  "DATABASE_URL": "postgresql://USER:PASSWORD@HOST:5432/DB_NAME",
-  "PORT": "3000",
-  "JWT_SECRET": "your-secret",
-  "SERPAPI_API_KEY": "your-serpapi-key"
-}
-```
+| Environment        | API URL                        |
+|--------------------|-------------------------------|
+| Physical Device    | http://YOUR_LOCAL_IP:3000/api  |
+| Android Emulator   | http://10.0.2.2:3000/api       |
+| iOS Simulator      | http://localhost:3000/api      |
 
 ---
+## Database Setup (Local)
 
-## 🗄️ 4. Database Setup (Local)
-
-Run from the `server/` directory:
+From `server/`:
 
 ```bash
 npx prisma migrate dev
 npm run seed
-npx prisma studio
+npx prisma studio # optional
 ```
 
-### Notes
-- `npm run seed` is **required**
-- `prisma studio` is optional but useful for inspection
+**Notes:**
+- `npm run seed` is **required** for initial data
+- `prisma studio` is optional for DB inspection
 
 ---
 
-## 🚀 5. Run Locally
+## Running the App Locally
 
-### Start Server
+### 1. Start the Server
 
 ```bash
 cd server
 npm run dev
 ```
 
-### Start Client
+### 2. Start the Client
 
 ```bash
 cd client
 npm run start
 ```
 
-### Then
+### 3. Open the App
 
-- Open Expo Go
-- Scan QR code
-- Ensure both devices are on the same Wi-Fi
+- Open Expo Go on your device
+- Scan the QR code from the terminal/browser
+- Ensure your device and computer are on the same Wi-Fi
 
 ---
 
-## 🌍 6. Testing with Production Backend
+## Testing
+
+### Server Tests
+
+```bash
+cd server
+npm test
+```
+
+### Client Tests
+
+```bash
+cd client
+npm test
+```
+
+---
+
+## Testing with Hosted/Production Backend
 
 ### 1. Deploy Backend
 
-Ensure:
-- Database is reachable
-- Migrations applied:
+- Ensure your production database is reachable
+- Apply migrations:
 
 ```bash
 npx prisma migrate deploy
 ```
 
-- Environment variables are set
-
----
+- Set all required environment variables on your server
 
 ### 2. Update Client `.env`
 
 ```env
 EXPO_PUBLIC_API_URL=https://YOUR_PROD_DOMAIN/api
 ```
-
----
 
 ### 3. Run Client
 
@@ -172,72 +176,43 @@ cd client
 npm run start
 ```
 
-Scan QR and test flows.
-
 ---
 
-## 🐳 Docker
+## 🐳 Docker (Optional)
 
-Docker files live under `server/`:
-- `server/docker-compose.yaml` (PostgreSQL service)
-- `server/Dockerfile` (Node server image)
+**Files:**
+- `server/docker-compose.yaml` (PostgreSQL)
+- `server/Dockerfile` (Node server)
 
 ### Start PostgreSQL with Docker Compose
 
-From `server/`:
-
 ```bash
+cd server
 docker compose up -d
 ```
 
-This starts:
-- PostgreSQL `16`
-- Port mapping `5432:5432`
-
-Then set `server/.env` `DATABASE_URL` to match compose credentials:
-
-```env
-DATABASE_URL=postgresql://myuser:postgres@localhost:5432/my_backend_db
-```
-
-After DB is up, run migrations and required seed:
-
-```bash
-cd server
-npx prisma migrate dev
-npm run seed
-```
+Set `server/.env` `DATABASE_URL` to match Docker credentials.
 
 ### Stop Docker services
 
-From `server/`:
-
 ```bash
+cd server
 docker compose down
-```
-
-To also remove persisted database volume:
-
-```bash
+# To remove DB volume:
 docker compose down -v
 ```
 
-### Optional: Run server in Docker
-
-From `server/`:
+### Run server in Docker (optional)
 
 ```bash
+cd server
 docker build -t lumiere-server .
 docker run --env-file .env -p 3000:3000 lumiere-server
 ```
 
-Note:
-- If server runs in container and DB runs in compose, use container networking/host mapping accordingly.
-- For local simplest setup, run only PostgreSQL in Docker and run server via `npm run dev`.
-
 ---
 
-## 🏗️ 7. Production Deployment
+## Production Deployment
 
 ### Server Startup Sequence
 
@@ -250,13 +225,7 @@ npm run build
 npm start
 ```
 
-### Notes
-- Seeding is required on first deploy
-- Keep seeding enabled unless managed externally
-
----
-
-### 📱 Client Builds (EAS)
+### Client Builds (EAS)
 
 ```bash
 npm install -g eas-cli
@@ -267,22 +236,18 @@ eas build -p ios
 
 ---
 
-## 🔄 8. Updating Dependencies
+## Updating Dependencies
 
 ### Check Outdated
 
 ```bash
 # Root
 npm outdated
-
 # Server
 cd server && npm outdated
-
 # Client
 cd client && npm outdated
 ```
-
----
 
 ### Update Server
 
@@ -291,15 +256,9 @@ cd server
 npm install package-name@latest
 npm run build
 npm test
-```
-
-If Prisma changes:
-
-```bash
+# If Prisma changes:
 npx prisma generate
 ```
-
----
 
 ### Update Client (Expo)
 
@@ -307,31 +266,17 @@ npx prisma generate
 cd client
 npx expo install --fix
 npx expo-doctor
-```
-
-Then:
-
-```bash
 npm install package-name@latest
 npm run start
 ```
 
-### Important
+**Important:**
 - Keep Expo ecosystem versions aligned
-- Prefer `expo install` when possible
+- Prefer `expo install` for Expo-managed packages
 
 ---
 
-## 🧰 9. Useful Commands
-
-### Root
-
-```bash
-npm run build
-npm start
-```
-
----
+## Useful Commands
 
 ### Server
 
@@ -340,7 +285,6 @@ npm run dev
 npm run build
 npm start
 npm test
-
 # Seeding
 npm run seed
 npm run seed:roles
@@ -351,8 +295,6 @@ npm run seed:allergens
 npm run seed:prompts
 ```
 
----
-
 ### Client
 
 ```bash
@@ -360,75 +302,51 @@ npm run start
 npm run android
 npm run ios
 npm run web
+npm test
 ```
 
 ---
 
-## 🛠️ 10. Troubleshooting
+## Troubleshooting & Common Issues
 
-### 📡 Phone Cannot Reach Backend
-
+### Phone Cannot Reach Backend
 - Use LAN IP (not localhost)
 - Check firewall (port 3000)
 - Test API in phone browser
 
----
+### Android Emulator
+- Use: `http://10.0.2.2:3000/api`
 
-### 🤖 Android Emulator Issues
+### iOS Simulator
+- Use: `http://localhost:3000/api`
 
-```bash
-http://10.0.2.2:3000/api
-```
-
----
-
-### 🍏 iOS Simulator Issues
-
-```bash
-http://localhost:3000/api
-```
-
----
-
-### ♻️ Clear Metro Cache
-
+### Clear Metro Cache
 ```bash
 cd client
 npx expo start -c
 ```
 
----
+### Prisma Errors
+- Check `DATABASE_URL` in `.env`
+- Re-run migrations:
+  - Local: `npx prisma migrate dev`
+  - Production: `npx prisma migrate deploy`
+- Ensure seed data exists: `npm run seed`
 
-### 🧩 Prisma Errors
-
-#### Check Environment
-- Verify `DATABASE_URL`
-
-#### Re-run Migrations
-
+### Propfill Issues (React Native)
+If you see errors about missing `prop-types` or `@react-native/prop-types`, install:
 ```bash
-# Local
-npx prisma migrate dev
-
-# Production
-npx prisma migrate deploy
+cd client
+npm install @react-native/prop-types
 ```
-
-#### Ensure Seed Data Exists
-
-```bash
-cd server
-npm run seed
-```
+Or, if you see warnings about missing fonts (e.g., `RobotoMedium`), ensure your `app.json` or `expo.config.js` includes the correct font assets and you have run `expo install expo-font`.
 
 ---
 
-## ✅ Final Notes
+## Final Notes
 
 - Keep environment configs consistent across environments
 - Always test after dependency updates
 - Treat seed data as critical to system integrity
-
----
 
 💡 *Tip: If something breaks, it's usually env vars, networking, or migrations — check those first.*

@@ -7,6 +7,7 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { Box, ScrollView } from "@gluestack-ui/themed";
+import BackButton from "../../components/Buttons/BackButton";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
@@ -258,35 +259,39 @@ export default function HistoryScreen() {
       >
         <NavBarTop notificationCount={0} />
 
-        {/* Profile switcher with scroll animation - sticky at top */}
 
-        <SwitchProfile
-          profiles={profileSwitcherItems}
-          activeProfileId={activeProfile?.id}
-          onSelectProfile={(profileId) => {
-            navigation.setParams({ profileId });
-          }}
-          onAddProfile={() => {
-            navigation.navigate("ProfileScreen");
-          }}
-          onEditProfile={(profileId) => {
-            const profileToEdit =
-              profiles.find((profile) => profile.id === profileId) ??
-              activeProfile;
 
-            navigation.navigate("EditProfileScreen", {
-              profileId: profileToEdit?.id,
-              profileName: profileToEdit?.first_name || undefined,
-              profileImageUri: profileToEdit?.profile_image ?? undefined,
-              profilePreferenceNames:
-                profileToEdit?.preferences?.map((item) => item.name) ?? [],
-              profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
-              profileIsMain: profileToEdit?.main_profile ?? false,
-            });
-          }}
-          title="Switch Profile"
-          hasScrolled={hasScrolled}
-        />
+        {/* Sticky header: back button sits above SwitchProfile */}
+        <Box>
+          <BackButton />        {/* Profile switcher with scroll animation - sticky at top */}
+          <SwitchProfile
+          hasBackButton
+            profiles={profileSwitcherItems}
+            activeProfileId={activeProfile?.id}
+            onSelectProfile={(profileId) => {
+              navigation.setParams({ profileId });
+            }}
+            onAddProfile={() => {
+              navigation.navigate("ProfileScreen");
+            }}
+            onEditProfile={(profileId) => {
+              const profileToEdit =
+                profiles.find((profile) => profile.id === profileId) ??
+                activeProfile;
+              navigation.navigate("EditProfileScreen", {
+                profileId: profileToEdit?.id,
+                profileName: profileToEdit?.first_name || undefined,
+                profileImageUri: profileToEdit?.profile_image ?? undefined,
+                profilePreferenceNames:
+                  profileToEdit?.preferences?.map((item) => item.name) ?? [],
+                profileAge: profileToEdit?.age?.toString()?.trim() || undefined,
+                profileIsMain: profileToEdit?.main_profile ?? false,
+              });
+            }}
+            title="Switch Profile"
+            hasScrolled={hasScrolled}
+          />
+        </Box>
         <Box px="$2">
           <AllEvaluations
             items={historyItems}
@@ -300,7 +305,9 @@ export default function HistoryScreen() {
             }}
             onDeleteEvaluation={(evaluationContextId) => {
               setHistoryItems((prev) =>
-                prev.filter((item) => item.evaluationContextId !== evaluationContextId)
+                prev.filter(
+                  (item) => item.evaluationContextId !== evaluationContextId,
+                ),
               );
             }}
           />
