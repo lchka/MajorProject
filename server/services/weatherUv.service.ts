@@ -2,7 +2,6 @@ import {
   BAD_REQUEST,
   HttpError,
   INTERNAL_SERVER_ERROR,
-  SERVICE_UNAVAILABLE,
 } from "../utils/HttpError.js";
 
 // Shape of the UV data returned to the frontend
@@ -46,8 +45,7 @@ export class WeatherUvService {
   // Base URLs for both APIs
   private readonly currentWeatherUrl =
     "https://api.openweathermap.org/data/2.5/weather";
-  private readonly openMeteoUrl =
-    "https://api.open-meteo.com/v1/forecast";
+  private readonly openMeteoUrl = "https://api.open-meteo.com/v1/forecast";
 
   // Cache lasts 30 minutes
   private readonly cacheTtlSeconds = 30 * 60;
@@ -63,14 +61,13 @@ export class WeatherUvService {
   // Try get cached UV snapshot if still valid
   private getCachedSnapshot(
     lat: number,
-    lon: number
+    lon: number,
   ): CurrentUvSnapshot | null {
     const cacheKey = this.getCacheKey(lat, lon);
     const cached = this.uvSnapshotCache.get(cacheKey);
     if (!cached) return null;
 
-    const ageSeconds =
-      Math.floor(Date.now() / 1000) - cached.cachedAtUnix;
+    const ageSeconds = Math.floor(Date.now() / 1000) - cached.cachedAtUnix;
 
     // Remove expired cache
     if (ageSeconds > this.cacheTtlSeconds) {
@@ -85,7 +82,7 @@ export class WeatherUvService {
   private setCachedSnapshot(
     lat: number,
     lon: number,
-    snapshot: CurrentUvSnapshot
+    snapshot: CurrentUvSnapshot,
   ): void {
     const cacheKey = this.getCacheKey(lat, lon);
     this.uvSnapshotCache.set(cacheKey, {
@@ -105,38 +102,31 @@ export class WeatherUvService {
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
       throw new HttpError(
         BAD_REQUEST,
-        "Latitude and longitude must be valid numbers."
+        "Latitude and longitude must be valid numbers.",
       );
     }
 
     if (lat < -90 || lat > 90) {
-      throw new HttpError(
-        BAD_REQUEST,
-        "Latitude must be between -90 and 90."
-      );
+      throw new HttpError(BAD_REQUEST, "Latitude must be between -90 and 90.");
     }
 
     if (lon < -180 || lon > 180) {
       throw new HttpError(
         BAD_REQUEST,
-        "Longitude must be between -180 and 180."
+        "Longitude must be between -180 and 180.",
       );
     }
   }
 
   // Convert Open-Meteo weather codes into readable text
-  private weatherCodeToDescription(
-    code: number | undefined
-  ): string | null {
+  private weatherCodeToDescription(code: number | undefined): string | null {
     if (typeof code !== "number") return null;
 
     if (code === 0) return "Clear sky";
     if (code >= 1 && code <= 3) return "Partly cloudy";
     if (code >= 45 && code <= 48) return "Fog";
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))
-      return "Rain";
-    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86))
-      return "Snow";
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return "Rain";
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return "Snow";
     if (code >= 95 && code <= 99) return "Thunderstorm";
 
     return null;
@@ -146,7 +136,7 @@ export class WeatherUvService {
   private async fetchOpenWeatherCurrentWeather(
     lat: number,
     lon: number,
-    apiKey: string
+    apiKey: string,
   ): Promise<OpenWeatherCurrentWeatherResponse | null> {
     const url = new URL(this.currentWeatherUrl);
     url.searchParams.set("lat", String(lat));
@@ -168,15 +158,12 @@ export class WeatherUvService {
   // Fetch UV + basic weather data from Open-Meteo (main source)
   private async fetchOpenMeteoUv(
     lat: number,
-    lon: number
+    lon: number,
   ): Promise<CurrentUvSnapshot> {
     const url = new URL(this.openMeteoUrl);
     url.searchParams.set("latitude", String(lat));
     url.searchParams.set("longitude", String(lon));
-    url.searchParams.set(
-      "current",
-      "uv_index,temperature_2m,weather_code"
-    );
+    url.searchParams.set("current", "uv_index,temperature_2m,weather_code");
     url.searchParams.set("timezone", "auto");
 
     let response: Response;
@@ -187,14 +174,14 @@ export class WeatherUvService {
       // Network-level failure
       throw new HttpError(
         INTERNAL_SERVER_ERROR,
-        "Unable to reach fallback UV provider."
+        "Unable to reach fallback UV provider.",
       );
     }
 
     if (!response.ok) {
       throw new HttpError(
         INTERNAL_SERVER_ERROR,
-        `Fallback UV provider request failed (${response.status}).`
+        `Fallback UV provider request failed (${response.status}).`,
       );
     }
 
@@ -205,7 +192,7 @@ export class WeatherUvService {
     } catch {
       throw new HttpError(
         INTERNAL_SERVER_ERROR,
-        "Fallback UV provider returned invalid JSON."
+        "Fallback UV provider returned invalid JSON.",
       );
     }
 
@@ -213,34 +200,22 @@ export class WeatherUvService {
 
     // Handle missing UV safely (important for night-time cases)
     const uvIndex =
-      typeof current?.uv_index === "number"
-        ? current.uv_index
-        : 0;
+      typeof current?.uv_index === "number" ? current.uv_index : 0;
 
     const unixTime = current?.time
       ? Math.floor(new Date(current.time).getTime() / 1000)
       : Math.floor(Date.now() / 1000);
 
     return {
-      lat:
-        typeof data.latitude === "number"
-          ? data.latitude
-          : lat,
-      lon:
-        typeof data.longitude === "number"
-          ? data.longitude
-          : lon,
+      lat: typeof data.latitude === "number" ? data.latitude : lat,
+      lon: typeof data.longitude === "number" ? data.longitude : lon,
       uvIndex,
       temperatureCelsius:
         typeof current?.temperature_2m === "number"
           ? current.temperature_2m
           : null,
-      weatherMain: this.weatherCodeToDescription(
-        current?.weather_code
-      ),
-      weatherDescription: this.weatherCodeToDescription(
-        current?.weather_code
-      ),
+      weatherMain: this.weatherCodeToDescription(current?.weather_code),
+      weatherDescription: this.weatherCodeToDescription(current?.weather_code),
       fetchedAtUnix: Number.isFinite(unixTime)
         ? unixTime
         : Math.floor(Date.now() / 1000),
@@ -250,7 +225,7 @@ export class WeatherUvService {
   // Main method used by controller
   async getCurrentUvByCoordinates(
     lat: number,
-    lon: number
+    lon: number,
   ): Promise<CurrentUvSnapshot> {
     this.validateCoordinateRange(lat, lon);
 
@@ -265,11 +240,15 @@ export class WeatherUvService {
       const cachedSnapshot = this.getCachedSnapshot(lat, lon);
 
       if (!cachedSnapshot) {
-        // No cache = fail request
-        throw new HttpError(
-          SERVICE_UNAVAILABLE,
-          "UV data provider is temporarily unavailable. Please try again shortly."
-        );
+        return {
+          lat,
+          lon,
+          uvIndex: 0, // safe default (especially realistic at night)
+          temperatureCelsius: null,
+          weatherMain: "Unavailable",
+          weatherDescription: "Weather data temporarily unavailable",
+          fetchedAtUnix: Math.floor(Date.now() / 1000),
+        };
       }
 
       snapshot = cachedSnapshot;
@@ -279,12 +258,11 @@ export class WeatherUvService {
     const apiKey = this.getOptionalOpenWeatherKey();
     if (!apiKey) return snapshot;
 
-    const currentWeather =
-      await this.fetchOpenWeatherCurrentWeather(
-        lat,
-        lon,
-        apiKey
-      );
+    const currentWeather = await this.fetchOpenWeatherCurrentWeather(
+      lat,
+      lon,
+      apiKey,
+    );
 
     if (!currentWeather) return snapshot;
 
@@ -307,8 +285,7 @@ export class WeatherUvService {
           ? currentWeather.main.temp
           : snapshot.temperatureCelsius,
       weatherMain: weather?.main ?? snapshot.weatherMain,
-      weatherDescription:
-        weather?.description ?? snapshot.weatherDescription,
+      weatherDescription: weather?.description ?? snapshot.weatherDescription,
       fetchedAtUnix:
         typeof currentWeather.dt === "number"
           ? currentWeather.dt
