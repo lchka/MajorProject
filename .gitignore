@@ -56,3 +56,10 @@ uploads/*
 tmp/
 temp/
 node_modules
+
+
+# packages
+/package-local.json
+/app.json
+/babel.config.js
+/package-lock.json
