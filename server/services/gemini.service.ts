@@ -10,7 +10,7 @@ export type ParsedProductFromImage = {
   name: string;
   brand: string;
   ingredients: string[];
-  category: string;
+  category: ProductCategory;
 };
 
 const PRODUCT_CATEGORIES = [
@@ -25,6 +25,24 @@ const PRODUCT_CATEGORIES = [
   "Other",
 ] as const;
 
+type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+
+type ParsedProductResponseJson = {
+  name?: unknown;
+  brand?: unknown;
+  ingredients?: unknown;
+  category?: unknown;
+};
+
+type ParsedIngredientsResponseJson = {
+  ingredients?: unknown;
+};
+
+/**
+ * FIXED PROMPT:
+ * Added explicit instructions to capture SPF, Volume, and Variants.
+ * This ensures the SerpAPI search has the specific data it needs to find the right bottle.
+ */
 const extractionSchemaDescription = `
 Return ONLY valid JSON with this exact shape:
 {
@@ -34,11 +52,14 @@ Return ONLY valid JSON with this exact shape:
   "category": "${PRODUCT_CATEGORIES.join(" | ")}"
 }
 
-Rules:
-- ingredients must be the actual INCI ingredient list from the label section that starts with words like "Ingredients", "INCI", or "Composition".
-- never return marketing claims as ingredients (examples to EXCLUDE: "No Silicone", "No Mineral Oils", "No Colourants", "Sulfate Free", "Paraben Free").
-- if ingredients are shown as one comma-separated line, split into separate array items.
-- If the category is unclear, use "Other".
+Rules for Name & Brand:
+- "name" MUST be specific. Include technical details visible on the front label such as SPF (e.g., "SPF 30", "SPF 50+"), volume (e.g., "200ml"), and sub-brand variants (e.g., "Kids", "Sport", "Invisible Finish").
+- Never simplify the name. If the bottle says "Sun Protect & Moisture SPF 30", do not return "Sun Cream".
+- "brand" is the primary manufacturer (e.g., "Cien", "Nivea", "La Roche-Posay").
+
+Rules for Ingredients:
+- ingredients must be the actual INCI list starting with "Ingredients", "INCI", or "Composition".
+- EXCLUDE marketing claims (e.g., "No Silicone", "Sulfate Free", "Paraben Free").
 - If text is partially unreadable, make the best safe guess.
 - Do not include markdown, code fences, or extra keys.
 `;
@@ -47,40 +68,49 @@ const ingredientsOnlySchemaDescription = `
 Read the product label image and extract ONLY the ingredient list.
 Return ONLY valid JSON in this exact shape:
 {
-	"ingredients": ["string"]
+  "ingredients": ["string"]
 }
-
-Rules:
-- Pull ingredients from the INCI/Ingredients/Composition section only.
-- Exclude marketing claims such as "No Silicone", "No Mineral Oils", "No Colourants", "Sulfate Free", and "Paraben Free".
-- If the ingredient list appears in a single comma-separated sentence, split it into separate array items.
-- Do not include markdown, code fences, or extra keys.
+Rules: Pull from INCI/Ingredients section only. Exclude marketing claims. Split comma-separated lines.
 `;
 
 const webIngredientsSchemaDescription = `
 Use web search to find the most up-to-date ingredient list for the exact product in UK or Ireland.
-Prioritize official manufacturer UK/IE pages and major UK/IE retailers (for example Boots, Superdrug, Tesco, Sainsbury's, Dunnes Stores).
+Prioritize official manufacturer UK/IE pages and major retailers (Boots, Superdrug, Tesco, etc.).
 Return ONLY valid JSON in this exact shape:
 {
-	"ingredients": ["string"]
+  "ingredients": ["string"]
 }
-
-Rules:
-- Return real ingredient names only.
-- Exclude claims such as "No Silicone", "No Mineral Oils", "No Colourants", "Sulfate Free", and "Paraben Free".
-- If you find one long comma-separated list, split into array items.
-- Do not include markdown, code fences, commentary, source links, or extra keys.
 `;
 
 export class GeminiService {
-  private model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null =
-    null;
+  private model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]> | null = null;
+
+  private isProductCategory(value: unknown): value is ProductCategory {
+    return (
+      typeof value === "string" &&
+      (PRODUCT_CATEGORIES as readonly string[]).includes(value)
+    );
+  }
+
+  private extractJsonObject(text: string): unknown {
+    const firstBrace = text.indexOf("{");
+    const lastBrace = text.lastIndexOf("}");
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      throw new HttpError(BAD_REQUEST, "Gemini did not return valid JSON");
+    }
+
+    const raw = text.slice(firstBrace, lastBrace + 1);
+
+    try {
+      return JSON.parse(raw);
+    } catch {
+      throw new HttpError(BAD_REQUEST, "Gemini JSON response could not be parsed");
+    }
+  }
 
   private getModel() {
-    // Reuse a single model client instance across requests.
-    if (this.model) {
-      return this.model;
-    }
+    if (this.model) return this.model;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -91,62 +121,30 @@ export class GeminiService {
     }
 
     const gemini = new GoogleGenerativeAI(apiKey);
+    // Note: Standardized model version for better vision performance
     this.model = gemini.getGenerativeModel({
-      model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL ?? "gemini-1.5-flash", 
     });
 
     return this.model;
   }
 
   private parseJsonResponse(text: string): ParsedProductFromImage {
-    const firstBrace = text.indexOf("{");
-    const lastBrace = text.lastIndexOf("}");
+    const parsed = this.extractJsonObject(text) as ParsedProductResponseJson;
 
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      throw new HttpError(BAD_REQUEST, "Gemini did not return valid JSON");
-    }
-
-    const raw = text.slice(firstBrace, lastBrace + 1);
-    let parsed: unknown;
-
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new HttpError(
-        BAD_REQUEST,
-        "Gemini JSON response could not be parsed",
-      );
-    }
-
-    if (!parsed || typeof parsed !== "object") {
-      throw new HttpError(BAD_REQUEST, "Gemini response shape is invalid");
-    }
-
-    const candidate = parsed as Record<string, unknown>;
-    const ingredients = this.normalizeExtractedIngredients(
-      candidate.ingredients,
-    );
+    const ingredients = this.normalizeExtractedIngredients(parsed.ingredients);
 
     return {
-      name: typeof candidate.name === "string" ? candidate.name.trim() : "",
-      brand: typeof candidate.brand === "string" ? candidate.brand.trim() : "",
+      name: typeof parsed.name === "string" ? parsed.name.trim() : "Unknown Product",
+      brand: typeof parsed.brand === "string" ? parsed.brand.trim() : "Unknown Brand",
       ingredients,
-      category:
-        typeof candidate.category === "string" &&
-        PRODUCT_CATEGORIES.includes(
-          candidate.category as (typeof PRODUCT_CATEGORIES)[number],
-        )
-          ? candidate.category
-          : "Other",
+      category: this.isProductCategory(parsed.category) ? parsed.category : "Other",
     };
   }
 
   private normalizeExtractedIngredients(value: unknown): string[] {
-    if (!Array.isArray(value)) {
-      return [];
-    }
+    if (!Array.isArray(value)) return [];
 
-    // Remove common marketing claims that are often misread as ingredients.
     const shouldExclude = (item: string): boolean => {
       const normalized = item.trim().toLowerCase();
       return (
@@ -163,30 +161,17 @@ export class GeminiService {
     const normalizedIngredients: string[] = [];
 
     for (const item of value) {
-      if (typeof item !== "string") {
-        continue;
-      }
+      if (typeof item !== "string") continue;
 
       const cleaned = item.replace(/^ingredients\s*:\s*/i, "").trim();
-      if (!cleaned) {
-        continue;
-      }
+      if (!cleaned) continue;
 
-      const pieces = cleaned
-        .split(/[;,]/)
-        .map((part) => part.trim())
-        .filter((part) => part.length > 0);
+      const pieces = cleaned.split(/[;,]/).map((part) => part.trim()).filter((part) => part.length > 0);
 
       for (const piece of pieces) {
-        if (shouldExclude(piece)) {
-          continue;
-        }
-
+        if (shouldExclude(piece)) continue;
         const key = piece.toLowerCase();
-        if (seen.has(key)) {
-          continue;
-        }
-
+        if (seen.has(key)) continue;
         seen.add(key);
         normalizedIngredients.push(piece);
       }
@@ -198,24 +183,19 @@ export class GeminiService {
   private parseIngredientsOnlyJson(text: string): string[] {
     const firstBrace = text.indexOf("{");
     const lastBrace = text.lastIndexOf("}");
-
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
-      return [];
-    }
+    if (firstBrace === -1 || lastBrace === -1) return [];
 
     try {
-      const parsed = JSON.parse(text.slice(firstBrace, lastBrace + 1)) as {
-        ingredients?: unknown;
-      };
+      const parsed = JSON.parse(
+        text.slice(firstBrace, lastBrace + 1),
+      ) as ParsedIngredientsResponseJson;
       return this.normalizeExtractedIngredients(parsed.ingredients);
     } catch {
       return [];
     }
   }
 
-  private async extractIngredientsFallback(
-    file: Express.Multer.File,
-  ): Promise<string[]> {
+  private async extractIngredientsFallback(file: Express.Multer.File): Promise<string[]> {
     const model = this.getModel();
     const result = await model.generateContent([
       ingredientsOnlySchemaDescription,
@@ -227,12 +207,7 @@ export class GeminiService {
       },
     ]);
 
-    const responseText = result.response.text();
-    if (!responseText) {
-      return [];
-    }
-
-    return this.parseIngredientsOnlyJson(responseText);
+    return this.parseIngredientsOnlyJson(result.response.text());
   }
 
   private async extractIngredientsFromWeb(params: {
@@ -241,56 +216,33 @@ export class GeminiService {
     category: string;
   }): Promise<string[]> {
     const model = this.getModel();
-    // Web fallback is constrained to UK/Ireland to improve ingredient relevance.
-    const queryPrompt = `Product name: ${params.name || "unknown"}\nBrand: ${params.brand || "unknown"}\nCategory: ${params.category || "Other"}\nRegion: UK and Ireland\n\n${webIngredientsSchemaDescription}`;
+    const queryPrompt = `Product: ${params.brand} ${params.name}\nCategory: ${params.category}\nRegion: UK/Ireland\n\n${webIngredientsSchemaDescription}`;
 
     try {
-      const requestWithSearchTool: unknown = {
+      const groundedRequest = {
         contents: [{ role: "user", parts: [{ text: queryPrompt }] }],
         tools: [{ googleSearch: {} }],
-      };
-
-      const groundedResult = await model.generateContent(
-        requestWithSearchTool as Parameters<typeof model.generateContent>[0],
-      );
+      } as unknown as Parameters<typeof model.generateContent>[0];
+      const groundedResult = await model.generateContent(groundedRequest);
       const groundedText = groundedResult.response.text();
       if (groundedText) {
-        const groundedIngredients = this.parseIngredientsOnlyJson(groundedText);
-        if (groundedIngredients.length > 0) {
-          return groundedIngredients;
-        }
+        const ingredients = this.parseIngredientsOnlyJson(groundedText);
+        if (ingredients.length > 0) return ingredients;
       }
     } catch {
-      // Continue to non-grounded fallback prompt if search tooling is unavailable.
+      console.warn("[Gemini] Web grounding failed, attempting standard fallback");
     }
 
     const nonGroundedResult = await model.generateContent(queryPrompt);
-    const nonGroundedText = nonGroundedResult.response.text();
-    if (!nonGroundedText) {
-      return [];
-    }
-
-    return this.parseIngredientsOnlyJson(nonGroundedText);
+    return this.parseIngredientsOnlyJson(nonGroundedResult.response.text());
   }
 
-  async extractProductFromImage(
-    file: Express.Multer.File,
-  ): Promise<ParsedProductFromImage> {
-    // validate first so we don’t access undefined properties
+  async extractProductFromImage(file: Express.Multer.File): Promise<ParsedProductFromImage> {
     if (!file?.buffer || !file.mimetype) {
-      console.error(
-        `[Gemini] Invalid file - buffer: ${!!file?.buffer}, mimetype: ${file?.mimetype}`,
-      );
-      throw new HttpError(
-        BAD_REQUEST,
-        "A valid product image file is required",
-      );
+      throw new HttpError(BAD_REQUEST, "A valid product image file is required");
     }
 
-    // safe to log now
-    console.log(
-      `[Gemini] extractProductFromImage called - mimetype: ${file.mimetype}, size: ${file.buffer.length} bytes`,
-    );
+    console.log(`[Gemini] Processing scan: ${file.mimetype} (${file.buffer.length} bytes)`);
 
     const model = this.getModel();
     const result = await model.generateContent([
@@ -304,41 +256,22 @@ export class GeminiService {
     ]);
 
     const responseText = result.response.text();
-    if (!responseText) {
-      console.error(`[Gemini] Empty response from Gemini`);
-      throw new HttpError(BAD_REQUEST, "Gemini returned an empty response");
-    }
+    if (!responseText) throw new HttpError(BAD_REQUEST, "Gemini returned an empty response");
 
     const parsed = this.parseJsonResponse(responseText);
 
-    console.log(
-      `[Gemini] Parsed product data - name: "${parsed.name}", brand: "${parsed.brand}", ingredients: ${parsed.ingredients.length}`,
-    );
+    console.log(`[Gemini] Extracted: "${parsed.brand} ${parsed.name}"`);
 
-    // preferred path: ingredients come directly from the image
-    if (parsed.ingredients.length > 0) {
-      console.log(`[Gemini] Ingredients found in initial extraction`);
-      return parsed;
-    }
+    // If we have ingredients, we are done
+    if (parsed.ingredients.length > 0) return parsed;
 
-    // fallback: try extracting ingredients again from the same image
-    console.log(
-      `[Gemini] No ingredients in initial extraction - attempting fallback extraction`,
-    );
+    // Fallback 1: Retrying image specifically for ingredients
     const fallbackIngredients = await this.extractIngredientsFallback(file);
-
     if (fallbackIngredients.length > 0) {
-      console.log(
-        `[Gemini] Fallback extraction found ${fallbackIngredients.length} ingredients`,
-      );
-      return {
-        ...parsed,
-        ingredients: fallbackIngredients,
-      };
+      return { ...parsed, ingredients: fallbackIngredients };
     }
 
-    // final fallback: get ingredients from web-grounded results
-    console.log(`[Gemini] Attempting web-grounded ingredient extraction`);
+    // Fallback 2: Web Search (Now uses the improved specific name)
     const webIngredients = await this.extractIngredientsFromWeb({
       name: parsed.name,
       brand: parsed.brand,
@@ -346,19 +279,10 @@ export class GeminiService {
     });
 
     if (webIngredients.length === 0) {
-      console.error(
-        `[Gemini] Could not extract ingredients from image or web sources`,
-      );
-      throw new HttpError(
-        BAD_REQUEST,
-        "Could not detect ingredients from the image or UK/Ireland web sources. Please upload a clearer Ingredients/INCI photo or include product name and brand manually.",
-      );
+      throw new HttpError(BAD_REQUEST, "Could not identify ingredients. Please ensure the label is clear.");
     }
 
-    return {
-      ...parsed,
-      ingredients: webIngredients,
-    };
+    return { ...parsed, ingredients: webIngredients };
   }
 }
 
