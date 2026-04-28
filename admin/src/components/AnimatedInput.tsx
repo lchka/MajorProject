@@ -21,20 +21,21 @@ export default function AnimatedInput({
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      whileFocus={{ scale: 1.05 }}
-      animate={
-        error
-          ? { x: [0, -6, 6, -6, 0] } // shake on error
-          : { x: 0 }
+      whileFocus={{ scale: 1.02 }}
+      animate={error ? { x: [0, -6, 6, -6, 0] } : { x: 0 }}
+      autoComplete={
+        type === "password" ? "current-password" : "email"
       }
-      style={{
-        width: "100%",
-        padding: "10px",
-        marginBottom: "10px",
-        borderRadius: "6px",
-        border: error ? "2px solid red" : "1px solid #ccc",
-        outline: "none",
-      }}
+      className={`
+        w-full
+        bg-transparent
+        px-4 py-3
+        text-white
+        placeholder:text-zinc-400
+        outline-none
+        appearance-none
+        ${error ? "text-red-300" : ""}
+      `}
     />
   );
 }
