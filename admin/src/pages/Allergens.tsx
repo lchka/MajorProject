@@ -8,7 +8,7 @@ import {
 import type { Allergen } from "../services/allergenService";
 import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
-
+import UsageBadge from "../components/general/UsageBadge";
 export default function Allergens() {
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export default function Allergens() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // 🔔 Banner state
+  // 🔔 Banner state (unchanged)
   const [banner, setBanner] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -34,7 +34,7 @@ export default function Allergens() {
     visible: false,
   });
 
-  // auto hide
+  // auto hide (unchanged)
   useEffect(() => {
     if (banner.visible) {
       const t = setTimeout(() => {
@@ -65,7 +65,6 @@ export default function Allergens() {
     const run = async () => {
       await load();
     };
-
     void run();
   }, []);
 
@@ -137,7 +136,16 @@ export default function Allergens() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, usedCount?: number) => {
+    if (usedCount && usedCount > 0) {
+      setBanner({
+        message: "Cannot delete: allergen is in use",
+        type: "error",
+        visible: true,
+      });
+      return;
+    }
+
     try {
       await deleteAllergen(id);
 
@@ -166,7 +174,6 @@ export default function Allergens() {
 
   return (
     <>
-      {/* 🔔 Banner */}
       <Banner
         message={banner.message}
         type={banner.type}
@@ -233,7 +240,7 @@ export default function Allergens() {
                   paginatedAllergens.map((a) => (
                     <div
                       key={a.id}
-                      className="flex justify-between items-center px-4 py-4 border-b border-white/10 last:border-none"
+                      className="flex justify-between items-start px-4 py-4 border-b border-white/10 last:border-none"
                     >
                       {editingId === a.id ? (
                         <div className="flex gap-3 flex-1">
@@ -249,14 +256,19 @@ export default function Allergens() {
                           />
                         </div>
                       ) : (
-                        <div>
-                          <p className="font-medium">{a.name}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium">{a.name}</p>
+                            <UsageBadge count={a.usedCount} />
+                          </div>
+
                           <p className="text-sm text-zinc-400">
                             {a.description || "No description"}
                           </p>
                         </div>
                       )}
 
+                      {/* ACTIONS */}
                       <div className="flex gap-3 ml-4">
                         {editingId === a.id ? (
                           <>
@@ -283,8 +295,12 @@ export default function Allergens() {
                             </button>
 
                             <button
-                              onClick={() => handleDelete(a.id)}
-                              className="text-red-400 hover:text-red-300 text-sm"
+                              onClick={() => handleDelete(a.id, a.usedCount)}
+                              className={`text-sm ${
+                                a.usedCount && a.usedCount > 0
+                                  ? "text-zinc-500 cursor-not-allowed"
+                                  : "text-red-400 hover:text-red-300"
+                              }`}
                             >
                               Delete
                             </button>

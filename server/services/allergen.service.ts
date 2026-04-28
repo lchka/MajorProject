@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma.js";
+import allergenRepository from "../repositories/allergen.repository.js";
 import { HttpError } from "../utils/HttpError.js";
 
 import {
@@ -21,20 +22,20 @@ export class AllergenService {
 
   //get allergen by id
   async getAllergenById(id: string): Promise<AllergenResponseDto> {
-    const allergen = await prisma.allergen.findUnique({ where: { id } });
+    const allergen = await allergenRepository.findById(id);
 
     if (!allergen) {
       throw new HttpError(404, "Allergen not found");
     }
-    return allergen;
+
+    return {
+      ...allergen,
+      usedCount: allergen.profiles.length,
+    };
   }
 
   async getAllAllergens(): Promise<AllergenResponseDto[]> {
-    return prisma.allergen.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    return allergenRepository.findAll();
   }
 
   async updateAllergen(

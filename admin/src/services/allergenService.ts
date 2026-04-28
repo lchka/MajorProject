@@ -5,6 +5,7 @@ export type Allergen = {
   name: string;
   description?: string;
   createdAt?: string;
+  usedCount?: number; 
 };
 
 // GET all allergens

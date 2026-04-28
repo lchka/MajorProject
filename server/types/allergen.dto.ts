@@ -6,6 +6,7 @@ export const allergenResponseSchema = z.object({
   description: z.string().min(1, "Allergen description is required"),
   createdAt: z.date(),
   updatedAt: z.date(),
+   usedCount: z.number().optional(), 
 });
 
 export const createAllergenSchema = z.object({
