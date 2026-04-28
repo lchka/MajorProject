@@ -6,12 +6,13 @@ const API = axios.create({
     "http://192.168.1.10:3000/api",
 });
 
-// attach token automatically
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
+
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
 
