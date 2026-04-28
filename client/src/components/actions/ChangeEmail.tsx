@@ -23,6 +23,7 @@ import {
 } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
+import ValidationAnimation from "../general/ValidationAnimation";
 
 type ChangeEmailProps = {
   isOpen: boolean;
@@ -114,6 +115,19 @@ export default function ChangeEmail({
   const [isLoading, setIsLoading] = React.useState(false);
   const [isClosing, setIsClosing] = React.useState(false);
   const [errors, setErrors] = React.useState<any>({});
+
+  const emailRules = [
+    {
+      id: "email-required",
+      label: "Email is required",
+      test: (value: string) => value.trim().length > 0,
+    },
+    {
+      id: "email-format",
+      label: "Valid email format",
+      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+    },
+  ];
 
   React.useEffect(() => {
     if (isOpen) {
@@ -244,6 +258,15 @@ export default function ChangeEmail({
                     placeholder="new@email.com"
                     error={errors.newEmail}
                     isLoading={isLoading}
+                  />
+
+                  <ValidationAnimation
+                    value={newEmail}
+                    rules={emailRules}
+                    validColor="#10B981"
+                    invalidColor="#DC2626"
+                    showOnlyAfterInputStarts={true}
+                    validMessage="Email looks good"
                   />
 
                   <InputField

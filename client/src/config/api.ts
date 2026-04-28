@@ -301,12 +301,12 @@ api.interceptors.response.use(
       switch (error.response.status) {
         case 401:
           // FIX: Handle unauthorized (401) by calling the registered handler
-          console.error('Unauthorized - please login');
+          // Suppress console.error to prevent Expo from showing error banner - will use ErrorBanner instead
           if (handleUnauthorized) {
             try {
               await handleUnauthorized();
             } catch (err) {
-              console.error('[API] Failed to handle unauthorized:', err);
+              // Silently catch to prevent error bubble
             }
           }
           break;

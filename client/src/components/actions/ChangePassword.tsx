@@ -1,5 +1,5 @@
 import React from "react";
-import { Alert, TextInput } from "react-native";
+import { Alert, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import {
   Modal,
   ModalBackdrop,
@@ -219,14 +219,18 @@ export default function ChangePassword({
   return (
     <Modal isOpen={isOpen} onClose={triggerClose}>
       <ModalBackdrop />
-      <MotiView
-        from={{ opacity: 0, translateY: 28 }}
-        animate={
-          isClosing ? { opacity: 0, translateY: 34 } : { opacity: 1, translateY: 0 }
-        }
-        transition={{ type: "timing", duration: 190 }}
-        style={{ alignItems: "center", width: "100%", paddingHorizontal: 16 }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ width: "100%" }}
       >
+        <MotiView
+          from={{ opacity: 0, translateY: 28 }}
+          animate={
+            isClosing ? { opacity: 0, translateY: 34 } : { opacity: 1, translateY: 0 }
+          }
+          transition={{ type: "timing", duration: 190 }}
+          style={{ alignItems: "center", width: "100%", paddingHorizontal: 16 }}
+        >
         <ModalContent
           bg="#FFFFFF"
           borderRadius={18}
@@ -368,6 +372,7 @@ export default function ChangePassword({
           </ModalBody>
         </ModalContent>
       </MotiView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

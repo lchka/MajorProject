@@ -5,17 +5,12 @@ import { Dimensions, Image } from "react-native";
 import LottieView from "lottie-react-native";
 import { MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
-import {
-  Box,
-  Center,
-  HStack,
-  Text,
-  VStack,
-} from "@gluestack-ui/themed";
+import { Box, Center, HStack, Text, VStack, Pressable } from "@gluestack-ui/themed";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import CreateButton from "../../components/Buttons/CreateButton";
 import { AuthStackParamList } from "../../types/navigation";
 import { getAuthToken } from "../../utils/authStorage";
+import SimpleLoadingScreen from "../../components/loadingscreens/SimpleLoadingScreen";
 
 // Device height used for full-screen intro + welcome panel slide animation.
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -88,6 +83,8 @@ export default function WelcomeScreen() {
   const [isPostChecksLogoDone, setIsPostChecksLogoDone] = useState(false);
   // Current visible substring for the typewriter subtitle.
   const [typedSubtitle, setTypedSubtitle] = useState("");
+  // Check if user is authenticated on mount - show loading while checking
+  const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
   // True only when full subtitle has finished typing.
   const isTypewriterDone =
     shouldShowWelcomeCard && typedSubtitle.length >= WELCOME_SUBTITLE.length;
@@ -99,7 +96,11 @@ export default function WelcomeScreen() {
       // Session token fetched from async storage.
       const token = await getAuthToken();
       if (token) {
+        // Replace immediately - don't wait for other animations
         navigation.replace("LandingScreen");
+      } else {
+        // Only allow showing welcome screen if no token
+        setIsAuthCheckComplete(true);
       }
     };
 
@@ -220,7 +221,15 @@ export default function WelcomeScreen() {
   }, [isChecklistSequenceDone]);
 
   return (
-    <Box h={SCREEN_HEIGHT} overflow="hidden">
+    <>
+      {/* Show loading screen while checking auth status */}
+      {!isAuthCheckComplete && (
+        <SimpleLoadingScreen fullScreen backgroundColor="#F2F8FF" />
+      )}
+
+      {/* Only render welcome content if auth check is complete */}
+      {isAuthCheckComplete && (
+        <Box h={SCREEN_HEIGHT} overflow="hidden">
       {/* Keep intro and welcome page stacked, then animate the whole screen upward. */}
       <MotiView
         animate={{
@@ -499,11 +508,38 @@ export default function WelcomeScreen() {
                     onPress={() => navigation.navigate("LoginScreen")}
                   />
                 </MotiView>
+
+                {/* Skip button: appears 1 second after welcome animations start */}
+                <MotiView
+                  animate={{
+                    opacity: shouldShowWelcomeCard ? 1 : 0,
+                  }}
+                  transition={{
+                    type: "timing",
+                    duration: 400,
+                    delay: 1000,
+                  }}
+                >
+                  <Pressable
+                    onPress={() => navigation.replace("LoginScreen")}
+                    hitSlop={20}
+                  >
+                    <Text
+                      size="md"
+                      color="#4A90D9"
+                      style={{ fontFamily: "RobotoMedium", textAlign: "center" }}
+                    >
+                      Skip for now
+                    </Text>
+                  </Pressable>
+                </MotiView>
               </VStack>
             </VStack>
           </Box>
         </Center>
       </MotiView>
-    </Box>
+        </Box>
+      )}
+    </>
   );
 }

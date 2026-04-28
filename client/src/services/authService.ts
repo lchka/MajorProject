@@ -61,6 +61,23 @@ export const authService = {
     const response = await api.get('/auth/me');
     return response.data;
   },
+
+  updateEmail: async (currentEmail: string, newEmail: string, password: string): Promise<any> => {
+    const response = await api.patch('/auth/update-email', {
+      currentEmail,
+      newEmail,
+      password,
+    });
+    return response.data;
+  },
+
+  updatePassword: async (currentPassword: string, newPassword: string): Promise<any> => {
+    const response = await api.patch('/auth/update-password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
+  },
 };
 
 export default authService;

@@ -16,7 +16,7 @@ import HistoryScreen from "./src/screens/Evaluations/HistoryScreen";
 import RegisterScreen from "./src/screens/auth/RegisterScreen";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
-import { StyleSheet, Alert } from "react-native";
+import { StyleSheet, Alert, LogBox } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -32,6 +32,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 // Fonts
 import { useFonts, DancingScript_400Regular } from '@expo-google-fonts/dancing-script';
 import { Roboto_400Regular, Roboto_500Medium } from '@expo-google-fonts/roboto';
+
+// Suppress LogBox warnings for unauthorized errors during app reload
+LogBox.ignoreLogs(['Non-serializable values were found in the navigation state']);
+
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 const PREVIEW_EVALUATION_LOADING = false;
@@ -96,23 +100,16 @@ export default function App() {
           // Token is valid, go to LandingScreen
           setInitialRouteName("LandingScreen");
         } catch (error: any) {
-          console.log("[Auth] Token validation failed:", {
-            status: error?.response?.status,
-            message: error?.message,
-            errorData: error?.response?.data
-          });
-          
-          // Token is invalid (401 Unauthorized), clear it and go to LoginScreen
+          // Silently log - no console.error to prevent Expo from showing error banner
           const is401 = error?.response?.status === 401;
           const isUnauthorizedMessage = error?.message?.toLowerCase().includes("unauthorized");
           
           if (is401 || isUnauthorizedMessage) {
-            console.log("[Auth] Detected 401/Unauthorized - clearing token and redirecting to LoginScreen");
+            // Token is invalid (401 Unauthorized), clear it and go to LoginScreen
             await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
             setInitialRouteName("LoginScreen");
           } else {
             // Other errors (network issues, 404, etc.), show banner and go to LandingScreen
-            console.log("[Auth] Non-401 error, defaulting to LandingScreen");
             const errorStatus = error?.response?.status;
             const errorMessage = errorStatus === 404 
               ? "Backend API endpoint not found (404). Please check the server configuration."
