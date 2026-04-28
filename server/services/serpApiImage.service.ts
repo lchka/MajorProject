@@ -32,14 +32,6 @@ export class SerpApiImageService {
     ).join(" ");
   }
 
-  private sanitizeQuery(value: string): string {
-    // Remove special characters that can break SerpAPI queries
-    return value
-      .replace(/['"{}[\]|\\^`]/g, "") // Remove quotes and special chars
-      .replace(/[&]/g, "and") // Convert & to "and"
-      .trim();
-  }
-
   private getApiKey(): string {
     const apiKey = process.env.SERPAPI_API_KEY?.trim();
 
@@ -56,121 +48,49 @@ export class SerpApiImageService {
   private buildQuery(name: string, brand: string): string {
     // CHANGE: Added logging to trace query construction
     const primary = this.compactWords(`${brand} ${name}`);
-    const sanitized = this.sanitizeQuery(primary);
     //search query PROMPT
-    const query = `${sanitized} product white background`.trim();
+    const query = `${primary} product white background`.trim();
     const finalQuery = query.replace(/\s+/g, " ");
     console.log(`[SerpAPI] Query built - name: "${name}", brand: "${brand}" → "${finalQuery}"`);
     return finalQuery;
   }
 
-  // Extract and validate image URLs from SerpAPI results
-  private extractValidImage(results: SerpImageResult[]): string | null {
-    const blockedDomains = [
-      "fbsbx.com",
-      "lookaside",
-      "facebook",
-      "pinterest",
-      "instagram",
-      "tiktok",
-      "media_id=",
-      "tracker",
-      "redirect",
-    ];
+  // CHANGE: Added comprehensive logging for debugging SerpAPI requests and responses
+  private async requestSerpImageUrl(apiKey: string, query: string): Promise<string | null> {
+    try {
+      console.log(`[SerpAPI] Requesting SerpAPI with query: "${query}"`);
+      const response = await axios.get<SerpApiResponse>(this.serpApiBaseUrl, {
+        params: {
+          engine: "google_images",
+          q: query,
+          api_key: apiKey,
+        },
+        timeout: this.serpApiTimeoutMs,
+      });
 
-    for (const result of results) {
-      const url = result.original ?? result.thumbnail;
-      if (!url) continue;
+      const resultsCount = response.data.images_results?.length ?? 0;
+      console.log(`[SerpAPI] Response received - ${resultsCount} images found`);
 
-      // 🚫 skip bad domains
-      if (blockedDomains.some(domain => url.includes(domain))) {
-        console.log(`[SerpAPI] Skipping blocked domain: ${url}`);
-        continue;
+      const firstResult = response.data.images_results?.[0];
+      const imageUrl = firstResult?.original ?? firstResult?.thumbnail ?? null;
+      
+      if (imageUrl) {
+        console.log(`[SerpAPI] Image URL found: ${imageUrl}`);
+      } else {
+        console.log(`[SerpAPI] No image URL in first result`);
       }
-
-      // 🚫 skip obvious non-image URLs
-      if (!url.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i)) {
-        console.log(`[SerpAPI] Skipping non-direct image URL: ${url}`);
-        continue;
-      }
-
-      // 🚫 Additional check: skip URLs with suspicious patterns (CDN redirects, trackers)
-      if (url.includes("?") && !url.match(/\.(jpg|jpeg|png|webp|gif)\?/i)) {
-        // URL has query params but no direct image extension before them - likely a redirect
-        console.log(`[SerpAPI] Skipping redirect/query-only URL: ${url}`);
-        continue;
-      }
-
-      console.log(`[SerpAPI] Valid candidate found: ${url}`);
-      return url;
+      
+      return imageUrl;
+    } catch (error) {
+      console.error(`[SerpAPI] Request failed for query "${query}":`, error instanceof Error ? error.message : error);
+      throw error;
     }
-
-    return null;
-  }
-
-  // CHANGE: Added retry logic with exponential backoff for transient SerpAPI errors
-  private async requestSerpImageUrl(apiKey: string, query: string, timeoutMs?: number): Promise<string | null> {
-    const MAX_RETRIES = 2;
-    const timeout = timeoutMs || this.serpApiTimeoutMs;
-
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        console.log(`[SerpAPI] Requesting SerpAPI with query: "${query}"${attempt > 1 ? ` (attempt ${attempt}/${MAX_RETRIES})` : ""}`);
-
-        const response = await axios.get<SerpApiResponse>(this.serpApiBaseUrl, {
-          params: {
-            engine: "google_images",
-            q: query,
-            api_key: apiKey,
-          },
-          timeout: timeout,
-        });
-
-        const results = response.data.images_results ?? [];
-        console.log(`[SerpAPI] Response received - ${results.length} images found`);
-
-        const imageUrl = this.extractValidImage(results);
-        if (imageUrl) {
-          return imageUrl;
-        }
-
-        console.log(`[SerpAPI] No valid image URL found after filtering`);
-        return null;
-
-      } catch (error) {
-        if (axios.isAxiosError(error)) {
-          const status = error.response?.status;
-          const statusText = error.response?.statusText;
-          const errorData = error.response?.data;
-
-          // Retry on transient server errors
-          if ((status === 503 || status === 429) && attempt < MAX_RETRIES) {
-            const backoffMs = 1000 * attempt;
-            console.log(`[SerpAPI] Transient error (${status} ${statusText}), retrying in ${backoffMs}ms (attempt ${attempt}/${MAX_RETRIES})...`);
-            await new Promise(res => setTimeout(res, backoffMs));
-            continue;
-          }
-
-          console.error(
-            `[SerpAPI] Request failed for query "${query}": status ${status} ${statusText}`,
-            errorData ? JSON.stringify(errorData).substring(0, 200) : error.message
-          );
-        } else {
-          console.error(
-            `[SerpAPI] Request failed for query "${query}":`,
-            error instanceof Error ? error.message : error
-          );
-        }
-        throw error;
-      }
-    }
-
-    throw new Error(`[SerpAPI] Max retries (${MAX_RETRIES}) exceeded for query "${query}"`);
   }
 
   private async getFirstImageUrl(name: string, brand: string): Promise<string> {
     console.log(`[SerpAPI] getFirstImageUrl called - name: "${name}", brand: "${brand}"`);
     const primaryQuery = this.buildQuery(name, brand);
+    const fallbackQuery = `${this.compactWords(name)} product white background`.trim();
 
     if (!primaryQuery) {
       console.error(`[SerpAPI] Empty primary query - name: "${name}", brand: "${brand}"`);
@@ -179,42 +99,22 @@ export class SerpApiImageService {
 
     const apiKey = this.getApiKey();
 
-    // Build a list of progressively simpler queries to try
-    const queries = [
-      primaryQuery, // Full: "brand name product white background"
-      this.sanitizeQuery(`${this.compactWords(brand)} ${this.compactWords(name)}`).trim(), // Just brand + name
-      this.sanitizeQuery(`${this.compactWords(name)} product`).trim(), // Name + product
-      this.sanitizeQuery(this.compactWords(name)).trim(), // Just product name
-    ];
-
-    for (const query of queries) {
+    for (const query of [primaryQuery, fallbackQuery]) {
       if (!query) {
         console.log(`[SerpAPI] Skipping empty query`);
         continue;
       }
 
       try {
-        // Use progressively longer timeouts for fallback queries
-        // Query 1: 12s, Query 2: 15s, Query 3+: 18s
-        const timeoutMs = Math.min(12000 + (queries.indexOf(query) * 3000), 18000);
-        const imageUrl = await this.requestSerpImageUrl(apiKey, query, timeoutMs);
+        const imageUrl = await this.requestSerpImageUrl(apiKey, query);
         if (imageUrl) {
-          console.log(`[SerpAPI] Image URL resolved successfully with query: "${query}"`);
+          console.log(`[SerpAPI] Image URL resolved successfully`);
           return imageUrl;
         }
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          const status = error.response?.status;
-          if (status === 500 || status === 429 || error.code === "ECONNABORTED") {
-            // Server error, rate limit, or timeout - try next query
-            console.log(`[SerpAPI] Server error (${status || error.code}), trying next query...`);
-            continue;
-          }
-          if (!error.response) {
-            // Network error, timeout, or ECONNABORTED - try next query
-            console.log(`[SerpAPI] Network/timeout error, trying next query...`);
-            continue;
-          }
+        if (axios.isAxiosError(error) && (error.code === "ECONNABORTED" || !error.response)) {
+          console.log(`[SerpAPI] Request timeout/aborted, trying fallback query`);
+          continue;
         }
 
         console.error(`[SerpAPI] Error in getFirstImageUrl:`, error instanceof Error ? error.message : error);
@@ -222,8 +122,8 @@ export class SerpApiImageService {
       }
     }
 
-    console.error(`[SerpAPI] No image found after trying all query variations`);
-    throw new HttpError(NOT_FOUND, "No official image found for this product after trying multiple search queries.");
+    console.error(`[SerpAPI] No image found after trying primary and fallback queries`);
+    throw new HttpError(NOT_FOUND, "No official image found for this product.");
   }
 
   // CHANGE: Main fix - handles CDN responses with generic binary/octet-stream content-type
@@ -235,21 +135,12 @@ export class SerpApiImageService {
       const sourceUrl = await this.getFirstImageUrl(params.name, params.brand);
       console.log(`[SerpAPI] Downloading image from: ${sourceUrl}`);
 
-      let imageResponse;
-      try {
-        imageResponse = await axios.get<ArrayBuffer>(sourceUrl, {
-          responseType: "arraybuffer",
-          timeout: 20000,
-          maxRedirects: 5,
-          validateStatus: (status) => status >= 200 && status < 400,
-        });
-      } catch (axiosError) {
-        if (axios.isAxiosError(axiosError)) {
-          console.error(`[SerpAPI] Image download failed - status: ${axiosError.response?.status}, message: ${axiosError.message}`);
-          throw new HttpError(INTERNAL_SERVER_ERROR, `Failed to download image from SerpAPI result: ${axiosError.message}`);
-        }
-        throw axiosError;
-      }
+      const imageResponse = await axios.get<ArrayBuffer>(sourceUrl, {
+        responseType: "arraybuffer",
+        timeout: 20000,
+        maxRedirects: 5,
+        validateStatus: (status) => status >= 200 && status < 400,
+      });
 
       // FIX: Changed from 'const' to 'let' to allow reassignment when CDN returns generic binary type
       let contentType = String(imageResponse.headers["content-type"] || "image/jpeg").split(";")[0] || "image/jpeg";      
@@ -275,13 +166,7 @@ export class SerpApiImageService {
       
       console.log(`[SerpAPI] Image downloaded successfully - contentType: ${contentType}, size: ${imageResponse.data.byteLength} bytes`);
 
-      // Strict validation: reject any HTML, JSON, or text responses
-      if (contentType.includes("text/") || contentType.includes("application/json")) {
-        console.error(`[SerpAPI] Invalid content type detected: ${contentType} - likely a redirect or error page`);
-        throw new HttpError(BAD_REQUEST, "SerpAPI result returned non-image content (likely redirect/error page).");
-      }
-
-      if (!contentType.startsWith("image/") && contentType !== "binary/octet-stream" && contentType !== "application/octet-stream") {
+      if (!contentType.startsWith("image/")) {
         console.error(`[SerpAPI] Invalid content type: ${contentType}`);
         throw new HttpError(BAD_REQUEST, "SerpAPI result did not return a valid image content type.");
       }
@@ -293,11 +178,7 @@ export class SerpApiImageService {
       };
     } catch (error) {
       console.error(`[SerpAPI] fetchOfficialImageAsset failed:`, error instanceof Error ? error.message : error);
-      // Re-throw HttpErrors as-is, wrap others as 500
-      if (error instanceof HttpError) {
-        throw error;
-      }
-      throw new HttpError(INTERNAL_SERVER_ERROR, `Image fetch failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
   }
 }
