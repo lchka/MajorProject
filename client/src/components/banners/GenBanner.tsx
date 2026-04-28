@@ -4,31 +4,58 @@ import { Box, Text, Pressable, HStack } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+type BannerType = "success" | "error" | "info" | "warning";
+
 type Props = {
-  /** boolean to control visibility. */
   isOpen: boolean;
-  /** Optional message, defaults to 'Account deleted successfully.' */
-  message?: string;
-  /** Called when the user taps the X button or timer expires. */
+  message: string;
   onDismiss: () => void;
-  /** Optional time in ms to auto-dismiss. Pass 0 to disable. Defaults to 4000 (4s). */
   autoDismissMs?: number;
+  type?: BannerType;
+  icon?: keyof typeof Feather.glyphMap; // optional override
 };
 
-export default function DeletedSuccessfullyBanner({
+const TYPE_CONFIG: Record<
+  BannerType,
+  { bg: string; icon: string; iconColor: string }
+> = {
+  success: {
+    bg: "#1E293B",
+    icon: "check-circle",
+    iconColor: "#10B981",
+  },
+  error: {
+    bg: "#1E293B",
+    icon: "x-circle",
+    iconColor: "#EF4444",
+  },
+  warning: {
+    bg: "#1E293B",
+    icon: "alert-circle",
+    iconColor: "#F59E0B",
+  },
+  info: {
+    bg: "#1E293B",
+    icon: "info",
+    iconColor: "#3B82F6",
+  },
+};
+
+export default function Banner({
   isOpen,
-  message = "Account deleted successfully.",
+  message,
   onDismiss,
   autoDismissMs = 4000,
+  type = "success",
+  icon,
 }: Props) {
   const insets = useSafeAreaInsets();
 
+  const config = TYPE_CONFIG[type];
+
   React.useEffect(() => {
     if (isOpen && autoDismissMs > 0) {
-      const timer = setTimeout(() => {
-        onDismiss();
-      }, autoDismissMs);
-
+      const timer = setTimeout(onDismiss, autoDismissMs);
       return () => clearTimeout(timer);
     }
   }, [isOpen, autoDismissMs, onDismiss]);
@@ -43,14 +70,14 @@ export default function DeletedSuccessfullyBanner({
           transition={{ type: "timing", duration: 250 }}
           style={{
             position: "absolute",
-            top: insets.top + 20, // ✅ fixed positioning
+            top: insets.top + 20,
             left: 16,
             right: 16,
             zIndex: 1000,
           }}
         >
           <Box
-            bg="#1E293B"
+            bg={config.bg}
             borderRadius={14}
             px="$4"
             py="$3"
@@ -60,15 +87,17 @@ export default function DeletedSuccessfullyBanner({
             elevation={6}
           >
             <HStack alignItems="center" justifyContent="space-between">
-              {/* LEFT SIDE */}
               <HStack alignItems="center" space="sm" flex={1}>
-                <Feather name="check-circle" size={18} color="#10B981" />
+                <Feather
+                  name={icon || (config.icon as any)}
+                  size={18}
+                  color={config.iconColor}
+                />
                 <Text color="white" fontSize={13} flexShrink={1}>
                   {message}
                 </Text>
               </HStack>
 
-              {/* CLOSE BUTTON */}
               <Pressable onPress={onDismiss} ml="$3">
                 <Feather name="x" size={18} color="#CBD5F5" />
               </Pressable>

@@ -27,7 +27,7 @@ import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
 import ErrorBanner from "../../components/banners/ErrorBanner";
-import DeleteSuccess from "../../components/banners/DeleteSuccess";
+import Banner from "../../components/banners/GenBanner";
 
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
@@ -291,7 +291,7 @@ export default function LoginScreen() {
 
   return (
     <Box flex={1} style={{ backgroundColor: "#F2F8FF" }}>
-      <DeleteSuccess
+      <Banner
         isOpen={isDeleteSuccessOpen}
         onDismiss={() => setIsDeleteSuccessOpen(false)}
         message="Account deleted successfully."

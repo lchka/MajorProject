@@ -13,7 +13,7 @@ import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
   EvaluationHistoryCard,
 } from "../../components/evaluations/AllEvaluations";
-import DeleteSuccess from "../../components/banners/DeleteSuccess";
+import Banner from "../../components/banners/GenBanner";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
 import {
@@ -250,7 +250,7 @@ export default function HistoryScreen() {
 
   return (
     <Box style={styles.screen}>
-      <DeleteSuccess
+      <Banner 
         isOpen={isDeleteSuccessOpen}
         onDismiss={() => setIsDeleteSuccessOpen(false)}
         message="Evaluation deleted successfully."
