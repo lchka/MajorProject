@@ -109,7 +109,7 @@ function SwipeableEvaluationRow({
       onStartShouldSetPanResponder: () => false,
       // Only steal the gesture when the move is clearly horizontal
       onMoveShouldSetPanResponder: (_, { dx, dy }) =>
-        Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.5,
+        Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 0.8,
       onPanResponderGrant: () => {
         // Kill any running spring so the card tracks the finger immediately
         swipeX.stopAnimation();

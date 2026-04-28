@@ -310,11 +310,22 @@ export default function HistoryScreen() {
               });
             }}
             onDeleteEvaluation={(evaluationContextId) => {
-              setHistoryItems((prev) =>
-                prev.filter(
-                  (item) => item.evaluationContextId !== evaluationContextId,
-                ),
-              );
+              // First call the backend to delete, then update local state
+              evaluationContextService.deleteById(evaluationContextId).then(() => {
+                setHistoryItems((prev) =>
+                  prev.filter(
+                    (item) => item.evaluationContextId !== evaluationContextId,
+                  ),
+                );
+              }).catch((error) => {
+                console.error("Failed to delete evaluation:", error);
+                // Still remove from local state even if backend fails (soft delete)
+                setHistoryItems((prev) =>
+                  prev.filter(
+                    (item) => item.evaluationContextId !== evaluationContextId,
+                  ),
+                );
+              });
             }}
           />
         </Box>
