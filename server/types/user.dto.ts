@@ -10,6 +10,7 @@ export const userResponseSchema = z.object({
   email: z.string().email("Must be a valid email address"),
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().optional().default(""),
+  deletedAt: z.string().datetime().nullable().optional(),
   profile_id: z
     .string()
     .uuid("Profile id must be a valid UUID")

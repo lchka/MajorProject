@@ -79,7 +79,6 @@ export class UserRepository {
   // list active users
   async findAll() {
     return await prisma.user.findMany({
-  
       include: {
         role: true,
         profiles: true,

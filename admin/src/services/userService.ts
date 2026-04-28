@@ -18,12 +18,15 @@ export const getUsers = async (): Promise<User[]> => {
   return res.data;
 };
 
-// SOFT DELETE (normal delete)
 export const softDeleteUser = async (id: string) => {
-  const res = await API.delete(`/users/${id}`);
-  return res.data;
-};
+  const token = localStorage.getItem("token");
 
+  return await API.delete(`/users/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
 // FORCE DELETE (permanent)
 export const forceDeleteUser = async (id: string) => {
   const res = await API.delete(`/users/${id}/force`);
@@ -32,7 +35,7 @@ export const forceDeleteUser = async (id: string) => {
 
 // RESTORE user
 export const restoreUser = async (id: string) => {
-  const res = await API.patch(`/users/${id}/restore`);
+  const res = await API.post(`/users/${id}/restore`);
   return res.data;
 };
 

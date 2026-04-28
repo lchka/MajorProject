@@ -10,6 +10,7 @@ import type { User } from "../services/userService";
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [tab, setTab] = useState<"active" | "removed">("active");
 
   const loadUsers = async () => {
@@ -17,6 +18,8 @@ export default function Users() {
       setLoading(true);
       const data = await getUsers();
       setUsers(data);
+    } catch (err) {
+      console.error("Failed to load users:", err);
     } finally {
       setLoading(false);
     }
@@ -27,18 +30,39 @@ export default function Users() {
   }, []);
 
   const handleSoftDelete = async (id: string) => {
-    await softDeleteUser(id);
-    loadUsers();
+    try {
+      setActionLoading(id);
+      await softDeleteUser(id);
+      await loadUsers();
+    } catch (err) {
+      console.error("Soft delete failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleForceDelete = async (id: string) => {
-    await forceDeleteUser(id);
-    loadUsers();
+    try {
+      setActionLoading(id);
+      await forceDeleteUser(id);
+      await loadUsers();
+    } catch (err) {
+      console.error("Force delete failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleRestore = async (id: string) => {
-    await restoreUser(id);
-    loadUsers();
+    try {
+      setActionLoading(id);
+      await restoreUser(id);
+      await loadUsers();
+    } catch (err) {
+      console.error("Restore failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const activeUsers = users.filter((u) => !u.deletedAt);
@@ -55,9 +79,7 @@ export default function Users() {
         <button
           onClick={() => setTab("active")}
           className={`px-4 py-2 rounded-lg ${
-            tab === "active"
-              ? "bg-white text-black"
-              : "bg-white/10"
+            tab === "active" ? "bg-white text-black" : "bg-white/10"
           }`}
         >
           Active ({activeUsers.length})
@@ -66,9 +88,7 @@ export default function Users() {
         <button
           onClick={() => setTab("removed")}
           className={`px-4 py-2 rounded-lg ${
-            tab === "removed"
-              ? "bg-white text-black"
-              : "bg-white/10"
+            tab === "removed" ? "bg-white text-black" : "bg-white/10"
           }`}
         >
           Removed ({removedUsers.length})
@@ -84,54 +104,61 @@ export default function Users() {
               No users found.
             </p>
           ) : (
-            displayedUsers.map((user) => (
-              <div
-                key={user.id}
-                className="flex justify-between items-center px-4 py-3 border-b border-white/10"
-              >
-                {/* USER INFO */}
-                <div>
-                  <p className="font-medium">{user.email}</p>
-                  <p className="text-sm text-zinc-400">
-                    {user.first_name} {user.last_name} • {user.role.name}
-                  </p>
+            displayedUsers.map((user) => {
+              const isBusy = actionLoading === user.id;
 
-                  {user.deletedAt && (
-                    <p className="text-xs text-red-400 mt-1">
-                      Removed
+              return (
+                <div
+                  key={user.id}
+                  className="flex justify-between items-center px-4 py-3 border-b border-white/10"
+                >
+                  {/* USER INFO */}
+                  <div>
+                    <p className="font-medium">{user.email}</p>
+                    <p className="text-sm text-zinc-400">
+                      {user.first_name} {user.last_name} • {user.role.name}
                     </p>
-                  )}
-                </div>
 
-                {/* ACTIONS */}
-                <div className="flex gap-3">
-                  {tab === "active" ? (
-                    <button
-                      onClick={() => handleSoftDelete(user.id)}
-                      className="text-yellow-400 hover:text-yellow-300 text-sm"
-                    >
-                      Disable
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => handleRestore(user.id)}
-                        className="text-green-400 hover:text-green-300 text-sm"
-                      >
-                        Restore
-                      </button>
+                    {user.deletedAt && (
+                      <p className="text-xs text-red-400 mt-1">
+                        Removed
+                      </p>
+                    )}
+                  </div>
 
+                  {/* ACTIONS */}
+                  <div className="flex gap-3">
+                    {tab === "active" ? (
                       <button
-                        onClick={() => handleForceDelete(user.id)}
-                        className="text-red-400 hover:text-red-300 text-sm"
+                        onClick={() => handleSoftDelete(user.id)}
+                        disabled={isBusy}
+                        className="text-yellow-400 hover:text-yellow-300 text-sm disabled:opacity-50"
                       >
-                        Delete
+                        {isBusy ? "Disabling..." : "Disable"}
                       </button>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleRestore(user.id)}
+                          disabled={isBusy}
+                          className="text-green-400 hover:text-green-300 text-sm disabled:opacity-50"
+                        >
+                          {isBusy ? "Restoring..." : "Restore"}
+                        </button>
+
+                        <button
+                          onClick={() => handleForceDelete(user.id)}
+                          disabled={isBusy}
+                          className="text-red-400 hover:text-red-300 text-sm disabled:opacity-50"
+                        >
+                          {isBusy ? "Deleting..." : "Delete"}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
