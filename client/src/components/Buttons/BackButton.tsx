@@ -2,7 +2,7 @@ import React from "react";
 import { StyleProp, ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Pressable } from "@gluestack-ui/themed";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import Feather from "@expo/vector-icons/Feather";
 
 type BackButtonProps = {
   onPress?: () => void;
@@ -15,20 +15,15 @@ type BackButtonProps = {
 export default function BackButton({
   onPress,
   color = "#111111",
-  size = 24,
+  size = 28,
   style,
   hitSlop = 10,
 }: BackButtonProps) {
   const navigation = useNavigation();
 
   const handleBack = React.useCallback(() => {
-    if (onPress) {
-      onPress();
-      return;
-    }
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
+    if (onPress) return onPress();
+    if (navigation.canGoBack()) navigation.goBack();
   }, [navigation, onPress]);
 
   return (
@@ -39,13 +34,13 @@ export default function BackButton({
       w={44}
       h={44}
       borderRadius={22}
-      bg="#E8F4F8"
+      bg="#daf6ff"
       style={style}
       hitSlop={hitSlop}
       accessibilityRole="button"
       accessibilityLabel="Go back"
     >
-      <AntDesign name="arrow-left" size={size} color={color} />
+      <Feather name="arrow-left" size={size} color={color} />
     </Pressable>
   );
 }

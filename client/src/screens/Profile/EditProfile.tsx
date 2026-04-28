@@ -286,22 +286,7 @@ export default function EditProfileScreen() {
 
   return (
     <Box flex={1} bg="#F2F6FA">
-      <NavBarTop notificationCount={2} />
-
-      <Box
-        style={{
-          position: "absolute",
-          top: 86,
-          right: 16,
-          zIndex: 50,
-          elevation: 30,
-        }}
-      >
-        <RedBanner
-          visible={showMainWarning}
-          message="You must make this change from the designated profile settings."
-        />
-      </Box>
+      <NavBarTop showNotifications={false} />
 
       <ScrollView
         contentContainerStyle={{
@@ -455,7 +440,24 @@ export default function EditProfileScreen() {
           </Box>
         </Box>
 
-        <Box style={{ marginTop: 18 }}>
+        <Box style={{ marginTop: 18, position: "relative" }}>
+          <Box
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: -12,
+              left: 12,
+              right: 12,
+              zIndex: 20,
+              elevation: 10,
+            }}
+          >
+            <RedBanner
+              visible={showMainWarning}
+              message="You must make this change from the designated profile settings."
+            />
+          </Box>
+
           <Text
             fontSize={18}
             lineHeight={22}
