@@ -5,6 +5,7 @@ export type Preference = {
   name: string;
   description?: string;
   createdAt?: string;
+  usedCount?: number;
 };
 
 // GET all preferences

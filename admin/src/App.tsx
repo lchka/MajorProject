@@ -3,6 +3,8 @@ import Login from "./pages/LoginPage";
 import Users from "./pages/Users";
 import Dashboard from "./pages/Dashboard";
 import Allergens from "./pages/Allergens";
+import Conditions from "./pages/Conditions";
+import Preferences from "./pages/Preferences";
 export default function App() {
   return (
     <BrowserRouter>
@@ -11,6 +13,8 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
         <Route path="/allergens" element={<Allergens />} />
+        <Route path="/conditions" element={<Conditions />} />
+        <Route path="/preferences" element={<Preferences />} />
 
       </Routes>
     </BrowserRouter>

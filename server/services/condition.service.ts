@@ -1,4 +1,5 @@
 import prisma from "../lib/prisma.js";
+import conditionRepository from "../repositories/condition.repository.js";
 import { HttpError } from "../utils/HttpError.js";
 import {
   CreateConditionDto,
@@ -23,22 +24,21 @@ export class ConditionService {
 
   async getConditionById(id: string): Promise<ConditionResponseDto> {
     // get one condition by id
-    const condition = await prisma.condition.findUnique({ where: { id } });
+    const condition = await conditionRepository.findById(id);
 
     if (!condition) {
       throw new HttpError(404, "Condition not found");
     }
 
-    return condition;
+    return {
+      ...condition,
+      usedCount: condition.profiles.length,
+    };
   }
 
   async getAllConditions(): Promise<ConditionResponseDto[]> {
     // list conditions newest first
-    return prisma.condition.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    return conditionRepository.findAll();
   }
 
   async updateCondition(

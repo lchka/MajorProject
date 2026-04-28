@@ -6,6 +6,7 @@ export const preferenceResponseSchema = z.object({
   description: z.string().min(1, "Preference description is required"),
   createdAt: z.date(),
   updatedAt: z.date(),
+  usedCount: z.number().optional(),
 });
 
 export const createPreferenceSchema = z.object({
