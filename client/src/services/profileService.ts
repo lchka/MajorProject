@@ -129,7 +129,7 @@ const toProfileFormData = (data: CreateProfileInput | UpdateProfileInput): FormD
       uri: profileImage.uri,
       name: profileImage.name ?? `profile-${Date.now()}.jpg`,
       type: profileImage.type ?? 'image/jpeg',
-    } as unknown as Blob);
+    } as unknown as { uri: string; name: string; type: string });
   }
 
   data.conditionIds?.forEach((id) => formData.append('conditionIds[]', id));

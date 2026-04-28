@@ -1,10 +1,21 @@
 import React from "react";
 import { TextInput } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
-import { Box, Image, Pressable, ScrollView, Text, VStack, HStack } from "@gluestack-ui/themed";
+import {
+  Box,
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  VStack,
+  HStack,
+} from "@gluestack-ui/themed";
 import NavBarTop from "../../components/general/NavBarTop";
-import EvaluationProfile, { type EvaluationProfileItem } from "../../components/profile/EvaluationProfile";
+import EvaluationProfile, {
+  type EvaluationProfileItem,
+} from "../../components/profile/EvaluationProfile";
 import type { Product } from "../../services/productService";
+import BackButton from "../../components/Buttons/BackButton";
 
 type ShowProductProps = {
   product: Product;
@@ -21,7 +32,10 @@ const toIngredientList = (value: Product["ingredients"]): string[] => {
     return [];
   }
 
-  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  return value.filter(
+    (item): item is string =>
+      typeof item === "string" && item.trim().length > 0,
+  );
 };
 
 export default function ShowProduct({
@@ -33,9 +47,11 @@ export default function ShowProduct({
   onContinue,
   onRetake,
 }: ShowProductProps) {
-  const [isIngredientsExpanded, setIsIngredientsExpanded] = React.useState(false);
+  const [isIngredientsExpanded, setIsIngredientsExpanded] =
+    React.useState(false);
   const [isEditingIngredients, setIsEditingIngredients] = React.useState(false);
-  const [isEvaluationProfileOpen, setIsEvaluationProfileOpen] = React.useState(false);
+  const [isEvaluationProfileOpen, setIsEvaluationProfileOpen] =
+    React.useState(false);
   const [ingredientsText, setIngredientsText] = React.useState("");
 
   React.useEffect(() => {
@@ -61,9 +77,19 @@ export default function ShowProduct({
         <Box px="$5" pt="$4" pb="$6">
           {/* Header */}
           <VStack space="xs" mb="$5">
-            <Text fontSize={30} lineHeight={34} color="#0F172A" fontFamily="RobotoMedium">
-              Product Found
-            </Text>
+            {/* Wrap the button and title in an HStack to put them inline */}
+            <HStack alignItems="center" space="sm">
+              <BackButton />
+              <Text
+                fontSize={30}
+                lineHeight={34}
+                color="#0F172A"
+                fontFamily="RobotoMedium"
+              >
+                Product Found
+              </Text>
+            </HStack>
+
             <Text fontSize={14} color="#64748B">
               Confirm the product before continuing
             </Text>
@@ -87,112 +113,133 @@ export default function ShowProduct({
               resizeMode="cover"
             />
 
-        {/* Content */}
-        <VStack px="$5" py="$4" space="sm">
-          {/* Product Name */}
-          <Text fontSize={24} lineHeight={28} color="#0F172A" fontFamily="RobotoMedium">
-            {product.name}
-          </Text>
-
-          {/* Meta Info */}
-          <HStack space="sm" flexWrap="wrap">
-            {product.brand && (
-              <Box
-                bg="#EEF4FF"
-                px="$3"
-                py="$1"
-                borderRadius="$full"
+            {/* Content */}
+            <VStack px="$5" py="$4" space="sm">
+              {/* Product Name */}
+              <Text
+                fontSize={24}
+                lineHeight={28}
+                color="#0F172A"
+                fontFamily="RobotoMedium"
               >
-                <Text fontSize={12} color="#3B82F6">
-                  {product.brand}
-                </Text>
-              </Box>
-            )}
-
-            {product.category && (
-              <Box
-                bg="#F1F5F9"
-                px="$3"
-                py="$1"
-                borderRadius="$full"
-              >
-                <Text fontSize={12} color="#475569">
-                  {product.category}
-                </Text>
-              </Box>
-            )}
-          </HStack>
-
-          <Box mt="$3">
-            <HStack alignItems="center" justifyContent="space-between" mb="$2">
-              <Text fontSize={14} color="#334155" fontFamily="RobotoMedium">
-                Pulled Ingredients
+                {product.name}
               </Text>
 
-              <HStack space="xs" alignItems="center">
-                <Pressable
-                  onPress={() => {
-                    setIsIngredientsExpanded((previous) => !previous);
-                  }}
-                  p="$1.5"
-                  borderRadius="$full"
-                  bg="#EEF2F7"
-                  borderWidth={1}
-                  borderColor="#D6DEE8"
-                >
-                  <Feather
-                    name={isIngredientsExpanded ? "chevron-up" : "chevron-down"}
-                    size={15}
-                    color="#5B6B7A"
-                  />
-                </Pressable>
+              {/* Meta Info */}
+              <HStack space="sm" flexWrap="wrap">
+                {product.brand && (
+                  <Box bg="#EEF4FF" px="$3" py="$1" borderRadius="$full">
+                    <Text fontSize={12} color="#3B82F6">
+                      {product.brand}
+                    </Text>
+                  </Box>
+                )}
 
-                <Pressable
-                  onPress={() => {
-                    setIsEditingIngredients((previous) => !previous);
-                    if (!isIngredientsExpanded) {
-                      setIsIngredientsExpanded(true);
-                    }
-                  }}
-                  p="$1.5"
-                  borderRadius="$full"
-                  bg={isEditingIngredients ? "#DFF0FF" : "#EEF2F7"}
-                  borderWidth={1}
-                  borderColor={isEditingIngredients ? "#8EC5F0" : "#D6DEE8"}
-                >
-                  <Feather name="edit-2" size={14} color={isEditingIngredients ? "#2E96CB" : "#5B6B7A"} />
-                </Pressable>
+                {product.category && (
+                  <Box bg="#F1F5F9" px="$3" py="$1" borderRadius="$full">
+                    <Text fontSize={12} color="#475569">
+                      {product.category}
+                    </Text>
+                  </Box>
+                )}
               </HStack>
-            </HStack>
 
-            {isIngredientsExpanded ? (isEditingIngredients ? (
-              <Box borderWidth={1} borderColor="#CBD5E1" borderRadius={12} bg="#FFFFFF" px="$3" py="$2">
-                <TextInput
-                  value={ingredientsText}
-                  onChangeText={setIngredientsText}
-                  multiline
-                  textAlignVertical="top"
-                  placeholder="Enter ingredients separated by commas"
-                  placeholderTextColor="#94A3B8"
-                  style={{
-                    minHeight: 86,
-                    fontSize: 14,
-                    lineHeight: 20,
-                    color: "#1E293B",
-                  }}
-                />
+              <Box mt="$3">
+                <HStack
+                  alignItems="center"
+                  justifyContent="space-between"
+                  mb="$2"
+                >
+                  <Text fontSize={14} color="#334155" fontFamily="RobotoMedium">
+                    Pulled Ingredients
+                  </Text>
+
+                  <HStack space="xs" alignItems="center">
+                    <Pressable
+                      onPress={() => {
+                        setIsIngredientsExpanded((previous) => !previous);
+                      }}
+                      p="$1.5"
+                      borderRadius="$full"
+                      bg="#EEF2F7"
+                      borderWidth={1}
+                      borderColor="#D6DEE8"
+                    >
+                      <Feather
+                        name={
+                          isIngredientsExpanded ? "chevron-up" : "chevron-down"
+                        }
+                        size={15}
+                        color="#5B6B7A"
+                      />
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => {
+                        setIsEditingIngredients((previous) => !previous);
+                        if (!isIngredientsExpanded) {
+                          setIsIngredientsExpanded(true);
+                        }
+                      }}
+                      p="$1.5"
+                      borderRadius="$full"
+                      bg={isEditingIngredients ? "#DFF0FF" : "#EEF2F7"}
+                      borderWidth={1}
+                      borderColor={isEditingIngredients ? "#8EC5F0" : "#D6DEE8"}
+                    >
+                      <Feather
+                        name="edit-2"
+                        size={14}
+                        color={isEditingIngredients ? "#2E96CB" : "#5B6B7A"}
+                      />
+                    </Pressable>
+                  </HStack>
+                </HStack>
+
+                {isIngredientsExpanded ? (
+                  isEditingIngredients ? (
+                    <Box
+                      borderWidth={1}
+                      borderColor="#CBD5E1"
+                      borderRadius={12}
+                      bg="#FFFFFF"
+                      px="$3"
+                      py="$2"
+                    >
+                      <TextInput
+                        value={ingredientsText}
+                        onChangeText={setIngredientsText}
+                        multiline
+                        textAlignVertical="top"
+                        placeholder="Enter ingredients separated by commas"
+                        placeholderTextColor="#94A3B8"
+                        style={{
+                          minHeight: 86,
+                          fontSize: 14,
+                          lineHeight: 20,
+                          color: "#1E293B",
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box
+                      borderWidth={1}
+                      borderColor="#E2E8F0"
+                      borderRadius={12}
+                      bg="#F8FAFC"
+                      px="$3"
+                      py="$2.5"
+                    >
+                      <Text fontSize={13} lineHeight={18} color="#475569">
+                        {parsedIngredients.length > 0
+                          ? parsedIngredients.join(", ")
+                          : "No ingredients were detected. Tap the pencil to add them."}
+                      </Text>
+                    </Box>
+                  )
+                ) : null}
               </Box>
-            ) : (
-              <Box borderWidth={1} borderColor="#E2E8F0" borderRadius={12} bg="#F8FAFC" px="$3" py="$2.5">
-                <Text fontSize={13} lineHeight={18} color="#475569">
-                  {parsedIngredients.length > 0
-                    ? parsedIngredients.join(", ")
-                    : "No ingredients were detected. Tap the pencil to add them."}
-                </Text>
-              </Box>
-            )) : null}
-          </Box>
-        </VStack>
+            </VStack>
           </Box>
 
           {/* Actions */}

@@ -45,7 +45,7 @@ export default function Banner({
   isOpen,
   message,
   onDismiss,
-  autoDismissMs = 4000,
+  autoDismissMs = 1500,
   type = "success",
   icon,
 }: Props) {

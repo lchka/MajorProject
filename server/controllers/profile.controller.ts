@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ProfileService } from "../services/profile.service.js";
 import { CreateProfileDTO, UpdateProfileDTO } from "../types/profile.dto.js";
-import { CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/HttpError.js";
+import { BAD_REQUEST, CREATED_SUCCESS, HttpError, SUCCESS_RES, UNAUTHORISED } from "../utils/HttpError.js";
 import { uploadProfileImageToS3 } from "../lib/s3.js";
 
 const profileService = new ProfileService();
@@ -102,6 +102,12 @@ export class ProfileController {
         next: NextFunction,
     ): Promise<void> {
         try {
+            const hasTextFields = Object.keys(req.body ?? {}).length > 0;
+
+            if (!req.file && !hasTextFields) {
+                throw new HttpError(BAD_REQUEST, "At least one field must be provided for update");
+            }
+
             // patch profile fields + relation ids
             let profileImageUrl = req.body.profile_image;
 

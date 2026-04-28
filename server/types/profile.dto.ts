@@ -103,9 +103,6 @@ export const updateProfileSchema = z
 
     main_profile: z.boolean().optional(),
     isComplete: z.boolean().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided for update",
   });
 
 export type ProfileResponseDTO = z.infer<typeof profileResponseSchema>;

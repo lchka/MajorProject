@@ -6,6 +6,7 @@ import {
 } from "react-native";
 import LottieView from "lottie-react-native";
 import * as ImagePicker from "expo-image-picker";
+import type { MediaType } from "expo-image-picker";
 import { Asset } from "expo-asset";
 import {
 	NavigationProp,
@@ -148,6 +149,7 @@ export default function CreateProfile() {
 			last_name: lastName.trim() ? lastName.trim() : undefined,
 			age: age.trim() ? age.trim() : undefined,
 			profile_image: profileImage,
+			...(profileId ? {} : { main_profile: true }),
 			conditionIds,
 			allergenIds,
 			preferenceIds,
@@ -190,6 +192,7 @@ export default function CreateProfile() {
 					? { last_name: payload.last_name }
 					: {}),
 				...(payload.age !== undefined ? { age: payload.age } : {}),
+				main_profile: true,
 				isComplete: true,
 			});
 
@@ -249,7 +252,7 @@ export default function CreateProfile() {
 		}
 
 		const picked = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			mediaTypes: ["images"] as MediaType[],
 			allowsEditing: true,
 			quality: 0.8,
 		});

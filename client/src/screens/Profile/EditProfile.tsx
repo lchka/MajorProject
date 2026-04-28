@@ -1,6 +1,7 @@
 import React from "react";
 import { Alert, Image, TextInput } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import type { MediaType } from "expo-image-picker";
 import {
   NavigationProp,
   RouteProp,
@@ -85,7 +86,7 @@ export default function EditProfileScreen() {
     }
 
     const picked = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+	      mediaTypes: ["images"] as MediaType[],
       allowsEditing: true,
       quality: 0.8,
     });
