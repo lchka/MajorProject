@@ -135,12 +135,21 @@ export class SerpApiImageService {
       const sourceUrl = await this.getFirstImageUrl(params.name, params.brand);
       console.log(`[SerpAPI] Downloading image from: ${sourceUrl}`);
 
-      const imageResponse = await axios.get<ArrayBuffer>(sourceUrl, {
-        responseType: "arraybuffer",
-        timeout: 20000,
-        maxRedirects: 5,
-        validateStatus: (status) => status >= 200 && status < 400,
-      });
+      let imageResponse;
+      try {
+        imageResponse = await axios.get<ArrayBuffer>(sourceUrl, {
+          responseType: "arraybuffer",
+          timeout: 20000,
+          maxRedirects: 5,
+          validateStatus: (status) => status >= 200 && status < 400,
+        });
+      } catch (axiosError) {
+        if (axios.isAxiosError(axiosError)) {
+          console.error(`[SerpAPI] Image download failed - status: ${axiosError.response?.status}, message: ${axiosError.message}`);
+          throw new HttpError(INTERNAL_SERVER_ERROR, `Failed to download image from SerpAPI result: ${axiosError.message}`);
+        }
+        throw axiosError;
+      }
 
       // FIX: Changed from 'const' to 'let' to allow reassignment when CDN returns generic binary type
       let contentType = String(imageResponse.headers["content-type"] || "image/jpeg").split(";")[0] || "image/jpeg";      
@@ -178,7 +187,11 @@ export class SerpApiImageService {
       };
     } catch (error) {
       console.error(`[SerpAPI] fetchOfficialImageAsset failed:`, error instanceof Error ? error.message : error);
-      throw error;
+      // Re-throw HttpErrors as-is, wrap others as 500
+      if (error instanceof HttpError) {
+        throw error;
+      }
+      throw new HttpError(INTERNAL_SERVER_ERROR, `Image fetch failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

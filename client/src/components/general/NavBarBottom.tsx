@@ -2,6 +2,7 @@ import React from "react";
 import type { ImageSourcePropType } from "react-native";
 import { MotiView } from "moti";
 import { NavigationProp, StackActions, useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
@@ -90,6 +91,26 @@ export default function NavBarBottom({
 	}, [cameraProfileId, navigation, onPressUpload]);
 
 	/**
+	 * Open device photo gallery to select an image
+	 * Then navigate to CameraScreen with the selected image
+	 */
+	const handleGalleryPress = React.useCallback(async () => {
+		const result = await ImagePicker.launchImageLibraryAsync({
+			mediaTypes: ImagePicker.MediaTypeOptions.Images,
+			allowsEditing: true,
+			aspect: [4, 3],
+			quality: 1,
+		});
+
+		if (!result.canceled) {
+			navigation.navigate("CameraScreen", {
+				profileId: cameraProfileId,
+				imageUri: result.assets[0].uri,
+			});
+		}
+	}, [cameraProfileId, navigation]);
+
+	/**
 	 * Navigate to history screen
 	 * Passes profileId for filtering history
 	 */
@@ -141,7 +162,7 @@ export default function NavBarBottom({
 				<BottomIcon
 					label="GALLERY"
 					isActive={activeTab === "upload"}
-					onPress={handleUploadPress}
+					onPress={handleGalleryPress}
 					icon={<Feather name="upload-cloud" size={32} color="#66707A" />}
 				/>
 

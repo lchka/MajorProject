@@ -11,7 +11,7 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
  *   - onScroll: scroll event handler for ScrollView
  *   - scrollEventThrottle: throttle value (16) for performance optimization
  */
-export const useScrollPastThreshold = (threshold: number = 7) => {
+export const useScrollPastThreshold = (threshold: number = 5) => {
   const [hasScrolled, setHasScrolled] = React.useState(false);
 
   const onScroll = React.useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {

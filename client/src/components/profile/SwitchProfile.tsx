@@ -37,7 +37,7 @@ function toGreetingFirstName(name: string) {
 	const trimmed = name.trim();
 	if (!trimmed) return "";
 	const [firstName] = trimmed.split(/\s+/);
-	return firstName.toUpperCase();
+	return firstName;
 }
 
 export default function SwitchProfile({
@@ -63,8 +63,8 @@ export default function SwitchProfile({
 
 	const displayedCardAvatarSource = activeProfile?.avatarSource ?? cardAvatarSource;
 	const shouldShowMainCrown = activeProfile ? activeProfile.isMain ?? true : false;
-	const capitalizedName = activeProfile?.name ? toGreetingFirstName(activeProfile.name) : "THERE";
-	const greetingText = greetingLabel ?? `HI, ${capitalizedName}!`;
+	const capitalizedName = activeProfile?.name ? toGreetingFirstName(activeProfile.name) : "there";
+	const greetingText = greetingLabel ?? `Hi, ${capitalizedName}!`;
 
 	const [isOpen, setIsOpen] = React.useState(false);
 	const isClosingRef = React.useRef(false);
@@ -157,7 +157,7 @@ export default function SwitchProfile({
 							) : null}
 						</Box>
 						<Box style={styles.switchCopy}>
-							<Text fontSize={13} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
+							<Text fontSize={22} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
 								{greetingText}
 							</Text>
 							{/* <Text pt="$2" fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">

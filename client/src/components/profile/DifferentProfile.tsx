@@ -1,5 +1,6 @@
 import React from "react";
-import type { ImageSourcePropType } from "react-native";
+import type { ImageSourcePropType, ViewStyle } from "react-native";
+import { MotiView } from "moti";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Box, Image, Pressable, Text } from "@gluestack-ui/themed";
 import { SWITCH_PROFILE_CLOSE_DURATION_MS } from "../../style/Animation";
@@ -23,6 +24,9 @@ type DifferentProfileProps = {
 	greetingLabel?: string;
 	cardTitle?: string;
 	cardAvatarSource?: ImageSourcePropType;
+	hasScrolled?: boolean;
+	hasBackButton?: boolean;
+	style?: ViewStyle;
 };
 
 function toGreetingFirstName(name: string) {
@@ -32,7 +36,7 @@ function toGreetingFirstName(name: string) {
 	}
 
 	const [firstName] = trimmed.split(/\s+/);
-	return firstName.toUpperCase();
+	return firstName;
 }
 
 export default function DifferentProfile({
@@ -45,6 +49,9 @@ export default function DifferentProfile({
 	greetingLabel,
 	cardTitle = "Switch Profile",
 	cardAvatarSource = require("../../../assets/icon.png"),
+	hasScrolled = false,
+	hasBackButton = false,
+	style,
 }: DifferentProfileProps) {
 	const switchCardBackgroundColor = "#ebf5ff";
 	const switchCardBorderColor = "#D1E2F0";
@@ -56,8 +63,8 @@ export default function DifferentProfile({
 
 	const displayedCardAvatarSource = activeProfile?.avatarSource ?? cardAvatarSource;
 	const shouldShowMainCrown = activeProfile ? activeProfile.isMain ?? true : false;
-	const capitalizedName = activeProfile?.name ? toGreetingFirstName(activeProfile.name) : "THERE";
-	const greetingText = greetingLabel ?? `HI, ${capitalizedName}!`;
+	const capitalizedName = activeProfile?.name ? toGreetingFirstName(activeProfile.name) : "there";
+	const greetingText = greetingLabel ?? `Hi, ${capitalizedName}!`;
 
 	const [isOpen, setIsOpen] = React.useState(false);
 	const isClosingRef = React.useRef(false);
@@ -110,25 +117,34 @@ export default function DifferentProfile({
 		};
 	}, []);
 
+	const baseMargin = hasBackButton ? 0 : 20;
+	const scrolledMargin = hasBackButton ? 10 : 52;
+
 	return (
 		<>
-			<Pressable
-				my="$6"
-				mx="$2"
-				style={[
-					styles.switchProfileCard,
-					{
-						backgroundColor: switchCardBackgroundColor,
-						borderColor: switchCardBorderColor,
-					},
-				]}
-				shadowColor="#000000"
-				shadowOpacity={0.14}
-				shadowRadius={10}
-				shadowOffset={{ width: 0, height: 4 }}
-				elevation={5}
-				onPress={() => setIsOpen(true)}
+			<MotiView
+				from={{ marginTop: baseMargin }}
+				animate={{ marginTop: hasScrolled ? scrolledMargin : baseMargin }}
+				transition={{ type: "timing", duration: 300 }}
+				style={style}
 			>
+				<Box>
+					<Pressable
+						mx="$2"
+						style={[
+							styles.switchProfileCard,
+							{
+								backgroundColor: switchCardBackgroundColor,
+								borderColor: switchCardBorderColor,
+							},
+						]}
+						shadowColor="#000000"
+						shadowOpacity={0.14}
+						shadowRadius={10}
+						shadowOffset={{ width: 0, height: 4 }}
+						elevation={5}
+						onPress={() => setIsOpen(true)}
+					>
 				<Box style={{ position: "relative" }}>
 					<Image source={displayedCardAvatarSource} style={styles.switchAvatar} alt="Profile avatar" />
 					{shouldShowMainCrown ? (
@@ -149,25 +165,24 @@ export default function DifferentProfile({
 				</Box>
 
 				<Box style={styles.switchCopy}>
-					<Text fontSize={13} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
+					<Text fontSize={22} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
 						{greetingText}
 					</Text>
-					<Text pt="$2" fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">
-						{cardTitle}
-					</Text>
-				</Box>
+			</Box>
 
-				<Box
-					w={40}
-					h={40}
-					borderRadius={20}
-					bg="#6FA5DA"
-					alignItems="center"
-					justifyContent="center"
-				>
-					<Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+			<Box
+				w={40}
+				h={40}
+				borderRadius={20}
+				bg="#6FA5DA"
+				alignItems="center"
+				justifyContent="center"
+			>
+				<Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+			</Box>
+					</Pressable>
 				</Box>
-			</Pressable>
+			</MotiView>
 
 			<ProfileChoice
 				isOpen={isOpen}

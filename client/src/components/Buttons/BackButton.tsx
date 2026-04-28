@@ -34,10 +34,12 @@ export default function BackButton({
   return (
     <Pressable
       onPress={handleBack}
-      alignSelf="flex-start"
       alignItems="center"
       justifyContent="center"
-      py="$3"
+      w={44}
+      h={44}
+      borderRadius={22}
+      bg="#E8F4F8"
       style={style}
       hitSlop={hitSlop}
       accessibilityRole="button"

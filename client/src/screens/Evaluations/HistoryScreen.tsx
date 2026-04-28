@@ -7,7 +7,7 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { Box, ScrollView } from "@gluestack-ui/themed";
-import BackButton from "../../components/Buttons/BackButton";
+
 import NavBarBottom from "../../components/general/NavBarBottom";
 import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
@@ -215,6 +215,13 @@ export default function HistoryScreen() {
     [profiles, routeProfileId],
   );
 
+  // Set initial route params to activeProfile if not already set
+  React.useEffect(() => {
+    if (!routeProfileId && activeProfile?.id) {
+      navigation.setParams({ profileId: activeProfile.id });
+    }
+  }, [activeProfile?.id, routeProfileId, navigation]);
+
   const profileSwitcherItems = React.useMemo(() => {
     return profiles.map((profile) => ({
       id: profile.id,
@@ -263,10 +270,8 @@ export default function HistoryScreen() {
 
         {/* Sticky header: back button sits above SwitchProfile */}
         <Box>
-          <BackButton />       
            {/* Profile switcher with scroll animation - sticky at top */}
           <SwitchProfile
-          hasBackButton
             profiles={profileSwitcherItems}
             activeProfileId={activeProfile?.id}
             onSelectProfile={(profileId) => {
