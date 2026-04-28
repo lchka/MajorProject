@@ -1,11 +1,11 @@
 // React & Gluestack imports
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
-import { NavigationProp, useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { getAuthToken, saveAuthToken } from "../../utils/authStorage";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { saveAuthToken } from "../../utils/authStorage";
 import {
   Box,
   HStack,
@@ -26,9 +26,7 @@ import { useGoogleAuth } from "../../hooks/googleAuth.hook";
 import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
-import ErrorBanner from "../../components/banners/ErrorBanner";
 import Banner from "../../components/banners/GenBanner";
-
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
@@ -37,24 +35,25 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
-  const route = useRoute<RouteProp<AuthStackParamList, "LoginScreen">>();
-  const deleteSuccessAt = route.params?.deleteSuccessAt;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isDeleteSuccessOpen, setIsDeleteSuccessOpen] = useState(false);
 
-  // ErrorBanner state
-  const [bannerError, setBannerError] = useState<string | null>(null);
-  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Generic Banner state
+  const [bannerVisible, setBannerVisible] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState("");
+  const [bannerType, setBannerType] = useState<"success" | "error" | "info" | "warning">("error");
 
   const showError = (message: string) => {
-    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
-    setBannerError(message);
-    bannerTimerRef.current = setTimeout(() => setBannerError(null), 4500);
+    setBannerVisible(false);
+    setTimeout(() => {
+      setBannerType("error");
+      setBannerMessage(message || "An unexpected error occurred.");
+      setBannerVisible(true);
+    }, 50);
   };
 
   const [touched, setTouched] = useState({
@@ -62,46 +61,26 @@ export default function LoginScreen() {
     password: false,
   });
 
-  // --- Validation rules ---
-
+  // --- Validation rules --
   const emailRules = [
-    {
-      id: "email-required",
-      label: "Email is required",
-      test: (value: string) => value.trim().length > 0,
-    },
-    {
-      id: "email-format",
-      label: "Email format is valid",
-      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
-    },
+    { id: "email-required", label: "Email is required", test: (v: string) => v.trim().length > 0 },
+    { id: "email-format", label: "Email format is valid", test: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) },
   ];
 
   const passwordRules = [
-    {
-      id: "password-required",
-      label: "Password is required",
-      test: (value: string) => value.length > 0,
-    },
-    {
-      id: "password-length",
-      label: "At least 8 characters",
-      test: (value: string) => value.length >= 8,
-    },
+    { id: "password-required", label: "Password is required", test: (v: string) => v.length > 0 },
+    { id: "password-length", label: "At least 8 characters", test: (v: string) => v.length >= 8 },
   ];
 
   // --- Auth helpers ---
-
   const completeLoginFlow = async (response: AuthResponse) => {
     let shouldGoToAnalyse = false;
-    let profileIdForEdit: string | undefined =
-      response.user.profile_id ?? undefined;
+    let profileIdForEdit: string | undefined = response.user.profile_id ?? undefined;
 
     if (profileIdForEdit) {
       try {
         const profiles = await profileService.getMyProfile();
-        const activeProfile =
-          profiles.find((item) => item.main_profile) ?? profiles[0];
+        const activeProfile = profiles.find((item) => item.main_profile) ?? profiles[0];
         shouldGoToAnalyse = Boolean(activeProfile?.isComplete);
         profileIdForEdit = activeProfile?.id ?? profileIdForEdit;
       } catch {
@@ -110,143 +89,66 @@ export default function LoginScreen() {
     }
 
     if (shouldGoToAnalyse) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "LandingScreen" }],
-      });
+      navigation.navigate("LandingScreen");
       return;
     }
 
-    navigation.reset({
-      index: 0,
-      routes: [
-        {
-          name: "ProfileScreen",
-          params: {
-            firstName: response.user.first_name,
-            lastName: response.user.last_name,
-            email: response.user.email,
-            profileId: profileIdForEdit,
-          },
-        },
-      ],
+    navigation.navigate("ProfileScreen", {
+      firstName: response.user.first_name,
+      lastName: response.user.last_name,
+      email: response.user.email,
+      profileId: profileIdForEdit,
     });
   };
 
   const { promptGoogleAuth, loading: googleLoading } = useGoogleAuth({
-    onLoginSuccess: async (response) => {
-      await completeLoginFlow(response);
-    },
-    onLoginError: (message) => {
-      showError(message);
-    },
+    onLoginSuccess: async (response) => await completeLoginFlow(response),
+    onLoginError: (message) => showError(message),
   });
 
   const isWeb = Platform.OS === "web";
   const isExpoGo = Constants.appOwnership === "expo";
   const githubRedirectUri = isExpoGo
     ? "https://auth.expo.io/@lchkas-organization/lumiere"
-    : AuthSession.makeRedirectUri({
-        preferLocalhost: isWeb,
-        scheme: "client",
-      });
+    : AuthSession.makeRedirectUri({ preferLocalhost: isWeb, scheme: "client" });
 
-  const [githubRequest, githubResponse, promptGithubAuth] =
-    AuthSession.useAuthRequest(
-      {
-        clientId: GITHUB_CLIENT_ID || "",
-        scopes: ["read:user", "user:email"],
-        redirectUri: githubRedirectUri,
-      },
-      {
-        authorizationEndpoint: "https://github.com/login/oauth/authorize",
-      },
-    );
-
-  useEffect(() => {
-    console.log("[GitHubAuth] init", {
-      redirectUri: githubRedirectUri,
-      requestUrl: githubRequest?.url,
-      hasClientId: Boolean(GITHUB_CLIENT_ID),
-    });
-  }, [githubRedirectUri, githubRequest?.url]);
-
-  useEffect(() => {
-    if (githubResponse?.type !== "success") return;
-    const code = githubResponse.params?.code;
-    if (typeof code === "string") {
-      console.log("[GitHubAuth] code", code);
-    }
-  }, [githubResponse]);
+  const [githubRequest, , promptGithubAuth] = AuthSession.useAuthRequest(
+    { clientId: GITHUB_CLIENT_ID || "", scopes: ["read:user", "user:email"], redirectUri: githubRedirectUri },
+    { authorizationEndpoint: "https://github.com/login/oauth/authorize" }
+  );
 
   useEffect(() => {
     const loadRememberedLogin = async () => {
       try {
         const rememberValue = await AsyncStorage.getItem(REMEMBER_ME_KEY);
-        const isRememberEnabled = rememberValue === "true";
-        setRememberMe(isRememberEnabled);
-        if (isRememberEnabled) {
+        if (rememberValue === "true") {
+          setRememberMe(true);
           const savedEmail = await AsyncStorage.getItem(REMEMBERED_EMAIL_KEY);
           if (savedEmail) setEmail(savedEmail);
         }
-      } catch (storageError) {
-        console.warn("Could not load remembered login", storageError);
-      }
+      } catch (e) { console.warn(e); }
     };
     loadRememberedLogin();
   }, []);
 
-  // Cleanup banner timer on unmount
-  useEffect(() => {
-    const redirectIfAuthenticated = async () => {
-      const token = await getAuthToken();
-      if (token) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "LandingScreen" }],
-        });
-      }
-    };
-
-    void redirectIfAuthenticated();
-  }, [navigation]);
-
-  useEffect(() => {
-    return () => {
-      if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof deleteSuccessAt === "number") {
-      const isFresh = Date.now() - deleteSuccessAt < 5000;
-      if (isFresh) {
-        setIsDeleteSuccessOpen(true);
-      }
-
-      navigation.setParams({ deleteSuccessAt: undefined });
-    }
-  }, [deleteSuccessAt, navigation]);
-
   const handleLogin = async () => {
     setTouched({ email: true, password: true });
-
     const result = loginSchema.safeParse({ email, password });
 
     if (!result.success) {
-      const errors = result.error.issues.map((err) => err.message).join("\n");
-      showError(errors);
+      showError(result.error.issues[0].message);
       return;
     }
 
     try {
       setLoading(true);
-
+      
       const response = await authService.login({
         email: email.toLowerCase().trim(),
         password,
       });
 
+      // ONLY proceed to save/navigate if login didn't throw
       await saveAuthToken(response.token);
 
       if (rememberMe) {
@@ -259,31 +161,32 @@ export default function LoginScreen() {
       }
 
       await completeLoginFlow(response);
-      setEmail("");
-      setPassword("");
+
     } catch (error: any) {
-      console.error("Login failed:", error);
+      // STOP loading immediately to keep user on screen
+      setLoading(false);
+      
+      console.log("Login Error Caught:", error);
 
-      let errorMessage = "Login failed. Please try again.";
-      const backendMessage = error.response?.data?.message?.toLowerCase() || "";
+      const status = error.response?.status || error.status || error.statusCode;
+      const errorStr = (error.message || String(error)).toLowerCase();
+      const apiResponseMsg = (error.response?.data?.message || "").toLowerCase();
 
+      let finalErrorMessage = "Login failed. Please try again.";
+
+      // Matching status 401 or the "Invalid credentials" string
       if (
-        backendMessage.includes("invalid credentials") ||
-        backendMessage.includes("wrong password")
+        status === 401 || 
+        errorStr.includes("401") || 
+        errorStr.includes("invalid") ||
+        apiResponseMsg.includes("credential")
       ) {
-        errorMessage = "Incorrect email or password.";
-      } else if (backendMessage.includes("user not found")) {
-        errorMessage = "No account found with that email.";
-      } else if (error.response?.status === 401) {
-        errorMessage = "Incorrect email or password.";
-      } else if (
-        typeof error.message === "string" &&
-        error.message.includes("Network Error")
-      ) {
-        errorMessage = "Cannot connect to server. Please check your connection.";
+        finalErrorMessage = "Incorrect email or password.";
+      } else if (errorStr.includes("network") || errorStr.includes("timeout")) {
+        finalErrorMessage = "Please check your internet connection.";
       }
 
-      showError(errorMessage);
+      showError(finalErrorMessage);
     } finally {
       setLoading(false);
     }
@@ -292,14 +195,11 @@ export default function LoginScreen() {
   return (
     <Box flex={1} style={{ backgroundColor: "#F2F8FF" }}>
       <Banner
-        isOpen={isDeleteSuccessOpen}
-        onDismiss={() => setIsDeleteSuccessOpen(false)}
-        message="Account deleted successfully."
-      />
-      {/* ErrorBanner lives at root level — above KeyboardAvoidingView and ScrollView */}
-      <ErrorBanner
-        error={bannerError ? { message: bannerError } : null}
-        onDismiss={() => setBannerError(null)}
+        key={bannerMessage}
+        isOpen={bannerVisible}
+        message={bannerMessage}
+        type={bannerType}
+        onDismiss={() => setBannerVisible(false)}
       />
 
       <KeyboardAvoidingView
@@ -307,166 +207,78 @@ export default function LoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "flex-start",
-            paddingHorizontal: 20,
-            paddingVertical: 30,
-          }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingVertical: 30 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Background circles */}
-          <Box
-            position="absolute"
-            top={-60}
-            right={-30}
-            w={180}
-            h={180}
-            borderRadius={999}
-            bg="#D8ECFF"
-            opacity={0.5}
-          />
-          <Box
-            position="absolute"
-            bottom={-40}
-            left={-20}
-            w={140}
-            h={140}
-            borderRadius={999}
-            bg="#BFDFFF"
-            opacity={0.25}
-          />
+          <Box position="absolute" top={-60} right={-30} w={180} h={180} borderRadius={999} bg="#D8ECFF" opacity={0.5} />
+          <Box position="absolute" bottom={-40} left={-20} w={140} h={140} borderRadius={999} bg="#BFDFFF" opacity={0.25} />
 
           <NavBarTop isFirstProfileSetup showAvatar={false} showDivider />
 
-          <HStack
-            pt="$8"
-            alignItems="center"
-            justifyContent="space-between"
-            mb="$1.5"
-          >
-            <Text
-              size="3xl"
-              style={{
-                fontFamily: "Roboto",
-                color: "#1E293B",
-                flex: 1,
-              }}
-            >
-              Sign in to your account
-            </Text>
+          <HStack pt="$8" alignItems="center" justifyContent="space-between" mb="$1.5">
+            <Text size="3xl" style={{ fontFamily: "Roboto", color: "#1E293B", flex: 1 }}>Sign in to your account</Text>
             <Feather name="log-in" size={22} color="#5E7FA3" />
           </HStack>
 
           <HStack mb="$4">
             <Text color="#64748B">Don&apos;t have an account? </Text>
             <Pressable onPress={() => navigation.navigate("RegisterScreen")}>
-              <Text color="#2E5F8A" style={{ fontFamily: "RobotoMedium" }}>
-                Sign up
-              </Text>
+              <Text color="#2E5F8A" style={{ fontFamily: "RobotoMedium" }}>Sign up</Text>
             </Pressable>
           </HStack>
 
           <VStack pt="$2" space="lg">
-            {/* Email */}
             <VStack space="xs">
               <Input size="lg" borderRadius="$full">
                 <InputField
                   placeholder="Email address"
                   value={email}
-                  onChangeText={(value) => {
-                    setEmail(value);
-                    setTouched((prev) => ({ ...prev, email: true }));
-                  }}
-                  onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
+                  onChangeText={(v) => { setEmail(v); setTouched(t => ({...t, email: true})); }}
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  autoComplete="email"
                   editable={!loading}
                 />
               </Input>
-              {touched.email && (
-                <ValidationAnimation value={email} rules={emailRules} />
-              )}
+              {touched.email && <ValidationAnimation value={email} rules={emailRules} />}
             </VStack>
 
-            {/* Password */}
             <VStack space="xs">
               <Box position="relative">
                 <Input size="lg" borderRadius="$full">
                   <InputField
                     placeholder="Password"
                     value={password}
-                    onChangeText={(value) => {
-                      setPassword(value);
-                      setTouched((prev) => ({ ...prev, password: true }));
-                    }}
-                    onBlur={() =>
-                      setTouched((prev) => ({ ...prev, password: true }))
-                    }
+                    onChangeText={(v) => { setPassword(v); setTouched(t => ({...t, password: true})); }}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
-                    autoComplete="password"
                     editable={!loading}
                     style={{ paddingRight: 44 }}
                   />
                 </Input>
-
                 <Pressable
                   position="absolute"
-                  right="$5"
-                  top={0}
-                  bottom={0}
-                  w="$10"
-                  alignItems="center"
-                  justifyContent="center"
-                  hitSlop={10}
-                  onPress={() => setShowPassword((prev) => !prev)}
-                  disabled={loading}
+                  right="$5" top={0} bottom={0} w="$10"
+                  alignItems="center" justifyContent="center"
+                  onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Feather
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={18}
-                    color="#6B7280"
-                  />
+                  <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#6B7280" />
                 </Pressable>
               </Box>
-              {touched.password && (
-                <ValidationAnimation value={password} rules={passwordRules} />
-              )}
+              {touched.password && <ValidationAnimation value={password} rules={passwordRules} />}
             </VStack>
 
-            {/* Remember me / Forgot password */}
             <HStack justifyContent="space-between" alignItems="center">
-              <Pressable
-                onPress={() => setRememberMe((prev) => !prev)}
-                disabled={loading}
-              >
+              <Pressable onPress={() => setRememberMe(!rememberMe)} disabled={loading}>
                 <HStack space="sm" alignItems="center">
-                  <Box
-                    w="$5"
-                    h="$5"
-                    borderWidth={1}
-                    borderColor="#9BB9D8"
-                    borderRadius="$md"
-                    alignItems="center"
-                    justifyContent="center"
-                    bg={rememberMe ? "#4A90D9" : "transparent"}
-                  >
-                    {rememberMe ? (
-                      <Feather name="check" size={12} color="white" />
-                    ) : null}
+                  <Box w="$5" h="$5" borderWidth={1} borderColor="#9BB9D8" borderRadius="$md" alignItems="center" justifyContent="center" bg={rememberMe ? "#4A90D9" : "transparent"}>
+                    {rememberMe && <Feather name="check" size={12} color="white" />}
                   </Box>
-                  <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>
-                    Remember me
-                  </Text>
+                  <Text style={{ fontFamily: "Roboto", color: "#57799B" }}>Remember me</Text>
                 </HStack>
               </Pressable>
-
               <Pressable disabled={loading}>
-                <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">
-                  Forgot Password?
-                </Text>
+                <Text style={{ fontFamily: "RobotoMedium" }} color="#2E5F8A">Forgot Password?</Text>
               </Pressable>
             </HStack>
 
@@ -479,11 +291,7 @@ export default function LoginScreen() {
             <SocialAuth
               onGooglePress={() => void promptGoogleAuth()}
               onGithubPress={async () => {
-                if (!GITHUB_CLIENT_ID) {
-                  showError("Missing GitHub client ID.");
-                  return;
-                }
-                if (!githubRequest) {
+                if (!GITHUB_CLIENT_ID || !githubRequest) {
                   showError("GitHub auth not ready.");
                   return;
                 }

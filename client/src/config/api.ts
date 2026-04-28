@@ -300,9 +300,11 @@ api.interceptors.response.use(
       // Server responded with error status
       switch (error.response.status) {
         case 401:
-          // FIX: Handle unauthorized (401) by calling the registered handler
-          // Suppress console.error to prevent Expo from showing error banner - will use ErrorBanner instead
-          if (handleUnauthorized) {
+          // FIX: Only trigger the global redirect if this is NOT a login attempt.
+          // This prevents the screen from "jumping" or resetting when a user enters a wrong password.
+          const isLoginRequest = error.config?.url?.includes('/auth/login');
+
+          if (handleUnauthorized && !isLoginRequest) {
             try {
               await handleUnauthorized();
             } catch (err) {
