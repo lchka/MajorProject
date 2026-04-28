@@ -21,35 +21,24 @@ import {
   VStack,
   ScrollView,
 } from "@gluestack-ui/themed";
-import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import ValidationAnimation from "../general/ValidationAnimation";
 
 type ChangeEmailProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (
-    currentEmail: string,
-    newEmail: string,
-    password: string,
-  ) => Promise<void>;
+  onSubmit?: (newEmail: string) => Promise<void>;
   currentEmail?: string;
 };
 
-//
-// ✅ INPUT COMPONENT (with eye toggle support)
-//
 const InputField = ({
   label,
   value,
   onChangeText,
   placeholder,
-  isPassword = false,
   error,
   editable = true,
   isLoading,
-  secureTextEntry,
-  onToggleSecure,
 }: any) => (
   <VStack space="xs">
     <Text fontSize={13} fontFamily="RobotoMedium" color="#0F172A">
@@ -64,32 +53,19 @@ const InputField = ({
       height={48}
       justifyContent="center"
       bg={editable ? "#FFFFFF" : "#F1F5F9"}
-      style={{ flexDirection: "row", alignItems: "center" }}
     >
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor="#94A3B8"
-        secureTextEntry={isPassword ? secureTextEntry : false}
         editable={editable && !isLoading}
         style={{
-          flex: 1,
           fontSize: 15,
           color: "#0F172A",
           fontFamily: "Roboto",
         }}
       />
-
-      {isPassword && (
-        <Pressable onPress={onToggleSecure}>
-          <Feather
-            name={secureTextEntry ? "eye-off" : "eye"}
-            size={18}
-            color="#64748B"
-          />
-        </Pressable>
-      )}
     </Box>
 
     {error && (
@@ -109,12 +85,9 @@ export default function ChangeEmail({
   const [currentEmail, setCurrentEmail] = React.useState("");
   const [newEmail, setNewEmail] = React.useState("");
   const [confirmEmail, setConfirmEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [showPassword, setShowPassword] = React.useState(false);
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [isClosing, setIsClosing] = React.useState(false);
-  const [errors, setErrors] = React.useState<any>({});
 
   const emailRules = [
     {
@@ -125,7 +98,17 @@ export default function ChangeEmail({
     {
       id: "email-format",
       label: "Valid email format",
-      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+      test: (value: string) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+    },
+  ];
+
+  const confirmEmailRules = [
+    {
+      id: "match",
+      label: "Emails do not match",
+      test: (value: string) =>
+        value.length > 0 && value === newEmail,
     },
   ];
 
@@ -136,47 +119,27 @@ export default function ChangeEmail({
       setCurrentEmail("");
       setNewEmail("");
       setConfirmEmail("");
-      setPassword("");
-      setErrors({});
       setIsClosing(false);
-      setShowPassword(false);
     }
   }, [isOpen, currentEmailProp]);
 
-  const validateEmail = (email: string) => {
-    if (!email.trim()) return "Email is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))
-      return "Invalid email";
-    return "";
-  };
-
   const validateForm = () => {
-    const newErrors: any = {};
-
-    if (validateEmail(newEmail)) newErrors.newEmail = "Invalid";
-
-    if (newEmail === currentEmail) {
-      newErrors.newEmail = "Must be different";
-    }
-
-    if (newEmail !== confirmEmail) {
-      newErrors.confirmEmail = "Doesn't match";
-    }
-
-    if (!password.trim()) {
-      newErrors.password = "Required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return (
+      emailRules.every((rule) => rule.test(newEmail)) &&
+      confirmEmailRules.every((rule) => rule.test(confirmEmail)) &&
+      newEmail !== currentEmail
+    );
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      Alert.alert("Error", "Please fix the errors before continuing.");
+      return;
+    }
 
     try {
       setIsLoading(true);
-      await onSubmit?.(currentEmail, newEmail.trim(), password);
+      await onSubmit?.(newEmail.trim());
       Alert.alert("Success", "Email updated.");
       triggerClose();
     } catch (e: any) {
@@ -186,11 +149,9 @@ export default function ChangeEmail({
     }
   };
 
-  const triggerClose = React.useCallback(() => {
-    if (isClosing) return;
-    setIsClosing(true);
-    setTimeout(onClose, 180);
-  }, [isClosing, onClose]);
+  const triggerClose = () => {
+  onClose();
+};
 
   return (
     <Modal isOpen={isOpen} onClose={triggerClose}>
@@ -239,7 +200,7 @@ export default function ChangeEmail({
                 keyboardShouldPersistTaps="handled"
               >
                 <Text fontSize={13} color="#64748B" mb="$5">
-                  Update your email securely.
+                  Update your email.
                 </Text>
 
                 <VStack space="md">
@@ -251,44 +212,44 @@ export default function ChangeEmail({
                     isLoading={isLoading}
                   />
 
-                  <InputField
-                    label="New Email"
-                    value={newEmail}
-                    onChangeText={setNewEmail}
-                    placeholder="new@email.com"
-                    error={errors.newEmail}
-                    isLoading={isLoading}
-                  />
+                  <VStack space="xs">
+                    <InputField
+                      label="New Email"
+                      value={newEmail}
+                      onChangeText={setNewEmail}
+                      placeholder="new@email.com"
+                      isLoading={isLoading}
+                    />
 
-                  <ValidationAnimation
-                    value={newEmail}
-                    rules={emailRules}
-                    validColor="#10B981"
-                    invalidColor="#DC2626"
-                    showOnlyAfterInputStarts={true}
-                    validMessage="Email looks good"
-                  />
+                    {newEmail.length > 0 && (
+                      <ValidationAnimation
+                        value={newEmail}
+                        rules={emailRules}
+                        validColor="#10B981"
+                        invalidColor="#DC2626"
+                        validMessage="Email looks good"
+                      />
+                    )}
+                  </VStack>
 
-                  <InputField
-                    label="Confirm Email"
-                    value={confirmEmail}
-                    onChangeText={setConfirmEmail}
-                    placeholder="new@email.com"
-                    error={errors.confirmEmail}
-                    isLoading={isLoading}
-                  />
+                  <VStack space="xs">
+                    <InputField
+                      label="Confirm Email"
+                      value={confirmEmail}
+                      onChangeText={setConfirmEmail}
+                      placeholder="new@email.com"
+                      isLoading={isLoading}
+                    />
 
-                  <InputField
-                    label="Password"
-                    value={password}
-                    onChangeText={setPassword}
-                    placeholder="••••••••"
-                    isPassword
-                    secureTextEntry={!showPassword}
-                    onToggleSecure={() => setShowPassword((prev) => !prev)}
-                    error={errors.password}
-                    isLoading={isLoading}
-                  />
+                    {confirmEmail.length > 0 && (
+                      <ValidationAnimation
+                        value={confirmEmail}
+                        rules={confirmEmailRules}
+                        validColor="#10B981"
+                        invalidColor="#DC2626"
+                      />
+                    )}
+                  </VStack>
                 </VStack>
 
                 <HStack space="sm" mt="$6">
@@ -320,13 +281,9 @@ export default function ChangeEmail({
                       backgroundColor: isLoading ? "#A5E3E9" : "#1dd2d8",
                     }}
                   >
-                    {isLoading ? (
-                      <Feather name="loader" size={16} color="#fff" />
-                    ) : (
-                      <Text color="#fff" fontFamily="RobotoMedium">
-                        Update
-                      </Text>
-                    )}
+                    <Text color="#fff" fontFamily="RobotoMedium">
+                      {isLoading ? "Updating..." : "Update"}
+                    </Text>
                   </Pressable>
                 </HStack>
               </ScrollView>

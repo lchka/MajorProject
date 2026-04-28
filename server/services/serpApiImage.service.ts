@@ -54,7 +54,7 @@ export class SerpApiImageService {
 private buildQuery(name: string, brand: string, containerType?: string): string {
   // 1. Get the SPF number specifically to keep it strict
   const spfMatch = name.match(/\d+/);
-  const spfValue = spfMatch ? `"${spfMatch[0]}"` : "";
+ const spfValue = spfMatch ? spfMatch[0] : "";
 
   // 2. Simplify the name: Too many words (like "High Waterproof") confuse the search
   // We just want the core product identity

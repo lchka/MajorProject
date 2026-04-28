@@ -12,7 +12,12 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
-
+export type UpdateUserPayload = {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  password?: string;
+};
 /**
  * User Service - Handles all user-related API calls
  */
@@ -36,7 +41,7 @@ export const userService = {
   /**
    * Update user
    */
-  updateUser: async (id: string, data: Partial<User>): Promise<User> => {
+  updateUser: async (id: string, data: UpdateUserPayload): Promise<User> => {
     const response = await api.patch(`/users/${id}`, data);
     return response.data;
   },
