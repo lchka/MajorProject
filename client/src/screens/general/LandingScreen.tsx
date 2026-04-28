@@ -157,8 +157,19 @@ export default function LandingScreen() {
     }
   }, []);
 
+  const loadAvailableAllergens = React.useCallback(async () => {
+    try {
+      const items = await allergenService.getAllAllergens();
+      setAvailableAllergens(
+        items.map((item) => ({ id: item.id, name: item.name })),
+      );
+    } catch {
+      setAvailableAllergens([]);
+    }
+  }, []);
+
   // Runs when screen comes into focus (tab selection, navigation back)
-  // Refreshes all data: profiles, UV index, allergens, and system errors
+  // Only consumes pending system errors so normal navigation keeps the current screen state.
   useFocusEffect(
     React.useCallback(() => {
       // Check for pending system errors from previous operations
@@ -169,23 +180,7 @@ export default function LandingScreen() {
           message: pendingSystemError.message,
         });
       }
-
-      // Refresh all data on screen focus
-      void loadProfiles();
-      void loadUv();
-
-      // Fetch all available allergens for the allergen editor
-      void allergenService
-        .getAllAllergens()
-        .then((items) => {
-          setAvailableAllergens(
-            items.map((item) => ({ id: item.id, name: item.name })),
-          );
-        })
-        .catch(() => {
-          setAvailableAllergens([]);
-        });
-    }, [loadProfiles, loadUv]),
+    }, []),
   );
 
   // Load profiles on initial component mount (before focus effect)
@@ -193,6 +188,11 @@ export default function LandingScreen() {
   React.useEffect(() => {
     void loadProfiles();
   }, [loadProfiles]);
+
+  React.useEffect(() => {
+    void loadUv();
+    void loadAvailableAllergens();
+  }, [loadAvailableAllergens, loadUv]);
 
   // Subscribe to system-wide error events and display them in an overlay modal
   // This allows errors from background operations to be displayed to the user

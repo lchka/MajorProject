@@ -10,7 +10,14 @@ import {
   type PastAnalysisSortOption,
 } from "../actions/PastAnalysisDropdown";
 import WarningChip from "../general/WarningChip";
-import { getLocalEvaluations, type LocalEvaluation, evaluationContextService, productService, profileService } from "../../services";
+import {
+  getLocalEvaluations,
+  subscribeLocalEvaluations,
+  type LocalEvaluation,
+  evaluationContextService,
+  productService,
+  profileService,
+} from "../../services";
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
 import type { AuthStackParamList } from "../../types/navigation";
@@ -136,7 +143,6 @@ type PastAnalysisProps = {
   profileId?: string | null;
   profileName?: string | null;
   title?: string;
-  refreshIntervalMs?: number;
 };
 
 const analysisCache = new Map<string, AnalysisCard[]>();
@@ -146,7 +152,6 @@ export default function PastAnalysis({
   profileId,
   profileName,
   title = "Past Analysis",
-  refreshIntervalMs = 3500,
 }: PastAnalysisProps) {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const { width: windowWidth } = useWindowDimensions();
@@ -292,14 +297,10 @@ export default function PastAnalysis({
   }, [analysisCards.length, loadPastAnalysis]);
 
   React.useEffect(() => {
-    const intervalId = setInterval(() => {
+    return subscribeLocalEvaluations(() => {
       void loadPastAnalysis();
-    }, refreshIntervalMs);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [loadPastAnalysis, refreshIntervalMs]);
+    });
+  }, [loadPastAnalysis]);
 
   const analysisPages = React.useMemo(() => {
     const pageSize = 9;

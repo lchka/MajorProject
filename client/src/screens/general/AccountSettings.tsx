@@ -7,6 +7,7 @@ import ChangeEmail from "../../components/actions/ChangeEmail";
 import ChangePassword from "../../components/actions/ChangePassword";
 import { AuthStackParamList } from "../../types/navigation";
 import { clearAuthToken } from "../../utils/authStorage";
+import authSvc from "../../services/authService";
 
 export default function AccountSettings() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
@@ -16,12 +17,28 @@ export default function AccountSettings() {
 
 	const handleEmailSubmit = React.useCallback(
 		async (newEmail: string, password: string) => {
-			// TODO: Call API to update email
-			// await authService.updateEmail(newEmail, password);
 		},
 		[]
 	);
 
+const [userEmail, setUserEmail] = React.useState("");
+const [isLoadingUser, setIsLoadingUser] = React.useState(true);
+
+React.useEffect(() => {
+	const loadUser = async () => {
+		try {
+			const res = await authSvc.getCurrentUser();
+			console.log("USER RESPONSE:", res); 
+			setUserEmail(res.user.email); // temporary
+		} catch (e) {
+			console.log("Failed to fetch user", e);
+		} finally {
+			setIsLoadingUser(false);
+		}
+	};
+
+	loadUser();
+}, []);
 	const handlePasswordSubmit = React.useCallback(
 		async (currentPassword: string, newPassword: string, confirmPassword: string) => {
 			// TODO: Call API to update password
@@ -107,7 +124,6 @@ export default function AccountSettings() {
 							Change Email
 						</Text>
 						<Text fontSize={16} lineHeight={16} color="#94A3B8" fontFamily="RobotoMedium">
-							{">"};
 						</Text>
 					</Pressable>
 
@@ -126,7 +142,6 @@ export default function AccountSettings() {
 							Change Password
 						</Text>
 						<Text fontSize={16} lineHeight={16} color="#94A3B8" fontFamily="RobotoMedium">
-							{">"};
 						</Text>
 					</Pressable>
 				</Box>
@@ -136,6 +151,7 @@ export default function AccountSettings() {
 				isOpen={isChangeEmailOpen}
 				onClose={() => setIsChangeEmailOpen(false)}
 				onSubmit={handleEmailSubmit}
+				currentEmail={userEmail}
 			/>
 
 			<ChangePassword

@@ -5,6 +5,8 @@ import type { EvaluationResultJson } from "../types/evaluationContext.type";
 const LOCAL_EVALUATIONS_KEY = "localEvaluations";
 const PENDING_ARCHIVE_KEY = "pendingArchivedEvaluations";
 const MAX_LOCAL_EVALUATIONS = 18;
+let localEvaluationsVersion = 0;
+const localEvaluationListeners = new Set<() => void>();
 
 export type LocalEvaluation = {
   evaluationContextId: string;
@@ -25,6 +27,13 @@ const toTimestamp = (value: string): number => {
 
 const sortNewestFirst = (items: LocalEvaluation[]): LocalEvaluation[] => {
   return [...items].sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
+};
+
+const emitLocalEvaluationsChanged = () => {
+  localEvaluationsVersion += 1;
+  localEvaluationListeners.forEach((listener) => {
+    listener();
+  });
 };
 
 const dedupeById = (items: LocalEvaluation[]): LocalEvaluation[] => {
@@ -120,9 +129,17 @@ export const getLocalEvaluations = async (): Promise<LocalEvaluation[]> => {
   return sortNewestFirst(dedupeById(parseStoredList(raw))).slice(0, MAX_LOCAL_EVALUATIONS);
 };
 
+export const subscribeLocalEvaluations = (listener: () => void): (() => void) => {
+  localEvaluationListeners.add(listener);
+  return () => {
+    localEvaluationListeners.delete(listener);
+  };
+};
+
 export const setLocalEvaluations = async (items: LocalEvaluation[]): Promise<void> => {
   const normalized = sortNewestFirst(dedupeById(items)).slice(0, MAX_LOCAL_EVALUATIONS);
   await AsyncStorage.setItem(LOCAL_EVALUATIONS_KEY, JSON.stringify(normalized));
+  emitLocalEvaluationsChanged();
 };
 
 export const saveEvaluation = async (newEvaluation: LocalEvaluation): Promise<void> => {
