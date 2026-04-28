@@ -4,6 +4,7 @@ import type { EvaluationResultJson } from "../types/evaluationContext.type";
 
 const LOCAL_EVALUATIONS_KEY = "localEvaluations";
 const PENDING_ARCHIVE_KEY = "pendingArchivedEvaluations";
+const DELETED_EVALUATIONS_KEY = "deletedEvaluationIds";
 const MAX_LOCAL_EVALUATIONS = 18;
 let localEvaluationsVersion = 0;
 const localEvaluationListeners = new Set<() => void>();
@@ -86,6 +87,25 @@ const parseStoredList = (raw: string | null): LocalEvaluation[] => {
   }
 };
 
+const parseStoredStringArray = (raw: string | null): string[] => {
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (item): item is string => typeof item === "string" && item.trim().length > 0,
+    );
+  } catch {
+    return [];
+  }
+};
+
 const getPendingArchive = async (): Promise<LocalEvaluation[]> => {
   const raw = await AsyncStorage.getItem(PENDING_ARCHIVE_KEY);
   return dedupeById(parseStoredList(raw));
@@ -129,6 +149,37 @@ export const getLocalEvaluations = async (): Promise<LocalEvaluation[]> => {
   return sortNewestFirst(dedupeById(parseStoredList(raw))).slice(0, MAX_LOCAL_EVALUATIONS);
 };
 
+export const getDeletedEvaluationIds = async (): Promise<string[]> => {
+  const raw = await AsyncStorage.getItem(DELETED_EVALUATIONS_KEY);
+  return Array.from(new Set(parseStoredStringArray(raw)));
+};
+
+const setDeletedEvaluationIds = async (ids: string[]): Promise<void> => {
+  const normalized = Array.from(
+    new Set(ids.filter((id) => typeof id === "string" && id.trim().length > 0)),
+  );
+  await AsyncStorage.setItem(DELETED_EVALUATIONS_KEY, JSON.stringify(normalized));
+};
+
+const addDeletedEvaluationId = async (evaluationContextId: string): Promise<void> => {
+  const current = await getDeletedEvaluationIds();
+  if (current.includes(evaluationContextId)) {
+    return;
+  }
+
+  await setDeletedEvaluationIds([...current, evaluationContextId]);
+};
+
+const removeDeletedEvaluationId = async (evaluationContextId: string): Promise<void> => {
+  const current = await getDeletedEvaluationIds();
+  const next = current.filter((id) => id !== evaluationContextId);
+  if (next.length === current.length) {
+    return;
+  }
+
+  await setDeletedEvaluationIds(next);
+};
+
 export const subscribeLocalEvaluations = (listener: () => void): (() => void) => {
   localEvaluationListeners.add(listener);
   return () => {
@@ -143,6 +194,7 @@ export const setLocalEvaluations = async (items: LocalEvaluation[]): Promise<voi
 };
 
 export const saveEvaluation = async (newEvaluation: LocalEvaluation): Promise<void> => {
+  await removeDeletedEvaluationId(newEvaluation.evaluationContextId);
   await flushPendingArchive();
 
   const current = await getLocalEvaluations();
@@ -189,5 +241,6 @@ export const removeLocalEvaluationById = async (evaluationContextId: string): Pr
   await Promise.all([
     setLocalEvaluations(nextLocal),
     setPendingArchive(nextPending),
+    addDeletedEvaluationId(evaluationContextId),
   ]);
 };

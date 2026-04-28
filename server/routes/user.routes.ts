@@ -29,7 +29,7 @@ router.get(
 router.get("/:id", authMiddleware, canViewUser, userController.getUserById);
 
 // Update user - admin can update anyone, users can update themselves
-router.put(
+router.patch(
   "/:id",
   authMiddleware,
   canModifyUser,

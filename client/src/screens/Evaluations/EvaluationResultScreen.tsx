@@ -258,13 +258,10 @@ export default function EvaluationResultScreen() {
             try {
               await evaluationContextService.deleteById(context.id);
               await removeLocalEvaluationById(context.id);
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.navigate("HistoryScreen", {
-                  profileId: context.profileId,
-                });
-              }
+              navigation.navigate("HistoryScreen", {
+                profileId: context.profileId,
+                deleteSuccessAt: Date.now(),
+              });
             } catch {
               Alert.alert(
                 "Delete failed",

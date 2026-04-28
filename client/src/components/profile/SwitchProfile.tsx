@@ -157,7 +157,7 @@ export default function SwitchProfile({
 							) : null}
 						</Box>
 						<Box style={styles.switchCopy}>
-							<Text fontSize={22} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
+							<Text fontSize={22} fontFamily="Roboto" fontWeight="bold" color="#343434">
 								{greetingText}
 							</Text>
 							{/* <Text pt="$2" fontSize={22} lineHeight={18} fontFamily="Roboto" fontWeight="semibold" color="#151515">

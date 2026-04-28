@@ -4,8 +4,8 @@ import { KeyboardAvoidingView, Platform } from "react-native";
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { saveAuthToken } from "../../utils/authStorage";
+import { NavigationProp, useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { getAuthToken, saveAuthToken } from "../../utils/authStorage";
 import {
   Box,
   HStack,
@@ -27,6 +27,7 @@ import CreateButton from "../../components/Buttons/CreateButton";
 import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
 import ErrorBanner from "../../components/banners/ErrorBanner";
+import DeleteSuccess from "../../components/banners/DeleteSuccess";
 
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
@@ -36,12 +37,15 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+  const route = useRoute<RouteProp<AuthStackParamList, "LoginScreen">>();
+  const deleteSuccessAt = route.params?.deleteSuccessAt;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isDeleteSuccessOpen, setIsDeleteSuccessOpen] = useState(false);
 
   // ErrorBanner state
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -106,15 +110,26 @@ export default function LoginScreen() {
     }
 
     if (shouldGoToAnalyse) {
-      navigation.navigate("LandingScreen");
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "LandingScreen" }],
+      });
       return;
     }
 
-    navigation.navigate("ProfileScreen", {
-      firstName: response.user.first_name,
-      lastName: response.user.last_name,
-      email: response.user.email,
-      profileId: profileIdForEdit,
+    navigation.reset({
+      index: 0,
+      routes: [
+        {
+          name: "ProfileScreen",
+          params: {
+            firstName: response.user.first_name,
+            lastName: response.user.last_name,
+            email: response.user.email,
+            profileId: profileIdForEdit,
+          },
+        },
+      ],
     });
   };
 
@@ -183,10 +198,35 @@ export default function LoginScreen() {
 
   // Cleanup banner timer on unmount
   useEffect(() => {
+    const redirectIfAuthenticated = async () => {
+      const token = await getAuthToken();
+      if (token) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "LandingScreen" }],
+        });
+      }
+    };
+
+    void redirectIfAuthenticated();
+  }, [navigation]);
+
+  useEffect(() => {
     return () => {
       if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (typeof deleteSuccessAt === "number") {
+      const isFresh = Date.now() - deleteSuccessAt < 5000;
+      if (isFresh) {
+        setIsDeleteSuccessOpen(true);
+      }
+
+      navigation.setParams({ deleteSuccessAt: undefined });
+    }
+  }, [deleteSuccessAt, navigation]);
 
   const handleLogin = async () => {
     setTouched({ email: true, password: true });
@@ -251,6 +291,11 @@ export default function LoginScreen() {
 
   return (
     <Box flex={1} style={{ backgroundColor: "#F2F8FF" }}>
+      <DeleteSuccess
+        isOpen={isDeleteSuccessOpen}
+        onDismiss={() => setIsDeleteSuccessOpen(false)}
+        message="Account deleted successfully."
+      />
       {/* ErrorBanner lives at root level — above KeyboardAvoidingView and ScrollView */}
       <ErrorBanner
         error={bannerError ? { message: bannerError } : null}

@@ -37,7 +37,7 @@ export const userService = {
    * Update user
    */
   updateUser: async (id: string, data: Partial<User>): Promise<User> => {
-    const response = await api.put(`/users/${id}`, data);
+    const response = await api.patch(`/users/${id}`, data);
     return response.data;
   },
 

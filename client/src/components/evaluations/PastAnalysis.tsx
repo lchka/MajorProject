@@ -17,6 +17,8 @@ import {
   evaluationContextService,
   productService,
   profileService,
+  getDeletedEvaluationIds,
+  removeLocalEvaluationById,
 } from "../../services";
 import { resolveMediaUrl } from "../../config/api";
 import { styles } from "../../style/LandingPageStyle";
@@ -145,9 +147,6 @@ type PastAnalysisProps = {
   title?: string;
 };
 
-const analysisCache = new Map<string, AnalysisCard[]>();
-const analysisSignatureCache = new Map<string, string>();
-
 export default function PastAnalysis({
   profileId,
   profileName,
@@ -161,18 +160,6 @@ export default function PastAnalysis({
   const [analysisLoading, setAnalysisLoading] = React.useState(false);
   const [isSortOpen, setIsSortOpen] = React.useState(false);
   const [sortOption, setSortOption] = React.useState<PastAnalysisSortOption>(DEFAULT_SORT_OPTION);
-  const cardsSignatureRef = React.useRef<string>("");
-  const cacheKey = profileId ?? "all";
-
-  React.useEffect(() => {
-    const cachedCards = analysisCache.get(cacheKey);
-    const cachedSignature = analysisSignatureCache.get(cacheKey);
-
-    if (cachedCards && cachedCards.length > 0) {
-      setAnalysisCards(cachedCards);
-      cardsSignatureRef.current = cachedSignature ?? "";
-    }
-  }, [cacheKey]);
 
   React.useEffect(() => {
     setAnalysisPage(0);
@@ -188,71 +175,95 @@ export default function PastAnalysis({
   const loadPastAnalysis = React.useCallback(async () => {
     try {
       let evaluations: LocalEvaluation[] = [];
-      
+
+      const [localEvaluations, deletedIds] = await Promise.all([
+        getLocalEvaluations(),
+        getDeletedEvaluationIds(),
+      ]);
+      const deletedSet = new Set(deletedIds);
+
       // First, try loading from local storage
-      const localEvaluations = await getLocalEvaluations();
       const scopedLocal = profileId
         ? localEvaluations.filter((evaluation) => evaluation.profileId === profileId)
         : localEvaluations;
 
-      evaluations = scopedLocal;
+      evaluations = scopedLocal.filter(
+        (evaluation) => !deletedSet.has(evaluation.evaluationContextId),
+      );
 
-      // If no local evaluations, fetch from server
-      if (evaluations.length === 0) {
-        try {
-          const [contexts, myProfiles] = await Promise.all([
-            evaluationContextService.getMyContexts(),
-            profileService.getMyProfile(),
-          ]);
+      // Always fetch from server and reconcile local cache
+      try {
+        const [contexts, myProfiles] = await Promise.all([
+          evaluationContextService.getMyContexts(),
+          profileService.getMyProfile(),
+        ]);
 
-          const scopedContexts = profileId
-            ? contexts.filter((context) => context.profileId === profileId)
-            : contexts;
+        const scopedContexts = profileId
+          ? contexts.filter((context) => context.profileId === profileId)
+          : contexts;
 
-          if (scopedContexts.length > 0) {
-            const uniqueProductIds = Array.from(new Set(scopedContexts.map((context) => context.productId)));
-            const profileMap = new Map<string, Profile>(
-              myProfiles.map((profile) => [profile.id, profile]),
-            );
+        const filteredContexts = scopedContexts.filter(
+          (context) => !deletedSet.has(context.id),
+        );
 
-            const products = await Promise.all(
-              uniqueProductIds.map(async (productId) => {
-                try {
-                  return await productService.getProductById(productId);
-                } catch {
-                  return null;
-                }
-              }),
-            );
+        const serverIds = new Set(filteredContexts.map((context) => context.id));
+        const staleLocal = scopedLocal.filter(
+          (evaluation) => !serverIds.has(evaluation.evaluationContextId),
+        );
 
-            const productMap = new Map<string, Product>(
-              products
-                .filter((item): item is Product => Boolean(item))
-                .map((product) => [product.id, product]),
-            );
-
-            // Convert EvaluationContext to LocalEvaluation format
-            evaluations = scopedContexts.map((context: EvaluationContext) => {
-              const product = productMap.get(context.productId);
-              const profile = profileMap.get(context.profileId);
-
-              return {
-                evaluationContextId: context.id,
-                profileId: context.profileId,
-                productId: context.productId,
-                promptId: context.promptId,
-                resultJson: context.resultJson,
-                productName: product?.name ?? "Unknown product",
-                profileName: profile?.first_name?.trim() || "Unknown profile",
-                imageUri: product?.product_image ?? null,
-                createdAt: context.createdAt,
-              } satisfies LocalEvaluation;
-            });
-          }
-        } catch (serverError) {
-          console.warn("[PastAnalysis] Failed to fetch from server:", serverError);
-          // Continue with empty evaluations
+        if (staleLocal.length > 0) {
+          await Promise.all(
+            staleLocal.map((evaluation) =>
+              removeLocalEvaluationById(evaluation.evaluationContextId),
+            ),
+          );
         }
+
+        if (filteredContexts.length > 0) {
+          const uniqueProductIds = Array.from(
+            new Set(filteredContexts.map((context) => context.productId)),
+          );
+          const profileMap = new Map<string, Profile>(
+            myProfiles.map((profile) => [profile.id, profile]),
+          );
+
+          const products = await Promise.all(
+            uniqueProductIds.map(async (productId) => {
+              try {
+                return await productService.getProductById(productId);
+              } catch {
+                return null;
+              }
+            }),
+          );
+
+          const productMap = new Map<string, Product>(
+            products
+              .filter((item): item is Product => Boolean(item))
+              .map((product) => [product.id, product]),
+          );
+
+          // Convert EvaluationContext to LocalEvaluation format
+          evaluations = filteredContexts.map((context: EvaluationContext) => {
+            const product = productMap.get(context.productId);
+            const profile = profileMap.get(context.profileId);
+
+            return {
+              evaluationContextId: context.id,
+              profileId: context.profileId,
+              productId: context.productId,
+              promptId: context.promptId,
+              resultJson: context.resultJson,
+              productName: product?.name ?? "Unknown product",
+              profileName: profile?.first_name?.trim() || "Unknown profile",
+              imageUri: product?.product_image ?? null,
+              createdAt: context.createdAt,
+            } satisfies LocalEvaluation;
+          });
+        }
+      } catch (serverError) {
+        console.warn("[PastAnalysis] Failed to fetch from server:", serverError);
+        // Continue with local evaluations
       }
 
       const sortedEvaluations = sortEvaluations(evaluations, sortOption);
@@ -266,25 +277,11 @@ export default function PastAnalysis({
         } satisfies AnalysisCard;
       });
 
-      const nextSignature = JSON.stringify(
-        cards.map((card) => ({ id: card.id, title: card.title, image: card.image, status: card.status })),
-      );
-
-      if (nextSignature !== cardsSignatureRef.current) {
-        cardsSignatureRef.current = nextSignature;
-        setAnalysisCards(cards);
-        analysisCache.set(cacheKey, cards);
-        analysisSignatureCache.set(cacheKey, nextSignature);
-      }
+      setAnalysisCards(cards);
     } catch {
-      if (cardsSignatureRef.current !== "[]") {
-        cardsSignatureRef.current = "[]";
-        setAnalysisCards([]);
-        analysisCache.set(cacheKey, []);
-        analysisSignatureCache.set(cacheKey, "[]");
-      }
+      setAnalysisCards([]);
     }
-  }, [cacheKey, profileId, sortOption]);
+  }, [profileId, sortOption]);
 
   React.useEffect(() => {
     if (analysisCards.length === 0) {

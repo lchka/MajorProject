@@ -206,6 +206,10 @@ export default function CreateEvaluations({
     onRetake?.();
   }, [onRetake]);
 
+  const handleDelete = React.useCallback(() => {
+    onDelete?.();
+  }, [onDelete]);
+
   const ingredients = React.useMemo<IngredientRow[]>(() => {
     if (!resultJson) {
       return defaultIngredients;
@@ -387,7 +391,7 @@ export default function CreateEvaluations({
           <BackButton />
           <DeleteButton
             label="Delete"
-            onPress={onDelete}
+            onPress={handleDelete}
             disabled={!onDelete}
           />
         </Box>

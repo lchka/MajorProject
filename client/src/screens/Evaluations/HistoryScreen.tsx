@@ -13,6 +13,7 @@ import NavBarTop from "../../components/general/NavBarTop";
 import AllEvaluations, {
   EvaluationHistoryCard,
 } from "../../components/evaluations/AllEvaluations";
+import DeleteSuccess from "../../components/banners/DeleteSuccess";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
 import {
@@ -20,6 +21,7 @@ import {
   productService,
   profileService,
   getLocalEvaluations,
+  removeLocalEvaluationById,
 } from "../../services";
 import type { AuthStackParamList } from "../../types/navigation";
 import type { EvaluationContext } from "../../types/evaluationContext.type";
@@ -34,6 +36,7 @@ export default function HistoryScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "HistoryScreen">>();
   const routeProfileId = route.params?.profileId;
+  const deleteSuccessAt = route.params?.deleteSuccessAt;
 
   const { hasScrolled, onScroll, scrollEventThrottle } =
     useScrollPastThreshold(5);
@@ -43,6 +46,7 @@ export default function HistoryScreen() {
     EvaluationHistoryCard[]
   >([]);
   const [profiles, setProfiles] = React.useState<Profile[]>(cachedProfiles);
+  const [isDeleteSuccessOpen, setIsDeleteSuccessOpen] = React.useState(false);
 
   const loadHistory = React.useCallback(async () => {
     // FAST PATH: Load from local storage first
@@ -193,6 +197,17 @@ export default function HistoryScreen() {
   }, [loadHistory]);
 
   React.useEffect(() => {
+    if (typeof deleteSuccessAt === "number") {
+      const isFresh = Date.now() - deleteSuccessAt < 5000;
+      if (isFresh) {
+        setIsDeleteSuccessOpen(true);
+      }
+
+      navigation.setParams({ deleteSuccessAt: undefined });
+    }
+  }, [deleteSuccessAt, navigation]);
+
+  React.useEffect(() => {
     // Load profiles once for the switcher and keep them cached
     profileService
       .getMyProfile()
@@ -235,6 +250,11 @@ export default function HistoryScreen() {
 
   return (
     <Box style={styles.screen}>
+      <DeleteSuccess
+        isOpen={isDeleteSuccessOpen}
+        onDismiss={() => setIsDeleteSuccessOpen(false)}
+        message="Evaluation deleted successfully."
+      />
       <Box
         position="absolute"
         top={-60}
@@ -317,14 +337,10 @@ export default function HistoryScreen() {
                     (item) => item.evaluationContextId !== evaluationContextId,
                   ),
                 );
+                void removeLocalEvaluationById(evaluationContextId);
+                setIsDeleteSuccessOpen(true);
               }).catch((error) => {
                 console.error("Failed to delete evaluation:", error);
-                // Still remove from local state even if backend fails (soft delete)
-                setHistoryItems((prev) =>
-                  prev.filter(
-                    (item) => item.evaluationContextId !== evaluationContextId,
-                  ),
-                );
               });
             }}
           />

@@ -165,7 +165,7 @@ export default function DifferentProfile({
 				</Box>
 
 				<Box style={styles.switchCopy}>
-					<Text fontSize={22} fontFamily="Roboto" fontWeight="bold" color="#9c9c9c">
+					<Text fontSize={22} fontFamily="Roboto" fontWeight="bold" color="#343434">
 						{greetingText}
 					</Text>
 			</Box>

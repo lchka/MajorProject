@@ -16,7 +16,11 @@ export type AuthStackParamList = {
         profileId?: string;
       }
     | undefined;
-  LoginScreen: undefined;
+  LoginScreen:
+    | {
+        deleteSuccessAt?: number;
+      }
+    | undefined;
   RegisterScreen: undefined;
   ProfileScreen:
     | {
@@ -47,6 +51,7 @@ export type AuthStackParamList = {
   HistoryScreen:
     | {
         profileId?: string;
+        deleteSuccessAt?: number;
       }
     | undefined;
   EvaluationLoading: undefined;

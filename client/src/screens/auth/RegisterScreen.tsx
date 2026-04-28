@@ -11,7 +11,7 @@ import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { saveAuthToken } from "../../utils/authStorage";
+import { getAuthToken, saveAuthToken } from "../../utils/authStorage";
 import { RegisterInput } from "../../types/auth.types";
 import {
   Box,
@@ -42,6 +42,20 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function RegisterScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
+
+  useEffect(() => {
+    const redirectIfAuthenticated = async () => {
+      const token = await getAuthToken();
+      if (token) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "LandingScreen" }],
+        });
+      }
+    };
+
+    void redirectIfAuthenticated();
+  }, [navigation]);
 
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");

@@ -13,6 +13,7 @@ export {
   saveEvaluation,
   removeLocalEvaluationById,
   subscribeLocalEvaluations,
+  getDeletedEvaluationIds,
 } from './localEvaluationStorage';
 
 // Re-export types

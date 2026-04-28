@@ -93,7 +93,7 @@ export default function AccountSettings() {
             setIsDeleteModalOpen(false);
             navigation.reset({
                 index: 0,
-                routes: [{ name: "RegisterScreen" as any }],
+                routes: [{ name: "LoginScreen" as any, params: { deleteSuccessAt: Date.now() } }],
             });
         } catch (error) {
             console.error("Delete failed", error);
@@ -179,9 +179,24 @@ export default function AccountSettings() {
                             Change Password
                         </Text>
                     </Pressable>
+
+                    <Pressable
+                        onPress={() => {}}
+                        style={{
+                            paddingVertical: 14,
+                            borderTopWidth: 1,
+                            borderTopColor: "#EEF3F8",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Text fontSize={15} lineHeight={20} color="#0F172A" fontFamily="RobotoMedium">
+                            Change Name
+                        </Text>
+                    </Pressable>
                 </Box>
 
-                {/* Danger Zone Box */}
                 <Box
                     style={{
                         borderRadius: 18,
@@ -194,7 +209,7 @@ export default function AccountSettings() {
                     }}
                 >
                     <Text fontSize={16} lineHeight={20} color="#991B1B" fontFamily="RobotoMedium">
-                        Danger Zone
+                        Delete Account
                     </Text>
                     <Text fontSize={13} lineHeight={18} color="#64748B" fontFamily="Roboto" mt="$2">
                         Permanently remove your account and all associated data.
@@ -207,6 +222,9 @@ export default function AccountSettings() {
                             paddingVertical: 14,
                             borderTopWidth: 1,
                             borderTopColor: "#FEE2E2",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
                         }}
                     >
                         <Text fontSize={15} lineHeight={20} color="#D64545" fontFamily="RobotoMedium">
