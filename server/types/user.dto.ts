@@ -25,20 +25,27 @@ export const registerRequestSchema = z
       .trim()
       .min(2, "First name must be at least 2 characters")
       .max(25, "First name must be at most 25 characters"),
+
     last_name: z
       .string()
       .trim()
-      .max(25, "Last name must be at most 25 characters")
+      .transform((val) => (val === "" ? undefined : val))
       .optional()
       .refine(
-        (value) => value === undefined || value.length === 0 || value.length >= 2,
+        (val) => val === undefined || val.length >= 2,
         "Last name must be at least 2 characters",
+      )
+      .refine(
+        (val) => val === undefined || val.length <= 25,
+        "Last name must be at most 25 characters",
       ),
+
     email: z
       .string()
       .trim()
       .toLowerCase()
       .email("Must be a valid email address"),
+
     password: z
       .string()
       .min(8, "Password must be at least 8 characters long")
@@ -46,6 +53,7 @@ export const registerRequestSchema = z
         /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
         "Password must contain uppercase, lowercase, number and special character",
       ),
+
     c_password: z.string().min(1, "Confirm password is required"),
   })
   .refine((data) => data.password === data.c_password, {
@@ -70,6 +78,7 @@ export const authResponseSchema = z.object({
 
 export const createUserSchema = z.object({
   email: z.string().trim().toLowerCase().email("Must be a valid email address"),
+
   password: z
     .string()
     .min(8, "Password must be at least 8 characters long")
@@ -77,20 +86,27 @@ export const createUserSchema = z.object({
       /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/,
       "Password must contain uppercase, lowercase, number and special character",
     ),
+
   first_name: z
     .string()
     .trim()
     .min(2, "First name must be at least 2 characters")
     .max(25, "First name must be at most 25 characters"),
+
   last_name: z
     .string()
     .trim()
-    .max(25, "Last name must be at most 25 characters")
+    .transform((val) => (val === "" ? undefined : val))
     .optional()
     .refine(
-      (value) => value === undefined || value.length === 0 || value.length >= 2,
+      (val) => val === undefined || val.length >= 2,
       "Last name must be at least 2 characters",
+    )
+    .refine(
+      (val) => val === undefined || val.length <= 25,
+      "Last name must be at most 25 characters",
     ),
+
   roleId: z.string().uuid("Role id must be a valid UUID"),
 });
 
@@ -102,6 +118,7 @@ export const updateUserSchema = z
       .toLowerCase()
       .email("Must be a valid email address")
       .optional(),
+
     password: z
       .string()
       .min(8, "Password must be at least 8 characters long")
@@ -110,22 +127,34 @@ export const updateUserSchema = z
         "Password must contain uppercase, lowercase, number and special character",
       )
       .optional(),
+
     first_name: z
       .string()
       .trim()
       .min(2, "First name must be at least 2 characters")
       .max(25, "First name must be at most 25 characters")
       .optional(),
+
     last_name: z
       .string()
       .trim()
-      .min(2, "Last name must be at least 2 characters")
-      .max(25, "Last name must be at most 25 characters")
-      .optional(),
+      .transform((val) => (val === "" ? undefined : val))
+      .optional()
+      .refine(
+        (val) => val === undefined || val.length >= 2,
+        "Last name must be at least 2 characters",
+      )
+      .refine(
+        (val) => val === undefined || val.length <= 25,
+        "Last name must be at most 25 characters",
+      ),
   })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided for update",
-  });
+  .refine(
+    (data) => Object.values(data).some((value) => value !== undefined),
+    {
+      message: "At least one field must be provided for update",
+    },
+  );
 
 export const updateProfileSchema = z
   .object({
@@ -135,17 +164,27 @@ export const updateProfileSchema = z
       .min(2, "First name must be at least 2 characters")
       .max(25, "First name must be at most 25 characters")
       .optional(),
+
     last_name: z
       .string()
       .trim()
-      .min(2, "Last name must be at least 2 characters")
-      .max(25, "Last name must be at most 25 characters")
-      .optional(),
+      .transform((val) => (val === "" ? undefined : val))
+      .optional()
+      .refine(
+        (val) => val === undefined || val.length >= 2,
+        "Last name must be at least 2 characters",
+      )
+      .refine(
+        (val) => val === undefined || val.length <= 25,
+        "Last name must be at most 25 characters",
+      ),
+
     nickname: z
       .string()
       .trim()
       .max(25, "Nickname must be at most 25 characters")
       .optional(),
+
     age: z
       .number()
       .int("Age must be a whole number")
@@ -153,9 +192,12 @@ export const updateProfileSchema = z
       .max(150, "Age must be at most 150")
       .optional(),
   })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided for profile update",
-  });
+  .refine(
+    (data) => Object.values(data).some((value) => value !== undefined),
+    {
+      message: "At least one field must be provided for profile update",
+    },
+  );
 
 export type UserResponseDto = z.infer<typeof userResponseSchema>;
 export type RegisterRequestDto = z.infer<typeof registerRequestSchema>;

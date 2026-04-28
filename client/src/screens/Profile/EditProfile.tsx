@@ -17,8 +17,12 @@ import ProfileEditBadgeComponent from "../../components/profile/ProfileEditBadge
 import AllConditions from "../../components/conditions/AllConditions";
 import AllAllergens from "../../components/allergens/AllAllergens";
 import AllPreferences from "../../components/preferences/AllPreferences";
+import Banner from "../../components/banners/GenBanner";
 import RedBanner from "../../components/banners/RedBanner";
-import profileApiService, { ProfileImageUploadFile } from "../../services/profileService";
+import profileApiService, {
+  ProfileImageUploadFile,
+  setPendingProfileBanner,
+} from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
 
 export default function EditProfileScreen() {
@@ -30,15 +34,22 @@ export default function EditProfileScreen() {
   const initialProfileAge = route.params?.profileAge?.trim() ?? "";
   const initialProfileImageUri = route.params?.profileImageUri?.trim();
   const profilePreferenceNames = route.params?.profilePreferenceNames;
-  const [livePreferenceNames, setLivePreferenceNames] = React.useState<string[]>(
-    profilePreferenceNames ?? [],
+  const [livePreferenceNames, setLivePreferenceNames] = React.useState<
+    string[]
+  >(profilePreferenceNames ?? []);
+  const [liveConditionNames, setLiveConditionNames] = React.useState<string[]>(
+    [],
   );
-  const [liveConditionNames, setLiveConditionNames] = React.useState<string[]>([]);
-  const [liveAllergenNames, setLiveAllergenNames] = React.useState<string[]>([]);
-  const [profileImageUri, setProfileImageUri] = React.useState(initialProfileImageUri);
+  const [liveAllergenNames, setLiveAllergenNames] = React.useState<string[]>(
+    [],
+  );
+  const [profileImageUri, setProfileImageUri] = React.useState(
+    initialProfileImageUri,
+  );
   const [originalNameValue, setOriginalNameValue] = React.useState(profileName);
   const [nameValue, setNameValue] = React.useState(profileName);
-  const [originalAgeValue, setOriginalAgeValue] = React.useState(initialProfileAge);
+  const [originalAgeValue, setOriginalAgeValue] =
+    React.useState(initialProfileAge);
   const [ageValue, setAgeValue] = React.useState(initialProfileAge);
   const [profileImage, setProfileImage] = React.useState<
     ProfileImageUploadFile | undefined
@@ -48,12 +59,19 @@ export default function EditProfileScreen() {
   const [isUpdatingMain, setIsUpdatingMain] = React.useState(false);
   const [isMainStatus, setIsMainStatus] = React.useState(profileIsMain);
   const [showMainWarning, setShowMainWarning] = React.useState(false);
-  const mainWarningTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mainWarningTimeoutRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const [banner, setBanner] = React.useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const profileFirstName = nameValue.trim().split(" ")[0]?.trim();
   const previewImageUri = profileImage?.uri ?? profileImageUri;
   const hasNameChanges = nameValue.trim() !== originalNameValue;
   const hasAgeChanges = ageValue.trim() !== originalAgeValue;
-  const hasPendingChanges = Boolean(profileImage) || hasNameChanges || hasAgeChanges;
+  const hasPendingChanges =
+    Boolean(profileImage) || hasNameChanges || hasAgeChanges;
 
   const handlePickProfileImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -114,9 +132,15 @@ export default function EditProfileScreen() {
           }
 
           const activeProfile = profiles.find((item) => item.id === profileId);
-          setLivePreferenceNames(activeProfile?.preferences?.map((item) => item.name) ?? []);
-          setLiveConditionNames(activeProfile?.conditions?.map((item) => item.name) ?? []);
-          setLiveAllergenNames(activeProfile?.allergens?.map((item) => item.name) ?? []);
+          setLivePreferenceNames(
+            activeProfile?.preferences?.map((item) => item.name) ?? [],
+          );
+          setLiveConditionNames(
+            activeProfile?.conditions?.map((item) => item.name) ?? [],
+          );
+          setLiveAllergenNames(
+            activeProfile?.allergens?.map((item) => item.name) ?? [],
+          );
         } catch {
           if (isMounted) {
             setLivePreferenceNames(profilePreferenceNames ?? []);
@@ -134,9 +158,38 @@ export default function EditProfileScreen() {
     }, [profileId, profilePreferenceNames]),
   );
 
+const refreshProfile = React.useCallback(async () => {
+  if (!profileId) return;
+
+  try {
+    const profiles = await profileApiService.getMyProfile();
+    const updated = profiles.find((p) => p.id === profileId);
+
+    if (!updated) return;
+
+    const fullName = [updated.first_name, updated.last_name]
+      .filter(Boolean)
+      .join(" ");
+
+    setNameValue(fullName);
+    setOriginalNameValue(fullName);
+
+    const age = updated.age?.toString() ?? "";
+    setAgeValue(age);
+    setOriginalAgeValue(age);
+
+    setProfileImageUri(updated.profile_image);
+  } catch (e) {
+    console.log("Refresh failed", e);
+  }
+}, [profileId]);
+
   const handleSaveChanges = React.useCallback(async () => {
     if (!profileId) {
-      Alert.alert("Unable to save", "Missing profile id for this edit session.");
+      Alert.alert(
+        "Unable to save",
+        "Missing profile id for this edit session.",
+      );
       return;
     }
 
@@ -169,18 +222,35 @@ export default function EditProfileScreen() {
       });
 
       setProfileImage(undefined);
-      const savedFullName = [updatedProfile.first_name?.trim(), updatedProfile.last_name?.trim()]
+      await refreshProfile();
+
+      const savedAge = updatedProfile.age?.toString() ?? "";
+      const savedFullName = [
+        updatedProfile.first_name?.trim(),
+        updatedProfile.last_name?.trim(),
+      ]
         .filter(Boolean)
         .join(" ");
-      setNameValue(savedFullName);
-      setOriginalNameValue(savedFullName);
-      const savedAge = updatedProfile.age?.toString() ?? "";
       setAgeValue(savedAge);
       setOriginalAgeValue(savedAge);
       setProfileImageUri(updatedProfile.profile_image ?? profileImageUri);
-      Alert.alert("Success", "Changes saved.");
+      navigation.setParams({
+        profileName: savedFullName || updatedProfile.first_name?.trim() || undefined,
+        profileAge: savedAge || undefined,
+        profileImageUri: updatedProfile.profile_image ?? undefined,
+        profileIsMain: updatedProfile.main_profile,
+        profilePreferenceNames:
+          updatedProfile.preferences?.map((item) => item.name) ?? [],
+      });
+      setBanner({
+        type: "success",
+        message: "Profile changes saved successfully.",
+      });
     } catch {
-      Alert.alert("Save failed", "Unable to save changes right now. Please try again.");
+      setBanner({
+        type: "error",
+        message: "Unable to save changes right now. Please try again.",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -190,14 +260,19 @@ export default function EditProfileScreen() {
     hasNameChanges,
     hasPendingChanges,
     nameValue,
+    navigation,
     profileId,
     profileImage,
     profileImageUri,
+    refreshProfile,
   ]);
 
   const handleDeleteProfile = React.useCallback(() => {
     if (!profileId) {
-      Alert.alert("Unable to remove", "Missing profile id for this edit session.");
+      Alert.alert(
+        "Unable to remove",
+        "Missing profile id for this edit session.",
+      );
       return;
     }
 
@@ -213,14 +288,16 @@ export default function EditProfileScreen() {
             try {
               setIsDeleting(true);
               await profileApiService.deleteProfile(profileId);
-              Alert.alert("Profile removed", "The profile has been deleted.", [
-                {
-                  text: "OK",
-                  onPress: () => navigation.navigate("LandingScreen"),
-                },
-              ]);
+              setPendingProfileBanner({
+                type: "success",
+                message: "Profile deleted successfully.",
+              });
+              navigation.navigate("LandingScreen");
             } catch {
-              Alert.alert("Remove failed", "Unable to remove profile right now. Please try again.");
+              Alert.alert(
+                "Remove failed",
+                "Unable to remove profile right now. Please try again.",
+              );
             } finally {
               setIsDeleting(false);
             }
@@ -248,28 +325,29 @@ export default function EditProfileScreen() {
       return;
     }
 
-    Alert.alert(
-      "Set as main profile",
-      "Make this your main profile?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Set as main",
-          onPress: async () => {
-            try {
-              setIsUpdatingMain(true);
-              await profileApiService.updateProfile(profileId, { main_profile: true });
-              setIsMainStatus(true);
-              navigation.setParams({ profileIsMain: true });
-            } catch {
-              Alert.alert("Update failed", "Unable to update main profile right now.");
-            } finally {
-              setIsUpdatingMain(false);
-            }
-          },
+    Alert.alert("Set as main profile", "Make this your main profile?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Set as main",
+        onPress: async () => {
+          try {
+            setIsUpdatingMain(true);
+            await profileApiService.updateProfile(profileId, {
+              main_profile: true,
+            });
+            setIsMainStatus(true);
+            navigation.setParams({ profileIsMain: true });
+          } catch {
+            Alert.alert(
+              "Update failed",
+              "Unable to update main profile right now.",
+            );
+          } finally {
+            setIsUpdatingMain(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   }, [isMainStatus, isUpdatingMain, navigation, profileId]);
 
   React.useEffect(() => {
@@ -286,6 +364,14 @@ export default function EditProfileScreen() {
 
   return (
     <Box flex={1} bg="#F2F6FA">
+      <Banner
+        isOpen={Boolean(banner)}
+        message={banner?.message ?? ""}
+        type={banner?.type ?? "success"}
+        onDismiss={() => {
+          setBanner(null);
+        }}
+      />
       <NavBarTop showNotifications={false} />
 
       <ScrollView
@@ -305,11 +391,15 @@ export default function EditProfileScreen() {
           }}
         >
           <BackButton onPress={handleHeaderBack} />
-          <Text fontSize={24} lineHeight={28} color="#0F172A" fontFamily="RobotoMedium">
+          <Text
+            fontSize={24}
+            lineHeight={28}
+            color="#0F172A"
+            fontFamily="RobotoMedium"
+          >
             Edit Profile
           </Text>
         </Box>
-
 
         <Box
           style={{
@@ -344,7 +434,10 @@ export default function EditProfileScreen() {
               }}
             >
               {previewImageUri ? (
-                <Image source={{ uri: previewImageUri }} style={{ width: 148, height: 148 }} />
+                <Image
+                  source={{ uri: previewImageUri }}
+                  style={{ width: 148, height: 148 }}
+                />
               ) : null}
             </Pressable>
 
@@ -373,8 +466,20 @@ export default function EditProfileScreen() {
             />
           </Box>
 
-          <Box style={{ flexDirection: "row", alignItems: "center", marginTop: 16, gap: 8 }}>
-            <Text fontSize={26} lineHeight={30} color="#0F172A" fontFamily="RobotoMedium">
+          <Box
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 16,
+              gap: 8,
+            }}
+          >
+            <Text
+              fontSize={26}
+              lineHeight={30}
+              color="#0F172A"
+              fontFamily="RobotoMedium"
+            >
               Name:
             </Text>
             <TextInput
@@ -401,10 +506,21 @@ export default function EditProfileScreen() {
           </Box>
 
           <Box
-            style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 8,
+              gap: 8,
+            }}
             alignSelf="flex-start"
           >
-            <Text fontSize={24} pl="$2" lineHeight={30} color="#0F172A" fontFamily="RobotoMedium">
+            <Text
+              fontSize={24}
+              pl="$2"
+              lineHeight={30}
+              color="#0F172A"
+              fontFamily="RobotoMedium"
+            >
               Age:
             </Text>
             <TextInput
@@ -485,12 +601,28 @@ export default function EditProfileScreen() {
               opacity: isUpdatingMain ? 0.7 : 1,
             }}
           >
-            <Feather name={isMainStatus ? "check-square" : "square"} size={20} color="#6F4E37" />
+            <Feather
+              name={isMainStatus ? "check-square" : "square"}
+              size={20}
+              color="#6F4E37"
+            />
             <Box style={{ flex: 1 }}>
-              <Text fontSize={15} lineHeight={18} color="#111111" fontFamily="RobotoMedium">
-                {isMainStatus ? "This is the main profile" : "This is not a main profile"}
+              <Text
+                fontSize={15}
+                lineHeight={18}
+                color="#111111"
+                fontFamily="RobotoMedium"
+              >
+                {isMainStatus
+                  ? "This is the main profile"
+                  : "This is not a main profile"}
               </Text>
-              <Text fontSize={12} lineHeight={15} color="#7B8794" fontFamily="RobotoRegular">
+              <Text
+                fontSize={12}
+                lineHeight={15}
+                color="#7B8794"
+                fontFamily="RobotoRegular"
+              >
                 {isMainStatus
                   ? "Main profile status cannot be changed here."
                   : isUpdatingMain

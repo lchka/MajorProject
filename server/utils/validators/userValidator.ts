@@ -26,11 +26,18 @@ export const updateUserSchema = z
       .optional(),
 
     last_name: z
-      .string()
-      .trim()
-      .min(2, "Last name must be at least 2 characters")
-      .max(25, "Last name must be at most 25 characters")
-      .optional(),
+  .string()
+  .trim()
+  .transform((val) => (val === "" ? undefined : val))
+  .optional()
+  .refine(
+    (val) => val === undefined || val.length >= 2,
+    "Last name must be at least 2 characters"
+  )
+  .refine(
+    (val) => val === undefined || val.length <= 25,
+    "Last name must be at most 25 characters"
+  ),
 
     nickname: z
       .string()

@@ -18,171 +18,97 @@ export type OfficialImageAsset = {
 
 export class SerpApiImageService {
   private readonly serpApiBaseUrl = "https://serpapi.com/search.json";
-  
-  // FIX: Reduced from 12000 to 5000 to prevent server hang and 503 errors
-  private readonly serpApiTimeoutMs = 5000;
+  private readonly serpApiTimeoutMs = 8000;
+
+  private readonly forbiddenPatterns = [
+    "facebook.com", "fbcdn.net", "lookaside.fbsbx.com", 
+    "instagram.com", "pinterest.com", "tiktok.com"
+  ];
 
   private compactWords(value: string): string {
-    return Array.from(
-      new Set(
-        value
-          .split(/\s+/)
-          .map((item) => item.trim())
-          .filter((item) => item.length > 0)
-          .map((item) => item.toLowerCase()),
-      ),
-    ).join(" ");
+    return Array.from(new Set(value.split(/\s+/).map(item => item.trim().toLowerCase()).filter(item => item.length > 0))).join(" ");
   }
 
   private getApiKey(): string {
     const apiKey = process.env.SERPAPI_API_KEY?.trim();
-
-    if (!apiKey) {
-      throw new HttpError(
-        INTERNAL_SERVER_ERROR,
-        "SERPAPI_API_KEY is missing. Add it to your server environment.",
-      );
-    }
-
+    if (!apiKey) throw new HttpError(INTERNAL_SERVER_ERROR, "SERPAPI_API_KEY missing.");
     return apiKey;
   }
 
-  /**
-   * FIX: Added containerType to the query builder to differentiate 
-   * between bottles, tubs, jars, etc.
-   */
-private buildQuery(name: string, brand: string, containerType?: string): string {
-  // 1. Get the SPF number specifically to keep it strict
-  const spfMatch = name.match(/\d+/);
- const spfValue = spfMatch ? spfMatch[0] : "";
+  private buildQuery(name: string, brand: string, containerType?: string): string {
+    const primary = this.compactWords(`${brand} ${name}`);
+    const typeSuffix = containerType ? ` ${containerType}` : "";
+    const exclusions = this.forbiddenPatterns.map(p => `-site:${p}`).join(" ");
+    return `${primary}${typeSuffix} official product shot white background ${exclusions}`.replace(/\s+/g, " ").trim();
+  }
 
-  // 2. Simplify the name: Too many words (like "High Waterproof") confuse the search
-  // We just want the core product identity
-  const coreName = name.split(" ").slice(0, 4).join(" "); 
-
-  const primary = this.compactWords(`${brand} ${coreName}`);
-  const typeSuffix = containerType ? ` ${containerType}` : "";
-  
-  // 3. NEGATIVE FILTERS: We exclude sites that typically have bad/busy photos
-  // and force "high res" which usually triggers official white-background PR shots.
-  const negativeFilters = "-site:incibeauty.com -site:openfoodfacts.org -site:skinsafe.com";
-  
-  const query = `${primary}${typeSuffix} ${spfValue} official product white background ${negativeFilters}`.trim();
-  
-  const finalQuery = query.replace(/\s+/g, " ");
-  console.log(`[SerpAPI] Strict White-BG Query: "${finalQuery}"`);
-  return finalQuery;
-}
+  private isValidImageUrl(url: string): boolean {
+    const lowerUrl = url.toLowerCase();
+    return !this.forbiddenPatterns.some(pattern => lowerUrl.includes(pattern));
+  }
 
   private async requestSerpImageUrl(apiKey: string, query: string): Promise<string | null> {
     try {
-      console.log(`[SerpAPI] Requesting SerpAPI with query: "${query}"`);
       const response = await axios.get<SerpApiResponse>(this.serpApiBaseUrl, {
-        params: {
-          engine: "google_images",
-          q: query,
-          api_key: apiKey,
-        },
+        params: { engine: "google_images", q: query, api_key: apiKey },
         timeout: this.serpApiTimeoutMs,
       });
 
-      // const resultsCount = response.data.images_results?.length ?? 0;
-      const firstResult = response.data.images_results?.[0];
-      const imageUrl = firstResult?.original ?? firstResult?.thumbnail ?? null;
-      
-      return imageUrl;
-    } catch (error) {
-      console.error(`[SerpAPI] Request failed for query "${query}":`, error instanceof Error ? error.message : error);
-      throw error;
+      const results = response.data.images_results || [];
+      for (const result of results) {
+        const candidateUrl = result.original || result.thumbnail;
+        if (candidateUrl && this.isValidImageUrl(candidateUrl)) return candidateUrl;
+      }
+      return null;
+    } catch {
+      // Logic: Removed (error) to satisfy the "defined but not used" linter
+      return null;
     }
   }
 
   private async getFirstImageUrl(name: string, brand: string, containerType?: string): Promise<string> {
-    console.log(`[SerpAPI] getFirstImageUrl called - name: "${name}", brand: "${brand}"`);
-    
-    // Primary query now includes the container hint
-    const primaryQuery = this.buildQuery(name, brand, containerType);
-    const fallbackQuery = `${brand} ${this.compactWords(name)} white background`.trim();
-
-    if (!primaryQuery) {
-      throw new HttpError(BAD_REQUEST, "Product name and brand are required for official image lookup.");
-    }
-
     const apiKey = this.getApiKey();
+    const primaryQuery = this.buildQuery(name, brand, containerType);
+    const cleanName = name.replace(/leave-on|strengthening|pro-v/gi, "").trim();
+    const secondaryQuery = `${brand} ${cleanName} official product white background`.replace(/\s+/g, " ");
+    const minimalQuery = `${brand} ${name.split(' ').slice(0, 3).join(' ')} product`.trim();
 
-    for (const query of [primaryQuery, fallbackQuery]) {
-      if (!query) continue;
+    const queries = [primaryQuery, secondaryQuery, minimalQuery];
 
+    for (const query of queries) {
       try {
         const imageUrl = await this.requestSerpImageUrl(apiKey, query);
-        if (imageUrl) {
-          return imageUrl;
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error) && (error.code === "ECONNABORTED" || !error.response)) {
-          console.log(`[SerpAPI] Request timeout/aborted, trying fallback query`);
-          continue;
-        }
-        throw error;
+        if (imageUrl) return imageUrl;
+      } catch {
+        // Logic: Clean catch block without unused variables
+        console.warn(`[SerpAPI] Query failed, trying next fallback...`);
+        continue; 
       }
     }
 
-    throw new HttpError(NOT_FOUND, "No official image found for this product.");
+    throw new HttpError(NOT_FOUND, "No valid official image found.");
   }
 
-  /**
-   * Main method to fetch and process the image asset.
-   * FIX: Added containerType to parameters.
-   */
-  async fetchOfficialImageAsset(params: { 
-    name: string; 
-    brand: string; 
-    containerType?: string 
-  }): Promise<OfficialImageAsset> {
-    console.log(`[SerpAPI] fetchOfficialImageAsset called - name: "${params.name}", container: "${params.containerType}"`);
-    
+  async fetchOfficialImageAsset(params: { name: string; brand: string; containerType?: string }): Promise<OfficialImageAsset> {
     try {
-      // Pass the container type (bottle/tub) into the search logic
       const sourceUrl = await this.getFirstImageUrl(params.name, params.brand, params.containerType);
-      console.log(`[SerpAPI] Downloading image from: ${sourceUrl}`);
-
+      
       const imageResponse = await axios.get<ArrayBuffer>(sourceUrl, {
         responseType: "arraybuffer",
-        timeout: 15000, // Slightly lower than before to keep request cycles tight
+        timeout: 10000, 
         maxRedirects: 5,
-        validateStatus: (status) => status >= 200 && status < 400,
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
       });
 
-      let contentType = String(imageResponse.headers["content-type"] || "image/jpeg").split(";")[0] || "image/jpeg";      
-      
-      // Handle CDN responses that return binary/octet-stream
-      if (contentType === "binary/octet-stream" || contentType === "application/octet-stream") {
-        console.log(`[SerpAPI] CDN returned generic binary type, inferring from URL...`);
-        const urlPath = new URL(sourceUrl).pathname;
-        if (urlPath.includes(".png")) {
-          contentType = "image/png";
-        } else if (urlPath.includes(".webp")) {
-          contentType = "image/webp";
-        } else if (urlPath.includes(".gif")) {
-          contentType = "image/gif";
-        } else {
-          contentType = "image/jpeg";
-        }
-      }
-      
-      if (!contentType.startsWith("image/")) {
-        console.error(`[SerpAPI] Invalid content type: ${contentType}`);
-        throw new HttpError(BAD_REQUEST, "SerpAPI result did not return a valid image content type.");
-      }
+      const contentType = String(imageResponse.headers["content-type"] || "image/jpeg").split(";")[0];
+      if (!contentType.startsWith("image/")) throw new Error("Invalid content type");
 
-      return {
-        sourceUrl,
-        contentType,
-        buffer: Buffer.from(imageResponse.data),
-      };
-    } catch (error) {
-      console.error(`[SerpAPI] fetchOfficialImageAsset failed:`, error instanceof Error ? error.message : error);
-      throw error;
+      return { sourceUrl, contentType, buffer: Buffer.from(imageResponse.data) };
+    } catch (e) {
+      // Logic: Using the 'e' variable here prevents the unused variable error
+      const message = e instanceof Error ? e.message : "Internal Error";
+      console.error(`[SerpAPI] Final failure: ${message}`);
+      throw new HttpError(BAD_REQUEST, `SerpAPI fetch failed: ${message}`);
     }
   }
 }

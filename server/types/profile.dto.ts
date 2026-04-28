@@ -37,6 +37,7 @@ export const createProfileSchema = z.object({
     .trim()
     .min(2, "First Name must be at least 2 characters")
     .max(100, "First Name must not exceed 100 characters"),
+
   last_name: z
     .string()
     .trim()
@@ -46,9 +47,11 @@ export const createProfileSchema = z.object({
       (value) => value === undefined || value.length === 0 || value.length >= 2,
       "Last Name must be at least 2 characters",
     ),
+
   age: z.string().trim().optional(),
   profile_image: imageValid.optional(),
   main_profile: z.boolean().optional(),
+
   // ids to link on create (optional)
   conditionIds: z
     .array(z.string().uuid("Condition id must be a valid UUID"))
@@ -62,37 +65,49 @@ export const createProfileSchema = z.object({
 });
 
 // update payload (partial)
-export const updateProfileSchema = z.object({
-  first_name: z
-    .string()
-    .trim()
-    .min(2, "First Name must be at least 2 characters")
-    .max(100, "First Name must not exceed 100 characters")
-    .optional(),
-  last_name: z
-    .string()
-    .trim()
-    .min(2, "Last Name must be at least 2 characters")
-    .max(100, "Last Name must not exceed 100 characters")
-    .optional(),
-  age: z.string().trim().optional(),
-  profile_image: imageValid.optional().nullable(),
-  // if passed, these replace current links
-  conditionIds: z
-    .array(z.string().uuid("Condition id must be a valid UUID"))
-    .optional(),
-  allergenIds: z
-    .array(z.string().uuid("Allergen id must be a valid UUID"))
-    .optional(),
-  preferenceIds: z
-    .array(z.string().uuid("Preference id must be a valid UUID"))
-    .optional(),
-  main_profile: z.boolean().optional(),
-  isComplete: z.boolean().optional(),
-});
+export const updateProfileSchema = z
+  .object({
+    first_name: z
+      .string()
+      .trim()
+      .min(2, "First Name must be at least 2 characters")
+      .max(100, "First Name must not exceed 100 characters")
+      .optional(),
+
+    last_name: z
+      .string()
+      .trim()
+      .optional()
+      .refine(
+        (val) => val === undefined || val.length === 0 || val.length >= 2,
+        "Last Name must be at least 2 characters",
+      )
+      .refine(
+        (val) => val === undefined || val.length <= 100,
+        "Last Name must not exceed 100 characters",
+      ),
+
+    age: z.string().trim().optional(),
+    profile_image: imageValid.optional().nullable(),
+
+    // if passed, these replace current links
+    conditionIds: z
+      .array(z.string().uuid("Condition id must be a valid UUID"))
+      .optional(),
+    allergenIds: z
+      .array(z.string().uuid("Allergen id must be a valid UUID"))
+      .optional(),
+    preferenceIds: z
+      .array(z.string().uuid("Preference id must be a valid UUID"))
+      .optional(),
+
+    main_profile: z.boolean().optional(),
+    isComplete: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided for update",
+  });
 
 export type ProfileResponseDTO = z.infer<typeof profileResponseSchema>;
-
 export type CreateProfileDTO = z.infer<typeof createProfileSchema>;
-
 export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;

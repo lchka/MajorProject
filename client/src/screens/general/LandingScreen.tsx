@@ -13,6 +13,7 @@ import { clearAuthToken } from "../../utils/authStorage";
 import NavBarBottom from "../../components/general/NavBarBottom";
 import QuickStartPanel from "../../components/landingpage/QuickStartPanel";
 import NavBarTop from "../../components/general/NavBarTop";
+import Banner from "../../components/banners/GenBanner";
 import SystemErrorModal from "../../components/banners/ErrorBanner";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import PastAnalysis from "../../components/evaluations/PastAnalysis";
@@ -27,7 +28,12 @@ import {
   weatherService,
   CurrentUvSnapshot,
 } from "../../services/weatherService";
-import { profileService, Profile } from "../../services/profileService";
+import {
+  profileService,
+  Profile,
+  consumePendingProfileBanner,
+  subscribeProfileChanges,
+} from "../../services/profileService";
 import { allergenService } from "../../services/allergenService";
 import { preferenceService } from "../../services/preferenceService";
 import {
@@ -81,6 +87,10 @@ export default function LandingScreen() {
   // System error overlay state for displaying API errors
   const [systemErrorOverlay, setSystemErrorOverlay] = React.useState<{
     title: string;
+    message: string;
+  } | null>(null);
+  const [profileBanner, setProfileBanner] = React.useState<{
+    type: "success" | "error" | "info" | "warning";
     message: string;
   } | null>(null);
 
@@ -180,6 +190,11 @@ export default function LandingScreen() {
           message: pendingSystemError.message,
         });
       }
+
+      const pendingProfileBanner = consumePendingProfileBanner();
+      if (pendingProfileBanner) {
+        setProfileBanner(pendingProfileBanner);
+      }
     }, []),
   );
 
@@ -193,6 +208,12 @@ export default function LandingScreen() {
     void loadUv();
     void loadAvailableAllergens();
   }, [loadAvailableAllergens, loadUv]);
+
+  React.useEffect(() => {
+    return subscribeProfileChanges(() => {
+      void loadProfiles();
+    });
+  }, [loadProfiles]);
 
   // Subscribe to system-wide error events and display them in an overlay modal
   // This allows errors from background operations to be displayed to the user
@@ -384,6 +405,14 @@ export default function LandingScreen() {
 
   return (
     <Box style={styles.screen}>
+      <Banner
+        isOpen={Boolean(profileBanner)}
+        message={profileBanner?.message ?? ""}
+        type={profileBanner?.type ?? "success"}
+        onDismiss={() => {
+          setProfileBanner(null);
+        }}
+      />
       {/* Background decorative circles */}
       <Box
         position="absolute"

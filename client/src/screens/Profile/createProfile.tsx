@@ -27,7 +27,10 @@ import ProfileConditions from "../../components/conditions/profileConditions";
 import ProfileAllergens from "../../components/allergens/ProfileAllergens";
 import ProfilePreference from "../../components/preferences/ProfilePreference";
 import CreateButton from "../../components/Buttons/CreateButton";
-import { ProfileImageUploadFile } from "../../services/profileService";
+import {
+	ProfileImageUploadFile,
+	setPendingProfileBanner,
+} from "../../services/profileService";
 import NavBarTop from "../../components/general/NavBarTop";
 import ProfileNameAgeSection from "../../components/profile/ProfileNameAgeSection";
 import ProfileImageSection from "../../components/profile/ProfileImageSection";
@@ -182,6 +185,11 @@ export default function CreateProfile() {
 		if (!profileId) {
 			// Newly created additional profiles should be marked complete but not as main profile.
 			const completedAdditionalProfile = await updateProfile(savedProfile.id, {
+				first_name: payload.first_name,
+				...(payload.last_name !== undefined
+					? { last_name: payload.last_name }
+					: {}),
+				...(payload.age !== undefined ? { age: payload.age } : {}),
 				isComplete: true,
 			});
 
@@ -191,9 +199,18 @@ export default function CreateProfile() {
 		}
 
 		if (profileImage) {
-			// Ensure image upload targets whichever profile was just saved.
-			const targetProfileId = profileId ?? savedProfile.id;
-			const savedImage = await updateProfile(targetProfileId, {
+			// New profiles already send the image during createProfile, so only patch
+			// the image separately when completing an existing profile.
+			if (!profileId) {
+				setPendingProfileBanner({
+					type: "success",
+					message: "Profile created successfully.",
+				});
+				navigation.navigate("LandingScreen");
+				return;
+			}
+
+			const savedImage = await updateProfile(profileId, {
 				profile_image: profileImage,
 			});
 
@@ -203,12 +220,11 @@ export default function CreateProfile() {
 		}
 
 		if (savedProfile) {
-			Alert.alert("Success", "Profile completed successfully.", [
-				{
-					text: "Continue",
-					onPress: () => navigation.navigate("LandingScreen"),
-				},
-			]);
+			setPendingProfileBanner({
+				type: "success",
+				message: "Profile created successfully.",
+			});
+			navigation.navigate("LandingScreen");
 		}
 	};
 

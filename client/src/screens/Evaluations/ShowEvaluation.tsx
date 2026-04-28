@@ -362,7 +362,7 @@ export default function CreateEvaluations({
       <ScrollView
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
-        contentContainerStyle={{ paddingBottom: 16, paddingHorizontal: 12 }}
+        contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 12 }}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
       >

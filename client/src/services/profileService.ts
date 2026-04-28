@@ -63,6 +63,40 @@ export interface UpdateProfileInput {
   preferenceIds?: string[];
 }
 
+type ProfileChangeListener = () => void;
+type PendingProfileBanner = {
+  type: "success" | "error" | "info" | "warning";
+  message: string;
+};
+
+const profileChangeListeners = new Set<ProfileChangeListener>();
+let pendingProfileBanner: PendingProfileBanner | null = null;
+
+const emitProfileChanged = () => {
+  profileChangeListeners.forEach((listener) => {
+    listener();
+  });
+};
+
+export const subscribeProfileChanges = (
+  listener: ProfileChangeListener,
+): (() => void) => {
+  profileChangeListeners.add(listener);
+  return () => {
+    profileChangeListeners.delete(listener);
+  };
+};
+
+export const setPendingProfileBanner = (banner: PendingProfileBanner): void => {
+  pendingProfileBanner = banner;
+};
+
+export const consumePendingProfileBanner = (): PendingProfileBanner | null => {
+  const nextBanner = pendingProfileBanner;
+  pendingProfileBanner = null;
+  return nextBanner;
+};
+
 const isProfileImageUploadFile = (
   value: UpdateProfileInput['profile_image'] | CreateProfileInput['profile_image'],
 ): value is ProfileImageUploadFile => {
@@ -145,6 +179,7 @@ export const profileService = {
           },
         })
       : await api.post('/profiles', data);
+    emitProfileChanged();
     return response.data;
   },
 
@@ -160,6 +195,7 @@ export const profileService = {
           },
         })
       : await api.patch(`/profiles/${id}`, data);
+    emitProfileChanged();
     return response.data;
   },
 
@@ -168,6 +204,7 @@ export const profileService = {
    */
   deleteProfile: async (id: string): Promise<void> => {
     await api.delete(`/profiles/${id}`);
+    emitProfileChanged();
   },
 
   /**

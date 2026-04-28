@@ -56,10 +56,8 @@ export default function SwitchProfile({
 	const switchCardBackgroundColor = "#ebf5ff";
 	const switchCardBorderColor = "#D1E2F0";
 
-	const activeProfile = React.useMemo(
-		() => profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0],
-		[profiles, activeProfileId],
-	);
+	const activeProfile =
+  profiles.find((profile) => profile.id === activeProfileId) ?? profiles[0];
 
 	const displayedCardAvatarSource = activeProfile?.avatarSource ?? cardAvatarSource;
 	const shouldShowMainCrown = activeProfile ? activeProfile.isMain ?? true : false;

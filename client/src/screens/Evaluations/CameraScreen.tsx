@@ -640,19 +640,6 @@ borderColor="rgba(255,255,255,0.18)"
 {isFramingReady ? "Ready to scan" : "Align product in frame"}
 </Text>
 </Box>
-<Box
-mt="$3"
-px="$3"
-py="$2"
-borderRadius="$full"
-bg="rgba(0,0,0,0.28)"
-borderWidth={1}
-borderColor="rgba(255,255,255,0.12)"
->
-<Text fontSize={12} lineHeight={16} color="#FFFFFF" fontFamily="RobotoMedium">
-Make sure the product is in focus
-</Text>
-</Box>
 </Box>
 
 <Box
