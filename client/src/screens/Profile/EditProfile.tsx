@@ -415,8 +415,11 @@ export default function EditProfileScreen() {
             <ProfileEditBadgeComponent sizePreset="small" />
           </Box>
 
-          <Box style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 }}>
-            <Text fontSize={20} lineHeight={30} color="#0F172A" fontFamily="RobotoMedium">
+          <Box
+            style={{ flexDirection: "row", alignItems: "center", marginTop: 8, gap: 8 }}
+            alignSelf="flex-start"
+          >
+            <Text fontSize={24} pl="$2" lineHeight={30} color="#0F172A" fontFamily="RobotoMedium">
               Age:
             </Text>
             <TextInput
