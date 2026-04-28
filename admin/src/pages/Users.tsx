@@ -6,7 +6,7 @@ import {
   restoreUser,
 } from "../services/userService";
 import type { User } from "../services/userService";
-
+import BackButton from "../components/general/BackButtonAdmin";
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,8 @@ export default function Users() {
   return (
     <div className="min-h-screen bg-zinc-900 text-white p-6">
       <h1 className="text-2xl font-semibold mb-6">Users</h1>
-
+      <div className="py-4">
+      <BackButton /></div>
       {/* TABS */}
       <div className="flex gap-4 mb-6">
         <button
@@ -100,9 +101,7 @@ export default function Users() {
       ) : (
         <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
           {displayedUsers.length === 0 ? (
-            <p className="p-4 text-zinc-400 text-sm">
-              No users found.
-            </p>
+            <p className="p-4 text-zinc-400 text-sm">No users found.</p>
           ) : (
             displayedUsers.map((user) => {
               const isBusy = actionLoading === user.id;
@@ -120,9 +119,7 @@ export default function Users() {
                     </p>
 
                     {user.deletedAt && (
-                      <p className="text-xs text-red-400 mt-1">
-                        Removed
-                      </p>
+                      <p className="text-xs text-red-400 mt-1">Removed</p>
                     )}
                   </div>
 
