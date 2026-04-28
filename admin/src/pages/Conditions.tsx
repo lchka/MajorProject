@@ -24,13 +24,9 @@ export default function Conditions() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const [banner, setBanner] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-    visible: boolean;
-  }>({
+  const [banner, setBanner] = useState({
     message: "",
-    type: "info",
+    type: "info" as "success" | "error" | "info",
     visible: false,
   });
 
@@ -168,7 +164,7 @@ export default function Conditions() {
 
   const paginatedConditions = conditions.slice(
     (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
+    page * ITEMS_PER_PAGE,
   );
 
   return (
@@ -179,166 +175,164 @@ export default function Conditions() {
         isVisible={banner.visible}
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="min-h-screen bg-[#0a0a0b] text-white relative overflow-hidden">
+        {/* BACKGROUND FX */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-indigo-600/10 blur-[120px]" />
+          <div className="absolute top-1/3 -right-32 w-80 h-80 rounded-full bg-violet-600/8 blur-[100px]" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 rounded-full bg-sky-600/6 blur-[100px]" />
+        </div>
 
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+          }}
+        />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-10">
           {/* HEADER */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <BackButton />
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight">
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-indigo-400/80 mb-2">
+                  Data Management
+                </p>
+                <h1 className="text-4xl font-bold bg-gradient-to-br from-white via-white/90 to-white/50 bg-clip-text text-transparent">
                   Conditions
                 </h1>
-                <p className="text-zinc-400 text-sm">
+                <p className="text-zinc-500 text-sm mt-1">
                   Manage condition data
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* CREATE */}
-          <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm rounded-xl p-5 mb-6 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-            <h2 className="text-sm text-zinc-400 mb-4">Add New Condition</h2>
-
-            <div className="flex gap-3">
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Name"
-                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 flex-1 outline-none focus:border-white/20"
-              />
-
-              <input
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Description"
-                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 flex-1 outline-none focus:border-white/20"
-              />
-
-              <button
-                onClick={handleCreate}
-                className="px-4 rounded-lg bg-white text-black font-medium hover:opacity-90 transition"
-              >
-                Add
-              </button>
+            <div className="px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+              {conditions.length} total
             </div>
           </div>
 
-          {/* LIST */}
-          {loading ? (
-            <p className="text-zinc-400">Loading...</p>
-          ) : (
-            <>
-              <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                {paginatedConditions.length === 0 ? (
-                  <p className="p-4 text-zinc-400 text-sm">
-                    No conditions yet.
-                  </p>
-                ) : (
-                  paginatedConditions.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex justify-between items-start px-4 py-4 border-b border-white/10 last:border-none"
-                    >
-                      {editingId === c.id ? (
-                        <div className="flex gap-3 flex-1">
-                          <input
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="bg-black/40 border border-white/10 rounded px-2 py-1 flex-1"
-                          />
-                          <input
-                            value={editDesc}
-                            onChange={(e) => setEditDesc(e.target.value)}
-                            className="bg-black/40 border border-white/10 rounded px-2 py-1 flex-1"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium">{c.name}</p>
-                            <UsageBadge count={c.usedCount} />
-                          </div>
+          {/* GRID */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* CREATE */}
+            <div className="xl:col-span-1 relative group h-fit">
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-violet-500/15 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
 
-                          <p className="text-sm text-zinc-400">
-                            {c.description || "No description"}
-                          </p>
-                        </div>
-                      )}
+              <div className="relative bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 backdrop-blur-sm">
+                <h2 className="text-base font-semibold mb-1">Add Condition</h2>
+                <p className="text-xs text-zinc-500 mb-5">Create a new entry</p>
 
-                      {/* ACTIONS */}
-                      <div className="flex gap-3 ml-4">
-                        {editingId === c.id ? (
-                          <>
-                            <button
-                              onClick={handleUpdate}
-                              className="text-green-400 hover:text-green-300 text-sm"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingId(null)}
-                              className="text-zinc-400 hover:text-white text-sm"
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => startEdit(c)}
-                              className="text-blue-400 hover:text-blue-300 text-sm"
-                            >
-                              Edit
-                            </button>
+                <div className="flex flex-col gap-3">
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Name"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  />
 
-                            <button
-                              onClick={() => handleDelete(c.id, c.usedCount)}
-                              className={`text-sm ${
-                                c.usedCount && c.usedCount > 0
-                                  ? "text-zinc-500 cursor-not-allowed"
-                                  : "text-red-400 hover:text-red-300"
-                              }`}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* PAGINATION */}
-              <div className="flex justify-between items-center mt-4">
-                <p className="text-sm text-zinc-400">
-                  Page {page} of {totalPages || 1}
-                </p>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30 transition"
-                  >
-                    Prev
-                  </button>
+                  <input
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="Description"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/30"
+                  />
 
                   <button
-                    onClick={() =>
-                      setPage((p) => Math.min(p + 1, totalPages))
-                    }
-                    disabled={page === totalPages || totalPages === 0}
-                    className="px-3 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30 transition"
+                    onClick={handleCreate}
+                    className="px-4 py-2.5 rounded-xl bg-white text-black hover:bg-zinc-100"
                   >
-                    Next
+                    Add Condition
                   </button>
                 </div>
               </div>
-            </>
-          )}
+            </div>
+
+            {/* LIST */}
+            <div className="xl:col-span-2 relative group">
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/20 via-transparent to-violet-500/10 opacity-0 group-hover:opacity-100 transition" />
+
+              <div className="relative bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-white/[0.07] flex justify-between">
+                  <h2 className="text-base font-semibold">Condition List</h2>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                    Page {page} of {totalPages || 1}
+                  </span>
+                </div>
+
+                {loading ? (
+                  <p className="p-6 text-zinc-400">Loading...</p>
+                ) : (
+                  <div className="divide-y divide-white/[0.07]">
+                    {paginatedConditions.map((c, index) => (
+                      <div
+                        key={c.id}
+                        className="flex justify-between px-6 py-4 hover:bg-white/[0.02]"
+                      >
+                        {editingId === c.id ? (
+                          <div className="flex gap-3 flex-1">
+                            <input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              className="input"
+                            />
+                            <input
+                              value={editDesc}
+                              onChange={(e) => setEditDesc(e.target.value)}
+                              className="input"
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-zinc-600 w-5 text-right">
+                                {String(
+                                  (page - 1) * ITEMS_PER_PAGE + index + 1,
+                                ).padStart(2, "0")}
+                              </span>
+                              <p>{c.name}</p>
+                              <UsageBadge count={c.usedCount} />
+                            </div>
+                            <p className="text-sm text-zinc-400 pl-8">
+                              {c.description}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3">
+                          {editingId === c.id ? (
+                            <>
+                              <button onClick={handleUpdate}>Save</button>
+                              <button onClick={() => setEditingId(null)}>
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => startEdit(c)}>Edit</button>
+                              <button
+                                onClick={() => handleDelete(c.id, c.usedCount)}
+                                disabled={!!c.usedCount && c.usedCount > 0}
+                                className={`text-sm transition ${
+                                  c.usedCount && c.usedCount > 0
+                                    ? "text-zinc-500 cursor-not-allowed"
+                                    : "text-rose-400 hover:text-rose-300"
+                                }`}
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </>

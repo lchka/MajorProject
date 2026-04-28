@@ -29,7 +29,7 @@ export default function Preferences() {
     visible: false,
   });
 
-  // auto hide banner
+  // Auto hide banner
   useEffect(() => {
     if (banner.visible) {
       const t = setTimeout(() => {
@@ -39,6 +39,7 @@ export default function Preferences() {
     }
   }, [banner.visible]);
 
+  // Load data
   const load = async () => {
     try {
       setLoading(true);
@@ -63,6 +64,7 @@ export default function Preferences() {
     void run();
   }, []);
 
+  // Create
   const handleCreate = async () => {
     if (!newName.trim()) {
       setBanner({
@@ -98,8 +100,9 @@ export default function Preferences() {
     }
   };
 
-  const handleDelete = async (id: string, usedCount?: number) => {
-    if (usedCount && usedCount > 0) {
+  // Delete (LOCKED if used)
+  const handleDelete = async (id: string, usedCount: number) => {
+    if (usedCount > 0) {
       setBanner({
         message: "Cannot delete: preference is in use",
         type: "error",
@@ -136,131 +139,198 @@ export default function Preferences() {
 
   return (
     <>
+      {/* Banner */}
       <Banner
         message={banner.message}
         type={banner.type}
         isVisible={banner.visible}
       />
 
-      <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
-        <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="min-h-screen bg-[#0a0a0b] text-white relative overflow-hidden">
+
+        {/* Background FX */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-indigo-600/10 blur-[120px]" />
+          <div className="absolute top-1/3 -right-32 w-80 h-80 rounded-full bg-violet-600/8 blur-[100px]" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 rounded-full bg-sky-600/6 blur-[100px]" />
+        </div>
+
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
+            backgroundSize: "64px 64px",
+          }}
+        />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-10">
 
           {/* HEADER */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <BackButton />
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight">
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-indigo-400/80 mb-2">
+                  Data Management
+                </p>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-br from-white via-white/90 to-white/50 bg-clip-text text-transparent">
                   Preferences
                 </h1>
-                <p className="text-zinc-400 text-sm">
+                <p className="text-zinc-500 text-sm mt-1">
                   Manage preference data
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* CREATE */}
-          <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm rounded-xl p-5 mb-6 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-            <h2 className="text-sm text-zinc-400 mb-4">Add New Preference</h2>
-
-            <div className="flex gap-3">
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Name"
-                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 flex-1 outline-none focus:border-white/20"
-              />
-
-              <input
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Description"
-                className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 flex-1 outline-none focus:border-white/20"
-              />
-
-              <button
-                onClick={handleCreate}
-                className="px-4 rounded-lg bg-white text-black font-medium hover:opacity-90 transition"
-              >
-                Add
-              </button>
+            <div className="px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
+              {preferences.length} total
             </div>
           </div>
 
-          {/* LIST */}
-          {loading ? (
-            <p className="text-zinc-400">Loading...</p>
-          ) : (
-            <>
-              <div className="bg-white/[0.04] border border-white/[0.08] backdrop-blur-sm rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                {paginated.length === 0 ? (
-                  <p className="p-4 text-zinc-400 text-sm">
-                    No preferences yet.
-                  </p>
-                ) : (
-                  paginated.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex justify-between items-start px-4 py-4 border-b border-white/10 last:border-none"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium">{p.name}</p>
-                          <UsageBadge count={p.usedCount} />
-                        </div>
+          {/* GRID */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
-                        <p className="text-sm text-zinc-400">
-                          {p.description || "No description"}
-                        </p>
-                      </div>
+            {/* CREATE PANEL */}
+            <div className="xl:col-span-1 relative group h-fit">
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-violet-500/15 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                      {/* ACTIONS */}
-                      <div className="flex gap-3 ml-4">
-                        <button
-                          onClick={() => handleDelete(p.id, p.usedCount)}
-                          className={`text-sm ${
-                            p.usedCount && p.usedCount > 0
-                              ? "text-zinc-500 cursor-not-allowed"
-                              : "text-red-400 hover:text-red-300"
-                          }`}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* PAGINATION */}
-              <div className="flex justify-between items-center mt-4">
-                <p className="text-sm text-zinc-400">
-                  Page {page} of {totalPages || 1}
+              <div className="relative bg-white/[0.03] border border-white/[0.07] backdrop-blur-sm rounded-2xl p-6 shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
+                <h2 className="text-base font-semibold mb-1">Add Preference</h2>
+                <p className="text-xs text-zinc-500 mb-5">
+                  Create a new preference entry
                 </p>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30 transition"
-                  >
-                    Prev
-                  </button>
+                <div className="flex flex-col gap-3">
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Name"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-white/20 focus:ring-2 focus:ring-indigo-500/30"
+                  />
+
+                  <input
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="Description"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-white/20 focus:ring-2 focus:ring-indigo-500/30"
+                  />
 
                   <button
-                    onClick={() =>
-                      setPage((p) => Math.min(p + 1, totalPages))
-                    }
-                    disabled={page === totalPages || totalPages === 0}
-                    className="px-3 py-1 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30 transition"
+                    onClick={handleCreate}
+                    className="mt-1 px-4 py-2.5 rounded-xl bg-white text-black font-medium hover:bg-zinc-100 transition"
                   >
-                    Next
+                    Add Preference
                   </button>
                 </div>
               </div>
-            </>
-          )}
+            </div>
+
+            {/* LIST PANEL */}
+            <div className="xl:col-span-2 relative group">
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/20 via-transparent to-violet-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+              <div className="relative bg-white/[0.03] border border-white/[0.07] backdrop-blur-sm rounded-2xl overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
+
+                {/* LIST HEADER */}
+                <div className="px-6 py-5 border-b border-white/[0.07] flex justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">Preference List</h2>
+                    <p className="text-xs text-zinc-500">
+                      Review and remove entries
+                    </p>
+                  </div>
+
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                    Page {page} of {totalPages || 1}
+                  </span>
+                </div>
+
+                {/* LIST */}
+                {loading ? (
+                  <p className="p-6 text-zinc-400">Loading...</p>
+                ) : paginated.length === 0 ? (
+                  <p className="p-6 text-zinc-400">No preferences yet.</p>
+                ) : (
+                  <div className="divide-y divide-white/[0.07]">
+                    {paginated.map((p, index) => {
+                      const count = p.usedCount ?? 0;
+
+                      return (
+                        <div
+                          key={p.id}
+                          className="flex justify-between px-6 py-4 hover:bg-white/[0.02]"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-zinc-600 w-5 text-right">
+                                {String(
+                                  (page - 1) * ITEMS_PER_PAGE + index + 1
+                                ).padStart(2, "0")}
+                              </span>
+
+                              <p className="font-medium">{p.name}</p>
+                              <UsageBadge count={count} />
+                            </div>
+
+                            <p className="text-sm text-zinc-400 pl-8">
+                              {p.description || "No description"}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => handleDelete(p.id, count)}
+                            disabled={count > 0}
+                            title={
+                              count > 0
+                                ? "Cannot delete: preference is in use"
+                                : ""
+                            }
+                            className={`text-sm transition ${
+                              count > 0
+                                ? "text-zinc-500 cursor-not-allowed"
+                                : "text-rose-400 hover:text-rose-300"
+                            }`}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* FOOTER */}
+                <div className="px-6 py-4 border-t border-white/[0.07] flex justify-between">
+                  <p className="text-sm text-zinc-400">
+                    Page {page} of {totalPages || 1}
+                  </p>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30"
+                    >
+                      Prev
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        setPage((p) => Math.min(p + 1, totalPages))
+                      }
+                      disabled={page === totalPages || totalPages === 0}
+                      className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </>
