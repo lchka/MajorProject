@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getUsers } from "../services/userService";
 import { getAllergens } from "../services/allergenService";
 import type { User } from "../services/userService";
@@ -159,15 +160,12 @@ export default function Dashboard() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                    <a
-                      href="/allergens"
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-                    >
-                      View all allergens
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                      </svg>
-                    </a>
+                    <Link
+  to="/allergens"
+  className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+>
+  View all allergens
+</Link>
                   </div>
                 </div>
               </div>
@@ -264,8 +262,8 @@ function StatCard({
 /* ── Quick Action Button ── */
 function QuickAction({ href, label, primary }: { href: string; label: string; primary?: boolean }) {
   return (
-    <a
-      href={href}
+    <Link
+      to={href}
       className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
         primary
           ? "bg-white text-black hover:bg-zinc-100"
@@ -273,9 +271,6 @@ function QuickAction({ href, label, primary }: { href: string; label: string; pr
       }`}
     >
       {label}
-      <svg className="w-3.5 h-3.5 opacity-50" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-      </svg>
-    </a>
+    </Link>
   );
 }
