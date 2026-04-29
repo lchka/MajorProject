@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Allergens from "./pages/Allergens";
 import Conditions from "./pages/Conditions";
 import Preferences from "./pages/Preferences";
+import Prompts from "./pages/Prompts";
 export default function App() {
   return (
     <BrowserRouter>
@@ -15,7 +16,7 @@ export default function App() {
         <Route path="/allergens" element={<Allergens />} />
         <Route path="/conditions" element={<Conditions />} />
         <Route path="/preferences" element={<Preferences />} />
-
+        <Route path="/prompts" element={<Prompts />} />
       </Routes>
     </BrowserRouter>
   );

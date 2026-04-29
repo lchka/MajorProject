@@ -182,6 +182,7 @@ export default function Dashboard() {
                     <QuickAction href="/allergens" label="Manage Allergens" />
                     <QuickAction href="/conditions" label="Manage Conditions" />
                     <QuickAction href="/preferences" label="Manage Preferences" />
+                    <QuickAction  href="/prompts" label="Manage Prompts"/>
                   </div>
 
                   <div className="mt-6 pt-5 border-t border-white/[0.06]">

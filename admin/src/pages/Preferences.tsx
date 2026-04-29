@@ -3,12 +3,13 @@ import {
   getPreferences,
   createPreference,
   deletePreference,
+  updatePreference,
 } from "../services/preferenceService";
 import type { Preference } from "../services/preferenceService";
 import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
 import UsageBadge from "../components/general/UsageBadge";
-
+import SinglePreferenceModal from "../components/SinglePreference";
 export default function Preferences() {
   const [preferences, setPreferences] = useState<Preference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,20 +17,18 @@ export default function Preferences() {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
+  const [selectedPreference, setSelectedPreference] = useState<Preference | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  const [banner, setBanner] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-    visible: boolean;
-  }>({
+  const [banner, setBanner] = useState({
     message: "",
-    type: "info",
+    type: "info" as "success" | "error" | "info",
     visible: false,
   });
 
-  // Auto hide banner
   useEffect(() => {
     if (banner.visible) {
       const t = setTimeout(() => {
@@ -39,7 +38,6 @@ export default function Preferences() {
     }
   }, [banner.visible]);
 
-  // Load data
   const load = async () => {
     try {
       setLoading(true);
@@ -56,15 +54,36 @@ export default function Preferences() {
       setLoading(false);
     }
   };
+useEffect(() => {
+  let mounted = true;
 
-  useEffect(() => {
-    const run = async () => {
-      await load();
-    };
-    void run();
-  }, []);
+  const fetchData = async () => {
+    try {
+      const data = await getPreferences();
+      if (!mounted) return;
 
-  // Create
+      setPreferences(data);
+      setPage(1);
+    } catch {
+      if (!mounted) return;
+
+      setBanner({
+        message: "Failed to load preferences",
+        type: "error",
+        visible: true,
+      });
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  };
+
+  fetchData();
+
+  return () => {
+    mounted = false;
+  };
+}, []);
+
   const handleCreate = async () => {
     if (!newName.trim()) {
       setBanner({
@@ -100,7 +119,35 @@ export default function Preferences() {
     }
   };
 
-  // Delete (LOCKED if used)
+  const startEdit = (p: Preference) => {
+    setSelectedPreference(p);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSave = async (
+    id: string,
+    data: { name: string; description: string }
+  ) => {
+    try {
+      await updatePreference(id, data);
+
+      setBanner({
+        message: "Preference updated",
+        type: "success",
+        visible: true,
+      });
+
+      setIsModalOpen(false);
+      load();
+    } catch {
+      setBanner({
+        message: "Update failed",
+        type: "error",
+        visible: true,
+      });
+    }
+  };
+
   const handleDelete = async (id: string, usedCount: number) => {
     if (usedCount > 0) {
       setBanner({
@@ -139,7 +186,6 @@ export default function Preferences() {
 
   return (
     <>
-      {/* Banner */}
       <Banner
         message={banner.message}
         type={banner.type}
@@ -154,15 +200,6 @@ export default function Preferences() {
           <div className="absolute top-1/3 -right-32 w-80 h-80 rounded-full bg-violet-600/8 blur-[100px]" />
           <div className="absolute bottom-0 left-1/3 w-72 h-72 rounded-full bg-sky-600/6 blur-[100px]" />
         </div>
-
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-          }}
-        />
 
         <div className="relative max-w-7xl mx-auto px-6 py-10">
 
@@ -188,7 +225,6 @@ export default function Preferences() {
             </div>
           </div>
 
-          {/* GRID */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
             {/* CREATE PANEL */}
@@ -206,14 +242,14 @@ export default function Preferences() {
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Name"
-                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-white/20 focus:ring-2 focus:ring-indigo-500/30"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none"
                   />
 
                   <input
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     placeholder="Description"
-                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-white/20 focus:ring-2 focus:ring-indigo-500/30"
+                    className="bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 outline-none"
                   />
 
                   <button
@@ -232,25 +268,15 @@ export default function Preferences() {
 
               <div className="relative bg-white/[0.03] border border-white/[0.07] backdrop-blur-sm rounded-2xl overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.4)]">
 
-                {/* LIST HEADER */}
                 <div className="px-6 py-5 border-b border-white/[0.07] flex justify-between">
-                  <div>
-                    <h2 className="text-base font-semibold">Preference List</h2>
-                    <p className="text-xs text-zinc-500">
-                      Review and remove entries
-                    </p>
-                  </div>
-
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                  <h2 className="text-base font-semibold">Preference List</h2>
+                  <span className="text-xs text-indigo-400">
                     Page {page} of {totalPages || 1}
                   </span>
                 </div>
 
-                {/* LIST */}
                 {loading ? (
                   <p className="p-6 text-zinc-400">Loading...</p>
-                ) : paginated.length === 0 ? (
-                  <p className="p-6 text-zinc-400">No preferences yet.</p>
                 ) : (
                   <div className="divide-y divide-white/[0.07]">
                     {paginated.map((p, index) => {
@@ -278,50 +304,41 @@ export default function Preferences() {
                             </p>
                           </div>
 
-                          <button
-                            onClick={() => handleDelete(p.id, count)}
-                            disabled={count > 0}
-                            title={
-                              count > 0
-                                ? "Cannot delete: preference is in use"
-                                : ""
-                            }
-                            className={`text-sm transition ${
-                              count > 0
-                                ? "text-zinc-500 cursor-not-allowed"
-                                : "text-rose-400 hover:text-rose-300"
-                            }`}
-                          >
-                            Delete
-                          </button>
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => startEdit(p)}
+                              className="text-sky-400 hover:text-sky-300"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              onClick={() => handleDelete(p.id, count)}
+                              className={
+                                count > 0
+                                  ? "text-zinc-500 cursor-not-allowed"
+                                  : "text-rose-400 hover:text-rose-300"
+                              }
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 )}
 
-                {/* FOOTER */}
                 <div className="px-6 py-4 border-t border-white/[0.07] flex justify-between">
                   <p className="text-sm text-zinc-400">
                     Page {page} of {totalPages || 1}
                   </p>
 
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                      disabled={page === 1}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30"
-                    >
+                    <button onClick={() => setPage((p) => Math.max(p - 1, 1))}>
                       Prev
                     </button>
-
-                    <button
-                      onClick={() =>
-                        setPage((p) => Math.min(p + 1, totalPages))
-                      }
-                      disabled={page === totalPages || totalPages === 0}
-                      className="px-3 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.1] disabled:opacity-30"
-                    >
+                    <button onClick={() => setPage((p) => Math.min(p + 1, totalPages))}>
                       Next
                     </button>
                   </div>
@@ -332,6 +349,14 @@ export default function Preferences() {
 
           </div>
         </div>
+
+        {/* MODAL */}
+        <SinglePreferenceModal
+          preference={selectedPreference}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleModalSave}
+        />
       </div>
     </>
   );
