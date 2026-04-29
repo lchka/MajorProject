@@ -6,9 +6,9 @@ A full-stack TypeScript-first application for ingredient/allergen evaluation and
 
 ## Tech Stack
 
-**Server:** Node.js, Express, TypeScript, Prisma ORM, PostgreSQL
-
-**Client:** Expo (React Native), TypeScript
+**Server:** Node.js, Express, TypeScript, Prisma ORM, PostgreSQL  
+**Client:** Expo (React Native), TypeScript  
+**Admin:** React, Vite, TypeScript, TailwindCSS  
 
 ---
 
@@ -18,7 +18,8 @@ A full-stack TypeScript-first application for ingredient/allergen evaluation and
 MajorProject/
 ├── server/   # Backend (API, Prisma, database)
 ├── client/   # Mobile app (Expo / React Native)
-├── package.json  # Root config
+├── admin/    # Web admin panel (React + Vite)
+├── package.json
 ├── LICENCE.md
 └── README.md
 ```
@@ -36,8 +37,8 @@ Install **all** of the following:
 - Expo Go app (on your mobile device)
 
 **Optional:**
-- Docker (for PostgreSQL or server containerization)
-- EAS CLI (`npm install -g eas-cli`) for production mobile builds
+- Docker
+- EAS CLI (`npm install -g eas-cli`)
 
 ---
 
@@ -47,16 +48,11 @@ Install **all** of the following:
 git clone https://github.com/lchka/MajorProject.git
 cd MajorProject
 
-# Install root dependencies
 npm install
 
-# Server setup
-cd server
-npm install
-
-# Client setup
-cd ../client
-npm install
+cd server && npm install
+cd ../client && npm install
+cd ../admin && npm install
 ```
 
 ---
@@ -65,103 +61,51 @@ npm install
 
 ### Server — `server/.env`
 
-```env
-mitigate to .env.example! 
 ```
+DATABASE_URL=your_db_url
+JWT_SECRET=your_secret
+```
+
+---
 
 ### Client — `client/.env`
 
-```env
+```
 EXPO_PUBLIC_API_URL=http://YOUR_LOCAL_IP:3000/api
 ```
 
-**API URL Reference:**
-
-| Environment        | API URL                        |
-|--------------------|-------------------------------|
-| Physical Device    | http://YOUR_LOCAL_IP:3000/api  |
-| Android Emulator   | http://10.0.2.2:3000/api       |
-| iOS Simulator      | http://localhost:3000/api      |
-
 ---
-## Database Setup (Local)
 
-From `server/`:
+### Admin — `admin/.env`
 
-```bash
-npx prisma migrate dev
-npm run seed
-npx prisma studio # optional
+```
+VITE_API_URL=http://localhost:3000/api
 ```
 
-**Notes:**
-- `npm run seed` is **required** for initial data
-- `prisma studio` is optional for DB inspection
+---
+
+## Database Setup
+
+```bash
+cd server
+npx prisma migrate dev
+npm run seed
+```
 
 ---
 
-## Running the App Locally
+## Running Locally
 
-### 1. Start the Server
+### Start Backend
 
 ```bash
 cd server
 npm run dev
 ```
 
-### 2. Start the Client
-
-```bash
-cd client
-npm run start
-```
-
-### 3. Open the App
-
-- Open Expo Go on your device
-- Scan the QR code from the terminal/browser
-- Ensure your device and computer are on the same Wi-Fi
-
 ---
 
-## Testing
-
-### Server Tests
-
-```bash
-cd server
-npm test
-```
-
-### Client Tests
-
-```bash
-cd client
-npm test
-```
-
----
-
-## Testing with Hosted/Production Backend
-
-### 1. Deploy Backend
-
-- Ensure your production database is reachable
-- Apply migrations:
-
-```bash
-npx prisma migrate deploy && npm run seed
-```
-
-- Set all required environment variables on your server
-
-### 2. Update Client `.env`
-
-```env
-EXPO_PUBLIC_API_URL=https://YOUR_PROD_DOMAIN/api
-```
-
-### 3. Run Client
+### Start Mobile App
 
 ```bash
 cd client
@@ -170,43 +114,68 @@ npm run start
 
 ---
 
-## 🐳 Docker (Optional for Local Testing)
-
-**Files:**
-- `server/docker-compose.yaml` (PostgreSQL)
-- `server/Dockerfile` (Node server)
-
-### Start PostgreSQL with Docker Compose
+### Start Admin Panel
 
 ```bash
-cd server
-docker compose up -d
-```
-
-Set `server/.env` `DATABASE_URL` to match Docker credentials.
-
-### Stop Docker services
-
-```bash
-cd server
-docker compose down
-# To remove DB volume:
-docker compose down -v
-```
-
-### Run server in Docker (optional)
-
-```bash
-cd server
-docker build -t lumiere-server .
-docker run --env-file .env -p 3000:3000 lumiere-server
+cd admin
+npm run dev
 ```
 
 ---
 
-## Production Deployment
+## 🌐 Deploying Admin (Render)
 
-### Server Startup Sequence
+### 1. Create Static Site
+
+- Go to Render Dashboard
+- Click **New → Static Site**
+- Connect your repo
+
+---
+
+### 2. Configure Settings
+
+- **Root Directory:**  
+  `admin`
+
+- **Build Command:**
+```bash
+npm install && npm run build
+```
+
+- **Publish Directory:**
+```
+dist
+```
+
+---
+
+### 3. Add Environment Variable
+
+```
+VITE_API_URL=https://your-backend-url/api
+```
+
+---
+
+### 4. Deploy
+
+Click **Create Static Site**  
+Render will build and deploy automatically.
+
+---
+
+## 🧠 Admin Features
+
+- Manage allergens, conditions, preferences
+- Usage tracking (prevents deletion if in use)
+- Clean dashboard UI with pagination
+- Safe delete protections
+- Banner feedback system
+
+---
+
+## Production Backend Setup
 
 ```bash
 npm ci
@@ -217,128 +186,58 @@ npm run build
 npm start
 ```
 
-### Client Builds (EAS)
-
-```bash
-npm install -g eas-cli
-eas login
-eas build -p android
-eas build -p ios
-```
-
----
-
-## Updating Dependencies
-
-### Check Outdated
-
-```bash
-# Root
-npm outdated
-# Server
-cd server && npm outdated
-# Client
-cd client && npm outdated
-```
-
-### Update Server
-
-```bash
-cd server
-npm install package-name@latest
-npm run build
-npm test
-# If Prisma changes:
-npx prisma generate
-```
-
-### Update Client (Expo)
-
-```bash
-cd client
-npx expo install --fix
-npx expo-doctor
-npm install package-name@latest
-npm run start
-```
-
-**Important:**
-- Keep Expo ecosystem versions aligned
-- Prefer `expo install` for Expo-managed packages
-
 ---
 
 ## Useful Commands
 
 ### Server
-
 ```bash
 npm run dev
 npm run build
-npm start
 npm test
-# Seeding
 npm run seed
-npm run seed:roles
-npm run seed:users
-npm run seed:preferences
-npm run seed:conditions
-npm run seed:allergens
-npm run seed:prompts
 ```
 
 ### Client
-
 ```bash
 npm run start
 npm run android
 npm run ios
-npm run web
-npm test
+```
+
+### Admin
+```bash
+npm run dev
+npm run build
+npm run preview
 ```
 
 ---
 
-## Troubleshooting & Common Issues
+## Troubleshooting
 
-### Phone Cannot Reach Backend
-- Use LAN IP (not localhost)
+### API not reachable
+- Use LAN IP instead of localhost
 - Check firewall (port 3000)
-- Test API in phone browser
 
-### Android Emulator
-- Use: `http://10.0.2.2:3000/api`
+### Prisma issues
+```bash
+npx prisma migrate dev
+npm run seed
+```
 
-### iOS Simulator
-- Use: `http://localhost:3000/api`
-
-### Clear Metro Cache
+### Clear cache
 ```bash
 cd client
 npx expo start -c
 ```
 
-### Prisma Errors
-- Check `DATABASE_URL` in `.env`
-- Re-run migrations:
-  - Local: `npx prisma migrate dev`
-  - Production: `npx prisma migrate deploy`
-- Ensure seed data exists: `npm run seed`
-
-### Propfill Issues (React Native)
-If you see errors about missing `prop-types` or `@react-native/prop-types`, install:
-```bash
-cd client
-npm install @react-native/prop-types
-```
-Or, if you see warnings about missing fonts (e.g., `RobotoMedium`), ensure your `app.json` or `expo.config.js` includes the correct font assets and you have run `expo install expo-font`.
-
 ---
 
 ## Final Notes
 
-- Keep environment configs consistent across environments
-- Always test after dependency updates
-- Treat seed data as critical to system integrity
+- Keep env variables consistent
+- Always seed database
+- Most issues = env, networking, or migrations
 
-💡 *Tip: If something breaks, it's usually env vars, networking, or migrations, check those first.*
+💡 Tip: If something breaks — check API URL first.

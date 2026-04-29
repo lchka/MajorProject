@@ -1,73 +1,231 @@
-# React + TypeScript + Vite
+#  Lumiere Admin Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The **Lumiere Admin Panel** is a web-based dashboard for managing core application data including allergens, conditions, preferences, and users.
 
-Currently, two official plugins are available:
+Built with a modern stack for speed, clarity, and maintainability.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+##  Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React
+- TypeScript
+- Vite
+- TailwindCSS
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+##  Structure
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+admin/
+├── src/
+│   ├── pages/          # Admin pages (Allergens, Conditions, etc.)
+│   ├── components/     # Reusable UI components (Banner, Badge, etc.)
+│   ├── services/       # API calls
+│   └── utils/
+├── public/
+├── index.html
+├── package.json
+└── vite.config.ts
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## ⚙️ Setup
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+From the root of the project:
+
+```bash
+cd admin
+npm install
 ```
+
+---
+
+##  Environment Variables
+
+Create a `.env` file in `/admin`:
+
+```
+VITE_API_URL=http://localhost:3000/api
+```
+
+### Example (Production)
+
+```
+VITE_API_URL=https://your-backend.onrender.com/api
+```
+
+---
+
+##  Running Locally
+
+```bash
+npm run dev
+```
+
+Then open:
+
+```
+http://localhost:5173
+```
+
+---
+
+##  Build for Production
+
+```bash
+npm run build
+```
+
+Preview build:
+
+```bash
+npm run preview
+```
+
+---
+
+##  Deploying (Render)
+
+### 1. Create Static Site
+
+- Go to Render Dashboard
+- Click **New → Static Site**
+- Connect your repo
+
+---
+
+### 2. Configure
+
+- **Root Directory:**  
+  `admin`
+
+- **Build Command:**
+```bash
+npm install && npm run build
+```
+
+- **Publish Directory:**
+```
+dist
+```
+
+---
+
+### 3. Environment Variables
+
+Add:
+
+```
+VITE_API_URL=https://your-backend-url/api
+```
+
+---
+
+### 4. Deploy
+
+Click **Create Static Site**
+
+---
+
+##  Features
+
+###  Data Management
+- Allergens
+- Conditions
+- Preferences
+
+###  CRUD Operations
+- Create
+- Edit
+- Delete (with safety checks)
+
+### Safe Deletion Logic
+- Items **cannot be deleted if in use**
+- Usage shown via badge:
+```
+In use (3)
+```
+
+###  User Management
+- View users
+- Soft delete (disable)
+- Restore users
+- Permanent delete
+
+###  UI Features
+- Dark glassmorphism design
+- Gradient backgrounds
+- Usage badges
+- Inline editing
+- Pagination
+
+###  Feedback System
+- Success / error banners
+- Auto-dismiss notifications
+
+---
+
+##  Important Notes
+
+- Admin relies entirely on backend API
+- Ensure backend is running before using admin
+- All data validation happens server-side
+
+---
+
+##  Troubleshooting
+
+### API not working
+- Check `VITE_API_URL`
+- Ensure backend is running
+
+---
+
+### Build issues
+```bash
+rm -rf node_modules
+npm install
+npm run build
+```
+
+---
+
+### Changes not updating
+```bash
+npm run dev
+# then hard refresh browser
+```
+
+---
+
+##  Development Notes
+
+- Uses service layer (`/services`) for API calls
+- UI is component-based (Banner, UsageBadge, etc.)
+- Designed for scalability and admin workflows
+
+---
+
+## Tips
+
+- If delete isn’t working → check `usedCount`
+- If nothing loads → API URL is wrong
+- If UI looks off → Tailwind not loaded properly
+
+---
+
+##  Summary
+
+This admin panel is designed to:
+
+- Provide **safe data management**
+- Prevent **breaking relational data**
+- Give **clear visual feedback**
+- Stay **fast and simple to extend**
+
+---
+
+Built as part of the Lumiere Major Project.
