@@ -6,7 +6,7 @@ import {
   CreateAllergenDto,
   AllergenResponseDto,
   UpdateAllergenDto,
-} from "../types/allergen.dto";
+} from "../types/allergen.dto.js";
 
 export class AllergenService {
   //create a new allergen

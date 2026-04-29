@@ -6,7 +6,7 @@ import {
   CreatePreferenceDto,
   UpdatePreferenceDto,
   PreferenceResponseDto,
-} from "../types/preference.dto";
+} from "../types/preference.dto.js";
 
 
 export class PreferenceService {

@@ -31,7 +31,7 @@ jest.mock("../../services/auth.service.js", () => ({
 	},
 }));
 
-import authController from "../../controllers/auth.controller";
+import authController from "../../controllers/auth.controller.js";
 
 // error handler
 const testErrorHandler = (
