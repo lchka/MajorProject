@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFParse } from "pdf-parse";
-import { ragEmbeddingService } from "./embedding.service";
+import { ragEmbeddingService } from "./embedding.service.js";
 
 type PineconeVector = {
 	id: string;

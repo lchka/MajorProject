@@ -6,6 +6,7 @@ export const conditionResponseSchema = z.object({
   description: z.string().min(1, "Condition description is required"),
   createdAt: z.date(),
   updatedAt: z.date(),
+  usedCount: z.number().optional(),
 });
 
 export const createConditionSchema = z.object({

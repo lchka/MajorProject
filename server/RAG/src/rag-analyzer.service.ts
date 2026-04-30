@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { INTERNAL_SERVER_ERROR, HttpError } from "../../utils/HttpError";
-import { formatChunksForPrompt, retrieveRelevantChunks, type RagChunkMatch } from "./retrieve.service";
+import { INTERNAL_SERVER_ERROR, HttpError } from "../../utils/HttpError.js";
+import { formatChunksForPrompt, retrieveRelevantChunks, type RagChunkMatch } from "./retrieve.service.js";
 
 export type RagAnswer = {
 	answer: string;

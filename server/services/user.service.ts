@@ -180,6 +180,7 @@ export class UserService {
   private mapToUserResponse(user: {
     id: string;
     email: string;
+    deletedAt?: Date | null;
     profiles?: {
       id: string;
       first_name: string;
@@ -196,6 +197,7 @@ export class UserService {
     return {
       id: user.id,
       email: user.email,
+      deletedAt: user.deletedAt?.toISOString() ?? null,
       profile_id: selectedProfile?.id ?? null,
       first_name: selectedProfile?.first_name ?? "",
       last_name: selectedProfile?.last_name ?? "",

@@ -1,11 +1,12 @@
 import prisma from "../lib/prisma.js";
+import preferenceRepository from "../repositories/preference.repository.js";
 import { HttpError } from "../utils/HttpError.js";
 
 import {
   CreatePreferenceDto,
   UpdatePreferenceDto,
   PreferenceResponseDto,
-} from "../types/preference.dto";
+} from "../types/preference.dto.js";
 
 
 export class PreferenceService {
@@ -23,21 +24,21 @@ export class PreferenceService {
 
   //get all preferences by id
   async getPreferenceById(id:string):Promise<PreferenceResponseDto>{
-    const preference = await prisma.preference.findUnique({where:{id}})
+    const preference = await preferenceRepository.findById(id)
 
     if(!preference){
         throw new HttpError(404,"Preference not found")
     }
-    return preference;
+
+    return {
+      ...preference,
+      usedCount: preference.profiles.length,
+    };
   }
 
   //get all preferences
   async getAllPreferences():Promise<PreferenceResponseDto[]>{
-    return prisma.preference.findMany({
-        orderBy:{
-            createdAt:"desc"
-        }
-    })
+    return preferenceRepository.findAll();
 
   }
 //updating preference

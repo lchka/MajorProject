@@ -4,15 +4,26 @@ import type { Prisma } from "@prisma/client";
 export class PreferenceRepository {
 	// newest preferences first
 	async findAll() {
-		return await prisma.preference.findMany({
+		const preferences = await prisma.preference.findMany({
 			orderBy: { createdAt: "desc" },
+			include: {
+				profiles: true,
+			},
 		});
+
+		return preferences.map((p) => ({
+			...p,
+			usedCount: p.profiles.length,
+		}));
 	}
 
 	// get one preference by id
 	async findById(id: string) {
 		return await prisma.preference.findUnique({
 			where: { id },
+			include: {
+				profiles: true,
+			},
 		});
 	}
 

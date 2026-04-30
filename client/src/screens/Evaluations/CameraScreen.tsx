@@ -352,6 +352,9 @@ evaluationVariants[0] ??
 null;
 const displayedProfile = resolvedActiveVariant?.profile ?? activeProfile;
 const displayedContext = resolvedActiveVariant?.context ?? evaluationContext;
+if (!displayedProfile || !displayedContext) {
+  return <LoadingScreen />;
+}
 const differentProfiles = evaluationVariants.map<DifferentProfileItem>(({ profile }) => {
 const avatarUri = resolveMediaUrl(profile.profile_image);
 return {
@@ -385,6 +388,29 @@ setEvaluationContext(selectedVariant.context);
 currentProfileAllergens={displayedProfile?.allergens?.map((item) => item.name) ?? []}
 currentProfileConditions={displayedProfile?.conditions?.map((item) => item.name) ?? []}
 currentProfilePreferences={displayedProfile?.preferences?.map((item) => item.name) ?? []}
+onPressProfile={() => {
+  if (!displayedProfile?.id) {
+    console.warn("Profile not ready");
+    return;
+  }
+
+  const fullName = [
+    displayedProfile.first_name?.trim(),
+    displayedProfile.last_name?.trim(),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  navigation.navigate("EditProfileScreen", {
+    profileId: displayedProfile.id,
+    profileName: fullName || displayedProfile.first_name || undefined,
+    profileImageUri: displayedProfile.profile_image ?? undefined,
+    profilePreferenceNames:
+      displayedProfile.preferences?.map((item) => item.name) ?? [],
+    profileAge: displayedProfile.age?.toString()?.trim() || undefined,
+    profileIsMain: displayedProfile.main_profile ?? false,
+  });
+}}
 onRetake={() => {
 setCapturedUri(null);
 setEvaluationContext(null);

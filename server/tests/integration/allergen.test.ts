@@ -16,7 +16,6 @@ interface FakeUser {
 const getFakeUser = (req: Request): FakeUser | null =>
   ((req as unknown as Record<string, unknown>)._fakeUser as FakeUser | null) ?? null;
 
-// ---------- fake middleware ----------
 
 const fakeAuthMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   if (!getFakeUser(req)) {
@@ -47,7 +46,6 @@ const fakeCanAccessProfileByProfileId =
     next();
   };
 
-// ---------- prisma mock ----------
 // jest.mock is hoisted by Babel/ts-jest so this runs before any imports below.
 jest.mock("../../lib/prisma.js", () => ({
   __esModule: true,
@@ -70,7 +68,6 @@ import allergenController from "../../controllers/allergen.controller.js";
 import { HttpError } from "../../utils/HttpError.js";
 import { createAllergenSchema, updateAllergenSchema } from "../../types/allergen.dto.js";
 
-// ---------- validation middleware ----------
 
 const validate =
   <T>(schema: ZodSchema<T>) =>
@@ -84,7 +81,6 @@ const validate =
     next();
   };
 
-// ---------- error handler ----------
 
 const testErrorHandler = (
   err: unknown,
@@ -101,9 +97,7 @@ const testErrorHandler = (
   res.status(500).json({ error: "Internal Server Error" });
 };
 
-// ---------- async wrapper ----------
-// Generic so callers can pass handlers typed with specific Params/Body shapes
-// without hitting a ParamsDictionary incompatibility.
+
 
 const asyncHandler =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,12 +111,9 @@ const asyncHandler =
   (req: Request, res: Response, next: NextFunction) =>
     fn(req as Request<P, ResBody, ReqBody, ReqQuery>, res, next).catch(next);
 
-// ---------- request cast helper ----------
-
 const castReq = <P = Record<string, never>, T = Record<string, never>>(req: Request) =>
   req as unknown as Request<P, Record<string, never>, T>;
 
-// ---------- app factory ----------
 
 const makeApp = (user: FakeUser | null = null) => {
   const app = express();
@@ -200,7 +191,6 @@ const makeApp = (user: FakeUser | null = null) => {
   return app;
 };
 
-// ==================== TESTS ====================
 
 describe("INTEGRATION — allergenRouter", () => {
   beforeEach(() => jest.clearAllMocks());
@@ -221,6 +211,7 @@ describe("INTEGRATION — allergenRouter", () => {
     description: "Allergy",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    profiles:[]
   };
 
   // ---------- auth / permission guards ----------

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { answerWithRag } from "./rag-analyzer.service";
+import { answerWithRag } from "./rag-analyzer.service.js";
 
 const question = process.argv.slice(2).join(" ").trim();
 

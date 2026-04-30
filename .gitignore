@@ -13,6 +13,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Vite cache
+.vite/
+node_modules/.vite/
 # Logs
 logs/
 *.log

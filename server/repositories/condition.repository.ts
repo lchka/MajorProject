@@ -1,19 +1,30 @@
-import prisma from "../lib/prisma";
+import prisma from "../lib/prisma.js";
 import type { Prisma } from "@prisma/client";
 
 export class conditionRepository{
 
     // newest conditions first
     async findAll(){
-        return await prisma.condition.findMany({
-            orderBy:{createdAt:"desc"}
-        })
+        const conditions = await prisma.condition.findMany({
+            orderBy:{createdAt:"desc"},
+            include: {
+                profiles: true,
+            },
+        });
+
+        return conditions.map((c) => ({
+            ...c,
+            usedCount: c.profiles.length,
+        }));
     }
 
     // get one condition by id
     async findById(id:string){
         return await prisma.condition.findUnique({
-            where :{id}
+            where :{id},
+            include: {
+                profiles: true,
+            },
         })
     }
 
@@ -46,3 +57,5 @@ export class conditionRepository{
         })
     }
 }
+
+export default new conditionRepository();
