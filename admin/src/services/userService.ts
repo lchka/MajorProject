@@ -16,6 +16,7 @@ export type User = {
 export const getUsers = async (): Promise<User[]> => {
   const res = await API.get("/users");
   return res.data;
+  console.log("BASE URL:", API.defaults.baseURL);
 };
 
 export const softDeleteUser = async (id: string) => {
@@ -29,7 +30,14 @@ export const softDeleteUser = async (id: string) => {
 };
 // FORCE DELETE (permanent)
 export const forceDeleteUser = async (id: string) => {
-  const res = await API.delete(`/users/${id}/force`);
+  const token = localStorage.getItem("token");
+
+  const res = await API.delete(`/users/${id}/force`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+console.log("TOKEN:", token);
   return res.data;
 };
 

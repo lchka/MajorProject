@@ -37,6 +37,14 @@ router.patch(
   userController.updateUser,
 );
 
+// Force delete - admin only
+router.delete(
+  "/:id/force",
+  authMiddleware,
+  can(Permission.USER_DELETE_ANY),
+  userController.forceDeleteUser,
+);
+
 // Soft delete - admin can delete anyone, moderators/users can delete themselves
 router.delete(
   "/:id",
@@ -45,13 +53,7 @@ router.delete(
   userController.softDeleteUser,
 );
 
-// Force delete - admin only
-router.delete(
-  "/:id/force",
-  authMiddleware,
-  can(Permission.USER_DELETE_ANY),
-  userController.forceDeleteUser,
-);
+
 
 // Restore user - admin only
 router.post(

@@ -1,10 +1,6 @@
 // React & Gluestack imports
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform } from "react-native";
 import LottieView from "lottie-react-native";
 import { Easing } from "react-native-reanimated";
 import * as AuthSession from "expo-auth-session";
@@ -13,6 +9,7 @@ import Constants from "expo-constants";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { getAuthToken, saveAuthToken } from "../../utils/authStorage";
 import { RegisterInput } from "../../types/auth.types";
+import Banner from "../../components/banners/GenBanner";
 import {
   Box,
   HStack,
@@ -67,7 +64,9 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stepDirection, setStepDirection] = useState<1 | -1>(1);
-
+  const [bannerOpen, setBannerOpen] = useState(false);
+  const [bannerMessage, setBannerMessage] = useState("");
+  const [bannerType, setBannerType] = useState<"success" | "error">("success");
   const [touched, setTouched] = useState({
     firstName: false,
     lastName: false,
@@ -83,7 +82,8 @@ export default function RegisterScreen() {
 
   const validateLastName = (value: string) => {
     if (!value.trim()) return "";
-    if (value.trim().length < 2) return "Last name must be at least 2 characters.";
+    if (value.trim().length < 2)
+      return "Last name must be at least 2 characters.";
     return "";
   };
 
@@ -169,8 +169,7 @@ export default function RegisterScreen() {
     {
       id: "email-format",
       label: "Email format is valid",
-      test: (value: string) =>
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
+      test: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()),
     },
   ];
 
@@ -322,94 +321,104 @@ export default function RegisterScreen() {
     setStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleRegister = async () => {
-    const isValidForSubmit = validateStepFields(3);
+const handleRegister = async () => {
+  const isValidForSubmit = validateStepFields(3);
 
-    setTouched((prev) => ({
-      ...prev,
-      firstName: true,
-      lastName: true,
-      email: true,
-      password: true,
-      confirmPassword: true,
-    }));
+  setTouched((prev) => ({
+    ...prev,
+    firstName: true,
+    lastName: true,
+    email: true,
+    password: true,
+    confirmPassword: true,
+  }));
 
-    if (!isValidForSubmit) return;
+  if (!isValidForSubmit) {
+    setLoading(false);
+    return;
+  }
 
-    try {
-      const result = registerSchema.safeParse({
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password,
-        c_password: confirmPassword,
-      });
+  setLoading(true);
 
-      if (!result.success) {
-        const message = result.error.issues.map((e) => e.message).join("\n");
-        Alert.alert("Validation Error", message);
-        return;
-      }
+  try {
+    const result = registerSchema.safeParse({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      password,
+      c_password: confirmPassword,
+    });
 
-      // use validated + cleaned data from Zod
-      const payload: RegisterInput = {
-        ...result.data,
-        last_name: result.data.last_name || undefined,
-      };
+    if (!result.success) {
+      const message = result.error.issues.map((e) => e.message).join("\n");
 
-      const response = await authService.register(payload);
+      setBannerMessage(message);
+      setBannerType("error");
+      setBannerOpen(true);
 
-      await saveAuthToken(response.token);
-
-      console.log("Registration successful:", response);
-
-      Alert.alert("Success!", "Your account has been created successfully.", [
-        {
-          text: "OK",
-          onPress: () => {
-            const prefillFirstName = firstName.trim();
-            const prefillLastName = lastName.trim();
-            const prefillEmail = email.toLowerCase().trim();
-
-            setFirstName("");
-            setLastName("");
-            setEmail("");
-            setPassword("");
-            setConfirmPassword("");
-            setStep(0);
-            navigation.navigate("ProfileScreen", {
-              firstName: prefillFirstName,
-              lastName: prefillLastName,
-              email: prefillEmail,
-              profileId: response.user.profile_id ?? undefined,
-            });
-          },
-        },
-      ]);
-    } catch (error: any) {
-      console.error("Registration failed:", error);
-
-      let errorMessage = "Registration failed. Please try again.";
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.details) {
-        errorMessage = error.response.data.details.join("\n");
-      } else if (error.response?.status === 409) {
-        errorMessage = "Email already exists. Please use a different email.";
-      } else if (
-        typeof error.message === "string" &&
-        error.message.includes("Network Error")
-      ) {
-        errorMessage =
-          "Cannot connect to server. Please check your connection.";
-      }
-
-      Alert.alert("Registration Failed", errorMessage);
-    } finally {
       setLoading(false);
+      return;
     }
-  };
+
+    const payload: RegisterInput = {
+      ...result.data,
+      last_name: result.data.last_name || undefined,
+    };
+
+    const response = await authService.register(payload);
+    await saveAuthToken(response.token);
+
+    console.log("Registration successful:", response);
+
+    setBannerMessage("You're all set!");
+    setBannerType("success");
+    setBannerOpen(true);
+
+    setTimeout(() => {
+      const prefillFirstName = firstName.trim();
+      const prefillLastName = lastName.trim();
+      const prefillEmail = email.toLowerCase().trim();
+
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+      setStep(0);
+
+      navigation.navigate("ProfileScreen", {
+        firstName: prefillFirstName,
+        lastName: prefillLastName,
+        email: prefillEmail,
+        profileId: response.user.profile_id ?? undefined,
+      });
+    }, 1200);
+  } catch (error: any) {
+    console.error("Registration failed:", error);
+
+    let errorMessage = "Registration failed. Please try again.";
+
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.response?.data?.details) {
+      errorMessage = error.response.data.details.join("\n");
+    } else if (error.response?.status === 409) {
+      errorMessage = "Email already exists. Please use a different email.";
+    } else if (
+      typeof error.message === "string" &&
+      error.message.includes("Network Error")
+    ) {
+      errorMessage =
+        "Cannot connect to server. Please check your connection.";
+    }
+
+    setBannerMessage(errorMessage);
+    setBannerType("error");
+    setBannerOpen(true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView
@@ -538,10 +547,16 @@ export default function RegisterScreen() {
                           value={firstName}
                           onChangeText={(value) => {
                             setFirstName(value);
-                            setTouched((prev) => ({ ...prev, firstName: true }));
+                            setTouched((prev) => ({
+                              ...prev,
+                              firstName: true,
+                            }));
                           }}
                           onBlur={() => {
-                            setTouched((prev) => ({ ...prev, firstName: true }));
+                            setTouched((prev) => ({
+                              ...prev,
+                              firstName: true,
+                            }));
                           }}
                         />
                       </Input>
@@ -728,6 +743,12 @@ export default function RegisterScreen() {
           </MotiView>
         </Box>
       </ScrollView>
+      <Banner
+        isOpen={bannerOpen}
+        message={bannerMessage}
+        type={bannerType}
+        onDismiss={() => setBannerOpen(false)}
+      />
     </KeyboardAvoidingView>
   );
 }
