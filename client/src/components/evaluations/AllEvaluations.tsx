@@ -9,7 +9,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BackButton from "../../components/Buttons/BackButton";
-import { MotiView } from "moti";
+import { MotiView,AnimatePresence  } from "moti";
+
 import {
   Box,
   Image,

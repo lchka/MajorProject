@@ -16,14 +16,18 @@ export const PAST_ANALYSIS_SORT_OPTIONS = [
   "Missing History?",
 ] as const;
 
-export type PastAnalysisSortOption = (typeof PAST_ANALYSIS_SORT_OPTIONS)[number];
+export type PastAnalysisSortOption =
+  (typeof PAST_ANALYSIS_SORT_OPTIONS)[number];
 
 type Props = {
   selectedValue: PastAnalysisSortOption;
   onSelect: (value: PastAnalysisSortOption) => void;
 };
 
-const optionMeta: Record<PastAnalysisSortOption, { label: string; hint: string }> = {
+const optionMeta: Record<
+  PastAnalysisSortOption,
+  { label: string; hint: string }
+> = {
   "Newest First (DEFAULT)": {
     label: "Newest First",
     hint: "Show the latest scans first",
@@ -46,9 +50,13 @@ const optionMeta: Record<PastAnalysisSortOption, { label: string; hint: string }
   },
 };
 
-export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
+export const SortDropdown: React.FC<Props> = ({
+  selectedValue,
+  onSelect,
+}) => {
   return (
     <MotiView
+      pointerEvents="box-none"
       from={{ opacity: 0, translateY: -8, scale: 0.96 }}
       animate={{ opacity: 1, translateY: 0, scale: 1 }}
       transition={{ type: "timing", duration: 220 }}
@@ -102,19 +110,23 @@ export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
               py="$2"
               bg={item === selectedValue ? "#ECF4FC" : "transparent"}
               borderWidth={item === selectedValue ? 1 : 0}
-              borderColor={item === selectedValue ? "#B5D2EE" : "transparent"}
+              borderColor={
+                item === selectedValue ? "#B5D2EE" : "transparent"
+              }
             >
               <HStack alignItems="center" justifyContent="space-between">
                 <Box flex={1} pr="$2">
                   <Text
                     fontSize="$md"
-                    fontWeight={item === selectedValue ? "$semibold" : "$normal"}
+                    fontWeight={
+                      item === selectedValue ? "$semibold" : "$normal"
+                    }
                     color={
                       item === "Missing History?"
                         ? "#C33939"
                         : item === selectedValue
-                          ? "#1F4F86"
-                          : "#243241"
+                        ? "#1F4F86"
+                        : "#243241"
                     }
                   >
                     {optionMeta[item].label}
@@ -122,7 +134,9 @@ export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
 
                   <Text
                     fontSize="$xs"
-                    color={item === selectedValue ? "#4D6F93" : "#7C8A99"}
+                    color={
+                      item === selectedValue ? "#4D6F93" : "#7C8A99"
+                    }
                     mt="$0.5"
                   >
                     {optionMeta[item].hint}
@@ -139,7 +153,11 @@ export const SortDropdown: React.FC<Props> = ({ selectedValue, onSelect }) => {
                     justifyContent="center"
                     px="$1"
                   >
-                    <Text color="#FFFFFF" fontSize="$2xs" fontFamily="RobotoMedium">
+                    <Text
+                      color="#FFFFFF"
+                      fontSize="$2xs"
+                      fontFamily="RobotoMedium"
+                    >
                       OK
                     </Text>
                   </Box>

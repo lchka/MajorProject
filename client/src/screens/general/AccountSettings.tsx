@@ -201,6 +201,7 @@ const handleEmailSubmit = React.useCallback(async (newEmail: string) => {
         },
       ],
     });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     setBanner({
       visible: true,

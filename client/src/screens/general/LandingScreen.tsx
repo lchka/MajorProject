@@ -14,7 +14,7 @@ import NavBarBottom from "../../components/general/NavBarBottom";
 import QuickStartPanel from "../../components/landingpage/QuickStartPanel";
 import NavBarTop from "../../components/general/NavBarTop";
 import Banner from "../../components/banners/GenBanner";
-import SystemErrorModal from "../../components/banners/ErrorBanner";
+import ErrorBanner from "../../components/banners/ErrorBanner";
 import SwitchProfile from "../../components/profile/SwitchProfile";
 import PastAnalysis from "../../components/evaluations/PastAnalysis";
 import { UvIndexCard } from "../../components/landingpage/UvIndexWidget";
@@ -692,21 +692,17 @@ export default function LandingScreen() {
       />
 
       {/* System error modal - displays API errors and operation failures */}
-      <SystemErrorModal
-        isOpen={Boolean(systemErrorOverlay)}
-        title={systemErrorOverlay?.title}
-        message={systemErrorOverlay?.message}
-        onClose={() => {
-          setSystemErrorOverlay(null);
-        }}
-        onRetry={() => {
-          setSystemErrorOverlay(null);
-          void loadProfiles();
-        }}
-        onReport={() => {
-          setSystemErrorOverlay(null);
-        }}
-      />
+     <ErrorBanner
+  error={
+    systemErrorOverlay
+      ? {
+          message: systemErrorOverlay.message,
+          statusCode: undefined, // optional
+        }
+      : null
+  }
+  onDismiss={() => setSystemErrorOverlay(null)}
+/>
 
       {/* Sticky bottom navigation bar */}
       <NavBarBottom
