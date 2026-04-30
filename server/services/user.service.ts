@@ -156,16 +156,19 @@ export class UserService {
   }
 
   async forceDeleteUser(id: string): Promise<{ message: string }> {
-    const user = await userRepository.findById(id);
-
-    if (!user) {
-      throw new HttpError(404, "User not found");
-    }
-
+  // If your findById filters out soft-deleted users, 
+  // we need a different check or a more permissive find method.
+  
+  try {
     await userRepository.forceDelete(id);
 
     return { message: "User permanently deleted" };
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (error) {
+    // If the record didn't exist at all, handle it here
+    throw new HttpError(404, "User could not be found to be permanently deleted");
   }
+}
 
   async restoreUser(id: string): Promise<UserResponseDto> {
     const restoredUser = await userRepository.restore(id);

@@ -7,7 +7,7 @@ import {
 } from "../services/userService";
 import type { User } from "../services/userService";
 import BackButton from "../components/general/BackButtonAdmin";
-
+import Banner from "../components/general/Banner";
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,50 +34,77 @@ export default function Users() {
     void run();
   }, []);
 
-  const handleSoftDelete = async (id: string) => {
-    try {
-      setActionLoading(id);
-      await softDeleteUser(id);
-      await loadUsers();
-    } catch (err) {
-      console.error("Soft delete failed:", err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
 
-  const handleForceDelete = async (id: string) => {
-    try {
-      setActionLoading(id);
-      await forceDeleteUser(id);
-      await loadUsers();
-    } catch (err) {
-      console.error("Force delete failed:", err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
+const handleSoftDelete = async (id: string) => {
+  try {
+    setActionLoading(id);
+    await softDeleteUser(id);
+    showBanner("User disabled successfully"); // <-- Add this
+    await loadUsers();
+  } catch (err) {
+    showBanner("Failed to disable user", "error"); // <-- Add this
+    console.error("Soft delete failed:", err);
+  } finally {
+    setActionLoading(null);
+  }
+};
 
-  const handleRestore = async (id: string) => {
-    try {
-      setActionLoading(id);
-      await restoreUser(id);
-      await loadUsers();
-    } catch (err) {
-      console.error("Restore failed:", err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
+const handleForceDelete = async (id: string) => {
+  try {
+    setActionLoading(id);
+    await forceDeleteUser(id);
+    showBanner("User permanently deleted"); // <-- Add this
+    await loadUsers();
+  } catch (err) {
+    showBanner("Failed to delete user", "error"); // <-- Add this
+    console.error("Force delete failed:", err);
+  } finally {
+    setActionLoading(null);
+  }
+};
 
+const handleRestore = async (id: string) => {
+  try {
+    setActionLoading(id);
+    await restoreUser(id);
+    showBanner("User restored successfully"); // <-- Add this
+    await loadUsers();
+  } catch (err) {
+    showBanner("Failed to restore user", "error"); // <-- Add this
+    console.error("Restore failed:", err);
+  } finally {
+    setActionLoading(null);
+  }
+};
   const activeUsers = users.filter((u) => !u.deletedAt);
   const removedUsers = users.filter((u) => u.deletedAt);
   const displayedUsers = tab === "active" ? activeUsers : removedUsers;
+// Inside your Users component
+const [banner, setBanner] = useState<{
+  message: string;
+  type: "success" | "error" | "info";
+  isVisible: boolean;
+}>({
+  message: "",
+  type: "info",
+  isVisible: false,
+});
 
+// Helper to show banner and hide it after 2 seconds
+const showBanner = (message: string, type: "success" | "error" | "info" = "success") => {
+  setBanner({ message, type, isVisible: true });
+  setTimeout(() => {
+    setBanner((prev) => ({ ...prev, isVisible: false }));
+  }, 2000);
+};
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
       <div className="max-w-5xl mx-auto px-6 py-8">
-
+<Banner 
+      message={banner.message} 
+      type={banner.type} 
+      isVisible={banner.isVisible} 
+    />
         {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">

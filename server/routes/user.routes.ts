@@ -1,6 +1,8 @@
 // routes/user.routes.ts
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import cors from "cors";
+
 import {
   can,
   canModifyUser,
@@ -16,7 +18,15 @@ const router = Router();
 
 // Public - no authentication needed
 // (none for users, only auth routes)
+router.options("/:id/force", cors());
 
+// Force delete - admin only
+router.delete(
+  "/:id/force",
+  authMiddleware,
+  can(Permission.USER_DELETE_ANY),
+  userController.forceDeleteUser,
+);
 // View all users - requires USER_VIEW_ALL permission (admin/moderator)
 router.get(
   "/",
@@ -37,13 +47,6 @@ router.patch(
   userController.updateUser,
 );
 
-// Force delete - admin only
-router.delete(
-  "/:id/force",
-  authMiddleware,
-  can(Permission.USER_DELETE_ANY),
-  userController.forceDeleteUser,
-);
 
 // Soft delete - admin can delete anyone, moderators/users can delete themselves
 router.delete(
