@@ -506,7 +506,14 @@ export default function CreateEvaluations({
       <NavBarBottom
         activeTab="history"
         avatarSource={avatarSource}
-        onPressUpload={() => navigation.navigate("CameraScreen")}
+        historyProfileId={activeProfileId}
+        cameraProfileId={activeProfileId}
+        onPressUpload={() =>
+          navigation.navigate(
+            "CameraScreen",
+            activeProfileId ? { profileId: activeProfileId } : undefined,
+          )
+        }
         onPressProfile={onPressProfile}
       />
     </Box>
