@@ -10,6 +10,7 @@ import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
 import UsageBadge from "../components/general/UsageBadge";
 import SingleAllergenModal from "../components/SingleAllergen";
+//page component for managing allergens, with a list of existing allergens and a form to create new ones, and modals for editing existing allergens
 export default function Allergens() {
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +25,7 @@ export default function Allergens() {
 
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
+//state for showing a banner message after actions like create/update/delete, with auto-hide after 2 seconds
   const [banner, setBanner] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -34,7 +35,7 @@ export default function Allergens() {
     type: "info",
     visible: false,
   });
-
+//auto-hide the banner after 2 seconds when it becomes visible
   useEffect(() => {
     if (banner.visible) {
       const t = setTimeout(() => {
@@ -43,7 +44,7 @@ export default function Allergens() {
       return () => clearTimeout(t);
     }
   }, [banner.visible]);
-
+// function to load allergens from the server and update state, used on initial load and after create/update/delete actions
   const load = async () => {
     try {
       setLoading(true);
@@ -60,7 +61,7 @@ export default function Allergens() {
       setLoading(false);
     }
   };
-
+//load allergens on initial component mount
   useEffect(() => {
     let mounted = true;
 
@@ -85,14 +86,14 @@ export default function Allergens() {
         if (mounted) setLoading(false);
       }
     };
-
+//run the load function to fetch allergens when the component mounts
     run();
 
     return () => {
       mounted = false;
     };
   }, []);
-
+//handler for creating a new allergen, with validation and showing success/error banners, and reloading the list after creation
   const handleCreate = async () => {
     if (!newName.trim()) {
       setBanner({
@@ -102,7 +103,7 @@ export default function Allergens() {
       });
       return;
     }
-
+//trying to create the allergen using the service function, and showing appropriate banners based on success or failure, and reloading the list on success
     try {
       await createAllergen({
         name: newName,
@@ -127,7 +128,7 @@ export default function Allergens() {
       });
     }
   };
-
+//handler for starting the edit process by setting the selected allergen and opening the modal
   const startEdit = (a: Allergen) => {
     setSelectedAllergen(a);
     setIsModalOpen(true);
@@ -156,7 +157,7 @@ export default function Allergens() {
       });
     }
   };
-
+//handler for deleting an allergen, with a check for whether it's in use, showing appropriate banners, and reloading the list on success
   const handleDelete = async (id: string, usedCount?: number) => {
     if (usedCount && usedCount > 0) {
       setBanner({
@@ -185,7 +186,7 @@ export default function Allergens() {
       });
     }
   };
-
+//pagination logic to determine which allergens to show on the current page, and total pages for the footer
   const totalPages = Math.ceil(allergens.length / ITEMS_PER_PAGE);
 
   const paginatedAllergens = allergens.slice(
@@ -195,6 +196,7 @@ export default function Allergens() {
 
   return (
     <>
+    {/* banner component to show success/error/info messages after actions, with auto-hide functionality */}
       <Banner
         message={banner.message}
         type={banner.type}

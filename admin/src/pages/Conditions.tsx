@@ -10,6 +10,7 @@ import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
 import UsageBadge from "../components/general/UsageBadge";
 import SingleConditionModal from "../components/SingleCondition";
+//page component for managing conditions, with a list of conditions and a form to create new ones, and a modal for editing existing conditions
 export default function Conditions() {
   const [conditions, setConditions] = useState<Condition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,8 +57,7 @@ export default function Conditions() {
       setLoading(false);
     }
   };
-
-  // ✅ SAFE INITIAL LOAD (no React warning)
+//fetch conditions on component mount, with a mounted flag to prevent state updates if the component unmounts before the fetch completes
   useEffect(() => {
     let mounted = true;
 
@@ -184,7 +184,7 @@ export default function Conditions() {
       });
     }
   };
-
+//pagination logic to determine which conditions to show on the current page, and total pages for the footer
   const totalPages = Math.ceil(conditions.length / ITEMS_PER_PAGE);
 
   const paginated = conditions.slice(
@@ -194,6 +194,7 @@ export default function Conditions() {
 
   return (
     <>
+    // banner component to show success/error/info messages after actions, with auto-hide functionality
       <Banner
         message={banner.message}
         type={banner.type}
@@ -227,7 +228,7 @@ export default function Conditions() {
                 </p>
               </div>
             </div>
-
+{/* showing total count of conditions with a badge */}
             <div className="px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-medium">
               {conditions.length} total
             </div>

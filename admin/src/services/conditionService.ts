@@ -1,5 +1,5 @@
 import API from "./api";
-
+//  service functions for managing conditions, including types and API calls for CRUD operations
 export type Condition = {
   id: string;
   name: string;

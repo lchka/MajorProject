@@ -1,5 +1,5 @@
 import API from "./api";
-
+// service functions for managing prompts, including types and API calls for CRUD operations
 export const Category = {
   Shampoo: "Shampoo",
   DeodorantAndAntiperspirant: "Deodorant & Antiperspirant",

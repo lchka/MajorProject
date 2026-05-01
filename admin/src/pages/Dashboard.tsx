@@ -5,12 +5,12 @@ import { getAllergens } from "../services/allergenService";
 import type { User } from "../services/userService";
 import type { Allergen } from "../services/allergenService";
 import LogoutButton from "../components/LogoutButton";
-
+//dashboard page component that shows an overview of the system with stats and recent entries, and quick action links to other sections
 export default function Dashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [loading, setLoading] = useState(true);
-
+//fetch users and allergens on component mount, and set loading state accordingly
   useEffect(() => {
     const load = async () => {
       try {
@@ -26,7 +26,7 @@ export default function Dashboard() {
     };
     void load();
   }, []);
-
+//derive active and removed users from the full list for the stats cards
   const activeUsers = users.filter((u) => !u.deletedAt);
   const removedUsers = users.filter((u) => u.deletedAt);
 
@@ -65,6 +65,7 @@ export default function Dashboard() {
               System overview &amp; quick actions
             </p>
           </div>
+          {/* status indicator with a pulsing dot and a logout button */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -73,7 +74,7 @@ export default function Dashboard() {
             <LogoutButton />
           </div>
         </div>
-
+{/* show loading spinner if data is still being fetched, otherwise show the main dashboard content */}
         {loading ? (
           <div className="flex items-center gap-3 text-zinc-500">
             <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -94,6 +95,7 @@ export default function Dashboard() {
                 }
                 accent="indigo"
               />
+              {/* removed users stat card with a red accent */}
               <StatCard
                 title="Removed Users"
                 value={removedUsers.length}
@@ -128,7 +130,7 @@ export default function Dashboard() {
                       {allergens.length} total
                     </span>
                   </div>
-
+{/* list the 5 most recent allergens with their name and description, and a link to view all allergens at the bottom */}
                   <div className="space-y-1">
                     {allergens.slice(0, 5).map((a, i) => (
                       <div
@@ -236,6 +238,7 @@ function StatCard({
   accent?: keyof typeof accentMap;
 }) {
   const a = accentMap[accent];
+  // stat card with a title, value, and an icon, with a colored accent and a glow effect on hover
   return (
     <div className="relative group cursor-default">
       <div className={`absolute -inset-px rounded-2xl bg-gradient-to-br ${a.glow} via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />

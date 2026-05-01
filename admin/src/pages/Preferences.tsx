@@ -10,16 +10,17 @@ import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
 import UsageBadge from "../components/general/UsageBadge";
 import SinglePreferenceModal from "../components/SinglePreference";
+// page for managing preferences, with a list of existing preferences and a form to create new ones, and a modal for editing existing preferences
 export default function Preferences() {
   const [preferences, setPreferences] = useState<Preference[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
-
+// state for the currently selected preference for editing, and whether the edit modal is open
   const [selectedPreference, setSelectedPreference] = useState<Preference | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+// pagination state
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -29,6 +30,7 @@ export default function Preferences() {
     visible: false,
   });
 
+  // auto-hide banner after 2 seconds
   useEffect(() => {
     if (banner.visible) {
       const t = setTimeout(() => {
@@ -37,7 +39,7 @@ export default function Preferences() {
       return () => clearTimeout(t);
     }
   }, [banner.visible]);
-
+//  function to load preferences from the API and handle loading state and errors, used on initial load and after create/update/delete actions
   const load = async () => {
     try {
       setLoading(true);
@@ -54,6 +56,7 @@ export default function Preferences() {
       setLoading(false);
     }
   };
+  // initial load of preferences on component mount, with a mounted flag to prevent state updates if the component unmounts before the API call completes
 useEffect(() => {
   let mounted = true;
 
@@ -76,14 +79,14 @@ useEffect(() => {
       if (mounted) setLoading(false);
     }
   };
-
+// call the fetchData function to load preferences when the component mounts
   fetchData();
 
   return () => {
     mounted = false;
   };
 }, []);
-
+// function to handle creating a new preference, with validation and API call, and show appropriate banners for success or error cases, and reload the preferences list on success
   const handleCreate = async () => {
     if (!newName.trim()) {
       setBanner({
@@ -118,12 +121,12 @@ useEffect(() => {
       });
     }
   };
-
+// function to start editing a preference by setting the selected preference and opening the modal
   const startEdit = (p: Preference) => {
     setSelectedPreference(p);
     setIsModalOpen(true);
   };
-
+//  function to handle saving changes from the edit modal, with an API call to update the preference, and show appropriate banners for success or error cases, and reload the preferences list on success
   const handleModalSave = async (
     id: string,
     data: { name: string; description: string }
@@ -147,7 +150,7 @@ useEffect(() => {
       });
     }
   };
-
+// function to handle deleting a preference, with a check for whether the preference is in use (based on the usedCount), and show appropriate banners for success or error cases, and reload the preferences list on success
   const handleDelete = async (id: string, usedCount: number) => {
     if (usedCount > 0) {
       setBanner({
@@ -176,7 +179,7 @@ useEffect(() => {
       });
     }
   };
-
+// calculate total pages for pagination and get the preferences to display on the current page
   const totalPages = Math.ceil(preferences.length / ITEMS_PER_PAGE);
 
   const paginated = preferences.slice(
@@ -186,6 +189,7 @@ useEffect(() => {
 
   return (
     <>
+    {/* BANNER */}
       <Banner
         message={banner.message}
         type={banner.type}

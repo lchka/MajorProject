@@ -1,5 +1,5 @@
 import API from "./api";
-
+// service functions for managing preferences, including types and API calls for CRUD operations
 export type Preference = {
   id: string;
   name: string;

@@ -6,14 +6,14 @@ import { motion } from "framer-motion";
 import AnimatedInput from "../components/AnimatedInput";
 import lumiereLogo from "../assets/main.png";
 import Banner from "../components/general/Banner";
-
+// login page component with a form for email and password, and a banner for success/error messages
 export default function Login() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
+// state for the banner message, type and visibility
   const [banner, setBanner] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -34,6 +34,7 @@ export default function Login() {
     }
   }, [banner.visible]);
 
+  // handle login form submission, with validation and API call, and show appropriate banners for success or error cases
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -66,8 +67,7 @@ export default function Login() {
       }
 
       localStorage.setItem("token", token);
-
-      // ✅ SUCCESS BANNER
+// show success banner on successful login, and navigate to the dashboard after a short delay
       setBanner({
         message: "Login successful ✨",
         type: "success",
@@ -100,7 +100,7 @@ export default function Login() {
 
   return (
     <>
-      {/* 🔔 BANNER */}
+    {/* BANNER */}
       <Banner
         message={banner.message}
         type={banner.type}
@@ -180,7 +180,7 @@ export default function Login() {
               </div>
 
             </div>
-
+{/* mobile logo */}
             <motion.button
               whileTap={{ scale: 0.96 }}
               disabled={loading}

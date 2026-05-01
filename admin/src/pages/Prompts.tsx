@@ -11,19 +11,20 @@ import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
 import UsageBadge from "../components/general/UsageBadge";
 import SinglePromptModal from "../assets/SinglePrompt";
+// main component for managing prompts, with state for prompts list, loading, new prompt form, selected prompt for editing, pagination, and banner messages
 export default function Prompts() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [newText, setNewText] = useState("");
   const [newCategory, setNewCategory] = useState<Category>("Shampoo");
-
+// state for the currently selected prompt for editing, and whether the edit modal is open
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
+// state for the banner message, type and visibility
   const [banner, setBanner] = useState({
     message: "",
     type: "info" as "success" | "error" | "info",
@@ -58,7 +59,7 @@ export default function Prompts() {
     }
   };
 
-  // ✅ SAFE LOAD (no React error)
+// initial load of prompts on component mount, with a mounted flag to prevent state updates if the component unmounts before the API call completes
   useEffect(() => {
     let mounted = true;
 
@@ -88,7 +89,7 @@ export default function Prompts() {
       mounted = false;
     };
   }, []);
-
+// function to handle creating a new prompt, with validation and API call, and show appropriate banners for success or error cases, and reload the prompts list on success
   const handleCreate = async () => {
     if (!newText.trim()) {
       setBanner({
@@ -123,7 +124,7 @@ export default function Prompts() {
       });
     }
   };
-
+// function to start editing a prompt by setting the selected prompt and opening the modal
   const startEdit = (p: Prompt) => {
     setSelectedPrompt(p);
     setIsModalOpen(true);
@@ -152,7 +153,7 @@ export default function Prompts() {
       });
     }
   };
-
+// function to handle deleting a prompt, with a check for whether the prompt is in use (based on the usedCount), and show appropriate banners for success or error cases, and reload the prompts list on success
   const handleDelete = async (id: string, usedCount?: number) => {
     if (usedCount && usedCount > 0) {
       setBanner({
@@ -182,7 +183,7 @@ export default function Prompts() {
     }
   };
 
-  // ✅ FIXED pagination (no errors)
+  // pagination calculations
   const totalPages = Math.max(1, Math.ceil(prompts.length / ITEMS_PER_PAGE));
 
   const paginatedPrompts = prompts.slice(
@@ -192,6 +193,7 @@ export default function Prompts() {
 
   return (
     <>
+    {/* banner */}
       <Banner
         message={banner.message}
         type={banner.type}

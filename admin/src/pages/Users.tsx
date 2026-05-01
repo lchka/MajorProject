@@ -8,12 +8,13 @@ import {
 import type { User } from "../services/userService";
 import BackButton from "../components/general/BackButtonAdmin";
 import Banner from "../components/general/Banner";
+// page component for managing users, with tabs for active and removed users, and actions to disable, restore or permanently delete users, with appropriate banners for success or error cases
 export default function Users() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [tab, setTab] = useState<"active" | "removed">("active");
-
+//  function to load users from the API, with loading state and error handling
   const loadUsers = async () => {
     try {
       setLoading(true);
@@ -25,7 +26,7 @@ export default function Users() {
       setLoading(false);
     }
   };
-
+// initial load of users on component mount
   useEffect(() => {
     const run = async () => {
       await loadUsers();
@@ -34,7 +35,7 @@ export default function Users() {
     void run();
   }, []);
 
-
+// function to handle soft-deleting a user, with loading state and error handling, and show appropriate banners for success or error cases, and reload the users list on success
 const handleSoftDelete = async (id: string) => {
   try {
     setActionLoading(id);
@@ -48,7 +49,7 @@ const handleSoftDelete = async (id: string) => {
     setActionLoading(null);
   }
 };
-
+// function to handle permanently deleting a user, with loading state and error handling, and show appropriate banners for success or error cases, and reload the users list on success
 const handleForceDelete = async (id: string) => {
   try {
     setActionLoading(id);
@@ -62,7 +63,7 @@ const handleForceDelete = async (id: string) => {
     setActionLoading(null);
   }
 };
-
+// function to handle restoring a user, with loading state and error handling, and show appropriate banners for success or error cases, and reload the users list on success
 const handleRestore = async (id: string) => {
   try {
     setActionLoading(id);
@@ -76,10 +77,11 @@ const handleRestore = async (id: string) => {
     setActionLoading(null);
   }
 };
+// filter users based on the selected tab (active or removed)
   const activeUsers = users.filter((u) => !u.deletedAt);
   const removedUsers = users.filter((u) => u.deletedAt);
   const displayedUsers = tab === "active" ? activeUsers : removedUsers;
-// Inside your Users component
+//Users component
 const [banner, setBanner] = useState<{
   message: string;
   type: "success" | "error" | "info";

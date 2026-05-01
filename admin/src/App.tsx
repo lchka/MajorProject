@@ -8,6 +8,7 @@ import Preferences from "./pages/Preferences";
 import Prompts from "./pages/Prompts";
 export default function App() {
   return (
+    // Set up routing for the application, with routes for login, dashboard, users, allergens, conditions, preferences, and prompts
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
