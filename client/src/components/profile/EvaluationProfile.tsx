@@ -15,7 +15,7 @@ import {
 	Pressable,
 	Text,
 } from "@gluestack-ui/themed";
-
+// Component for managing the selection of profiles for evaluation in a modal interface. The component allows users to select between 1 and 3 profiles from a provided list, with an optional default profile pre-selected. It provides visual feedback on the selected profiles and includes buttons for submitting the selection or canceling the action. The component is designed to be flexible and can be used in various contexts where profile selection is needed for evaluation purposes.
 export type EvaluationProfileItem = {
 	id: string;
 	name: string;

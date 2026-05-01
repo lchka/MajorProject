@@ -6,7 +6,7 @@ export type ConditionIngredientData = {
     warning: IngredientInfo[];
   };
 };
-
+// This data structure maps each condition to a list of soothing ingredients that are beneficial for that condition, along with explanations of their benefits, and a list of warning ingredients that should be avoided, along with explanations of the potential risks or negative effects associated with those ingredients. This information can be used to provide users with guidance on which ingredients to look for in products and which to avoid based on their specific conditions.
 export const conditionIngredientData: ConditionIngredientData = {
   Psoriasis: {
     soothing: [

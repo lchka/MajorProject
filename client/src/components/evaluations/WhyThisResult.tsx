@@ -2,7 +2,7 @@ import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import { Box, Text } from "@gluestack-ui/themed";
-
+//	Component for displaying reasons behind a product evaluation result in a structured and visually appealing format. The component accepts an array of reason strings and an optional index for animation delay. It formats each reason by trimming whitespace, capitalizing the first letter, and ensuring it ends with proper punctuation. The reasons are displayed in a card format with a header and numbered entries, each styled with a background and border to differentiate them. The component uses Moti for smooth fade-in and slide-up animations when rendered, providing users with clear insights into why a particular evaluation result was given.
 type WhyThisResultProps = {
 	reasons: string[];
 	index?: number;

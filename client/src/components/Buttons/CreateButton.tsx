@@ -2,7 +2,7 @@ import React from "react";
 import { Button, ButtonText } from "@gluestack-ui/themed";
 import { MotiView } from "moti";
 import { Easing } from "react-native-reanimated";
-
+// Component for a customizable "Create" button that can be used in various parts of the app, such as account creation or form submission. The button supports different visual presets (solid or outline), can be disabled, and has an optional pulsing animation to draw attention. The component accepts props for handling press events, customizing the label, and controlling the animation behavior.
 type CreateButtonPreset = "solid" | "outline";
 
 type CreateButtonProps = {
@@ -18,7 +18,7 @@ type CreateButtonProps = {
 const PULSE_SCALE = 1.025;
 const PULSE_OPACITY = 0.96;
 const PULSE_DURATION_MS = 1400;
-
+// Define preset styles for the CreateButton component, specifying background color, border color, text color, and optional border width and variant for each preset type (solid and outline). These styles are used to ensure consistent visual appearance based on the selected preset.
 const PRESET_STYLES: Record<
 	CreateButtonPreset,
 	{ backgroundColor: string; borderColor: string; textColor: string; borderWidth?: number; variant?: "outline" }
@@ -36,7 +36,7 @@ const PRESET_STYLES: Record<
 		variant: "outline",
 	},
 };
-
+// The CreateButton component uses Moti for animations, allowing it to pulse when the isPulsing prop is true and the button is not disabled. The animation scales the button up slightly and reduces its opacity in a loop, creating a subtle attention-grabbing effect. The button's appearance is determined by the selected preset, and it can be disabled to prevent user interaction while visually indicating that it's inactive.
 export default function CreateButton({
 	onPress,
 	label = "Create my account",

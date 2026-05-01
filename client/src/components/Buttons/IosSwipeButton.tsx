@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 import { MotiView } from "moti";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Box, Pressable } from "@gluestack-ui/themed";
-
+// Component for an iOS-style swipe button, typically used in scenarios like confirming actions or revealing additional options. The button features a pulsing animation to draw attention and can be customized with props for handling press events, changing the icon color and size, and disabling the button when necessary. The component uses Moti for smooth animations and Gluestack UI's Pressable for handling user interactions.
 type IosSwipeButtonProps = {
 	onPress?: () => void;
 	iconColor?: string;

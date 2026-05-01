@@ -5,7 +5,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type BannerType = "success" | "error" | "info" | "warning";
-
+// Component for displaying a temporary banner notification at the top of the screen, with different styles based on the type of message (success, error, info, warning). The banner includes an icon, message text, and a close button, and it automatically dismisses after a specified duration. The component uses Moti for animations and respects safe area insets to avoid overlapping with device notches or status bars.
 type Props = {
   isOpen: boolean;
   message: string;
@@ -52,7 +52,7 @@ export default function Banner({
   const insets = useSafeAreaInsets();
 
   const config = TYPE_CONFIG[type];
-
+// Set up auto-dismissal of the banner when it becomes visible, using a timer that calls the onDismiss callback after the specified duration. The timer is cleared if the component unmounts or if the banner is dismissed manually to prevent memory leaks.
   React.useEffect(() => {
     if (isOpen && autoDismissMs > 0) {
       const timer = setTimeout(onDismiss, autoDismissMs);

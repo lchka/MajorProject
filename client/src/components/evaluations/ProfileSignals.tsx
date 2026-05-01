@@ -5,7 +5,7 @@ import { Box, Text } from "@gluestack-ui/themed";
 import AllPreferences from "../preferences/AllPreferences";
 import AllConditions from "../conditions/AllConditions";
 import AllAllergens from "../allergens/AllAllergens";
-
+// Component for displaying matched profile signals in a product evaluation. The component accepts arrays of matched allergens, conditions, and preferences, as well as the user's profile allergens, conditions, and preferences for comparison. It uses Moti for smooth fade-in and slide-up animations when rendered, and it displays the matched signals in a styled card format with a header and individual sections for allergens, conditions, and preferences. Each section shows the matched items in a chip format, or a message indicating no matches or that no profile signals are set up if applicable.
 type ProfileSignalsProps = {
   matchedAllergens: string[];
   matchedConditions: string[];

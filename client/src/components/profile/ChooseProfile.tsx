@@ -25,7 +25,7 @@ import {
 import EditButton from "../Buttons/EditButton";
 import ProfileWarning from "../banners/ProfileWarning";
 import { ProfileEditBadge } from "./ProfileEditBadge";
-
+// Component for allowing users to choose between different profiles in a modal overlay. The component accepts props for controlling the open state of the modal, a list of profile items with their IDs, names, and optional avatar sources, the currently active profile ID, and callback functions for selecting, adding, and editing profiles. The modal displays the active profile prominently at the top with its avatar and name, while secondary profiles are shown below. Users can tap on a profile to select it or enter edit mode to manage their profiles. The component also includes swipe-to-close functionality and visual feedback for reaching the maximum number of profiles allowed.
 type SwitchProfileItem = {
 	id: string;
 	name: string;

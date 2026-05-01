@@ -7,7 +7,7 @@ import {
   type EvaluateProductInput,
   type PersistEvaluationInput,
 } from "../types/evaluationContext.type";
-
+// The evaluationContextService module provides functions for managing evaluation contexts, which are used to evaluate products based on user profiles and preferences. It includes methods for fetching the user's evaluation contexts, evaluating a product, sending evaluation data to the server, retrieving a specific evaluation context by ID, deleting an evaluation context, and re-evaluating an existing context. Each function interacts with the backend API and uses Zod schemas to validate and parse the data returned from the server, ensuring that the application works with well-defined data structures.
 const EvaluationContextListSchema = EvaluationContextSchema.array();
 
 export const evaluationContextService = {

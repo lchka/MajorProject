@@ -13,7 +13,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import SelectionChip from "../general/SelectionChip";
 import OverlayPAllergens from "./OverlayPAllergens";
-
+// Types and helper functions for the ProfileAllergens component, which allows users to manage their allergen preferences by adding or removing allergens from a predefined list. The component includes a search input for filtering available allergens, displays selected allergens in a scrollable view, and provides an option to view all allergens in an overlay modal. The allergen options are structured as objects with id and name properties, and the component handles state management for the search query, selected allergens, and modal visibility.
 type AllergenOption = {
 	id: string;
 	name: string;

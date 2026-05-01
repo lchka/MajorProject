@@ -7,7 +7,7 @@ type SocialAuthProps = {
   onApplePress?: () => void;
   onGithubPress?: () => void;
 };
-
+// Component for social authentication options, including buttons for Google, Apple, and GitHub sign-in. The component displays a divider with text and renders Pressable components for each social provider, which trigger the corresponding callback functions when pressed. The buttons are styled with borders and icons to indicate the social platform.
 export default function SocialAuth({
   onGooglePress,
   onApplePress,

@@ -27,7 +27,7 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { AuthStackParamList } from "../../types/navigation";
 import { styles } from "../../style/LandingPageStyle";
 import { useScrollPastThreshold } from "../../hooks/useScrollPastThreshold";
-
+// The ShowEvaluation component is responsible for displaying the results of a product evaluation, including the product image, evaluation summary, confidence score, ingredient risk map, and other relevant information. It also allows users to switch between different profiles used for the evaluation and provides options to retake the evaluation or delete it. The component manages various states related to the evaluation results and user interactions, ensuring a comprehensive and user-friendly presentation of the evaluation data.
 type IngredientRow = {
   label: string;
   status: EvaluationStatus;
@@ -98,7 +98,7 @@ const normalizeAndSort = (values?: string[]): string[] => {
     .filter(Boolean)
     .sort((left, right) => left.localeCompare(right));
 };
-
+// Function to compare two lists of entities (e.g., allergens, conditions, preferences) to determine if they represent the same set of entities, regardless of order or formatting. It normalizes the entity names by trimming whitespace, converting to lowercase, and collapsing multiple spaces before comparing the sorted lists. This is used to detect if there has been a mismatch between the profile data used for the evaluation and the current profile data.
 const sameEntityList = (left?: string[], right?: string[]): boolean => {
   const normalizedLeft = normalizeAndSort(left);
   const normalizedRight = normalizeAndSort(right);

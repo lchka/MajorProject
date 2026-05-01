@@ -7,7 +7,7 @@ import {
   VStack,
   HStack,
 } from "@gluestack-ui/themed";
-
+// Dropdown component for sorting past analysis items, with animated appearance and options for sorting by newest, oldest, brand, skin concern, or missing history. The component uses a MotiView for animation and a Box to contain the options, which are rendered as Pressable components with conditional styling based on the selected value.
 export const PAST_ANALYSIS_SORT_OPTIONS = [
   "Newest First (DEFAULT)",
   "Oldest First",
@@ -49,7 +49,7 @@ const optionMeta: Record<
     hint: "Surface items missing detail",
   },
 };
-
+// Dropdown component for sorting past analysis items, with animated appearance and options for sorting by newest, oldest, brand, skin concern, or missing history. The component uses a MotiView for animation and a Box to contain the options, which are rendered as Pressable components with conditional styling based on the selected value.
 export const SortDropdown: React.FC<Props> = ({
   selectedValue,
   onSelect,

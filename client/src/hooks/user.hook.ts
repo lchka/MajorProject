@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import userService, { User } from "../services/userService";
-
+import { userService, User } from "../services/userService";
+// The useUser hook provides a convenient way to manage user-related data and operations within React components. It encapsulates the logic for fetching, updating, and deleting user data, as well as handling loading and error states. By using this hook, components can easily access and manipulate user data without having to directly interact with the underlying service layer, promoting cleaner and more maintainable code.
 interface UseUserReturn {
   users: User[];
   user: User | null;

@@ -14,12 +14,12 @@ import BackButton from "../components/Buttons/BackButton";
 import { profileService, Profile } from "../services/profileService";
 import { preferenceService } from "../services/preferenceService";
 import { AuthStackParamList } from "../types/navigation";
-
+// PreferenceScreen component allows users to manage their preferences associated with their profile. It fetches the user's profiles and available preferences from the API, displays the current preferences for the active profile, and provides an interface for adding or removing preferences. The component handles loading and saving states, and ensures that changes are persisted to the backend when the user saves their selections.
 type PreferenceOption = {
 	id: string;
 	name: string;
 };
-
+// Mapping of normalized preference names to their corresponding image sources, which are used to display icons for each preference in the UI. The normalization function ensures that different variations of preference names can be correctly matched to their images, providing a consistent visual representation for each preference option.
 const preferenceImageByKey: Record<string, number> = {
 	"alcohol free": require("../../assets/preferences/alcohol-free.png"),
 	"non comedogenic": require("../../assets/preferences/comedogenic.png"),
@@ -35,11 +35,11 @@ const preferenceImageByKey: Record<string, number> = {
 	"sulphate free": require("../../assets/preferences/sulfate-free.png"),
 	vegan: require("../../assets/preferences/vegan (1).png"),
 };
-
+// Utility function to ensure that preference IDs are unique when toggling selections. It takes an array of IDs and returns a new array with duplicates removed, which helps maintain the integrity of the selected preferences list when users add or remove preferences from their profile.
 function normalizeName(value: string) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
-
+// Utility function to get the image source for a given preference name. It normalizes the preference name and looks it up in the mapping of preference images. If no specific image is found for the normalized name, it returns a default image source, ensuring that every preference has an associated icon in the UI.
 function getPreferenceImageSource(name: string) {
 	const key = normalizeName(name);
 	return preferenceImageByKey[key] ?? require("../../assets/preferences/eco.png");

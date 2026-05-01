@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { HStack, Text, VStack } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
-
+// Component for displaying validation feedback with animated transitions based on the validity of an input value. The component accepts props for the input value, an array of validation rules, colors for valid and invalid states, and options for when to show the feedback and what message to display when valid. It uses the useEffect hook to manage the timing of fade-in animations for valid feedback, and it conditionally renders feedback messages based on the validation results. The component provides a visually engaging way to inform users about the validity of their input in real-time.
 export type ValidationRule = {
 	id: string;
 	label: string;

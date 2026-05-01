@@ -47,6 +47,7 @@ const [banner, setBanner] = React.useState<{
   message: "",
   type: "success",
 });
+// State to hold the count of user profiles, which is fetched when the component mounts. This is displayed in the user info card and helps users understand how many profiles they have associated with their account.
 const [profileCount, setProfileCount] = React.useState<number | null>(null);
 React.useEffect(() => {
   const loadUser = async () => {

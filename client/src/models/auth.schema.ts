@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const passwordRegex = /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
-
+// The registerSchema defines the validation rules for user registration, ensuring that the first name, last name, email, password, and confirm password fields meet specific criteria. The loginSchema defines the validation rules for user login, ensuring that the email and password fields are valid. Both schemas use Zod for schema validation and provide clear error messages for invalid inputs.
 export const registerSchema = z
 	.object({
 		first_name: z

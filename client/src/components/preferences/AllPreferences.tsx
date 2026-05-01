@@ -5,7 +5,7 @@ import CurrentProfile from "../general/CurrentProfileName";
 import EditButton from "../Buttons/EditButton";
 import RemoveIconTag from "../general/RemoveIconTag";
 import { styles } from "../../style/LandingPageStyle";
-
+// Component for displaying a user's preferences in a visual format with icons and labels, as well as an edit mode that allows users to manage their preferences. The component accepts props for the user's profile preference names, a list of preferences with IDs and names, the user's first name, callback functions for adding and removing preferences, and various states related to editing and removing preferences. It uses a master list of default preferences to resolve the display items based on the user's profile data and provides a user-friendly interface for viewing and managing preferences. The component also includes an optional "chips" variant that displays preferences in a compact chip format instead of the visual icon layout.
 type PreferenceItem = {
 	id: string;
 	label: string;

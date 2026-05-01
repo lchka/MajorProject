@@ -18,7 +18,7 @@ import {
 	Text,
 } from "@gluestack-ui/themed";
 import SwipeHandleButton from "../Buttons/SwipeHandleButton";
-
+// Component for an overlay modal that allows users to view and manage their selected conditions, such as skin conditions or allergies. The modal displays a list of all available conditions, highlights the currently selected conditions, and provides an interface for adding or removing conditions. The component uses Moti for smooth animations when opening and closing the modal, and it includes a swipe handle and close button for user-friendly interactions. The onSave callback allows the parent component to handle the saving of selected conditions, which can involve asynchronous operations such as API calls.
 type ConditionOption = {
 	id: string;
 	name: string;

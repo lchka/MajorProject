@@ -3,7 +3,7 @@ import type { StyleProp, ViewStyle } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import { Box } from "@gluestack-ui/themed";
-
+// Component for a profile edit badge that can be displayed on user profile avatars to indicate that the profile is in edit mode. The badge features a rotating animation to draw attention and can be customized in size using predefined presets. The component accepts props for the size preset and additional styling, allowing it to be easily integrated into various parts of the app where profile editing functionality is needed.
 type ProfileEditBadgeProps = {
 	sizePreset: "large" | "small";
 	style?: StyleProp<ViewStyle>;

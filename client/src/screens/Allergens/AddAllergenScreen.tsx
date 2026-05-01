@@ -15,6 +15,7 @@ import { profileService, Profile } from "../../services/profileService";
 import { allergenService } from "../../services/allergenService";
 import { AuthStackParamList } from "../../types/navigation";
 
+// The AddAllergen component allows users to manage their allergens for a specific profile. It retrieves the user's profiles and available allergens, displays the currently selected allergens, and provides an interface for adding or removing allergens. The component handles loading and saving states, and ensures that changes are persisted when the user saves their selections. It also includes navigation controls to go back to the previous screen or close the modal.
 type AllergenOption = {
   id: string;
   name: string;
@@ -22,6 +23,7 @@ type AllergenOption = {
 
 const uniqueIds = (ids: string[]) => Array.from(new Set(ids));
 
+// The allergenImageByKey object maps normalized allergen names to their corresponding image sources. The getAllergenImageSource function takes an allergen name, normalizes it, and checks if it includes any of the predefined tokens in the allergenImageByKey. If a match is found, it returns the associated image source; otherwise, it returns a default image source. This allows the component to display appropriate images for each allergen based on its name.
 const allergenImageByKey: Record<string, number> = {
   balsam: require("../../../assets/allergens/balsam.png"),
   cocamidopropylbetaine: require("../../../assets/allergens/Cocamidopropyl-Betaine.png"),
@@ -36,11 +38,11 @@ const allergenImageByKey: Record<string, number> = {
   mcimi: require("../../../assets/allergens/preservative.png"),
   propyleneglycol: require("../../../assets/allergens/Propylene Glycol.png"),
 };
-
+// The normalizeName function takes an allergen name as input and normalizes it by converting it to lowercase, removing non-alphanumeric characters, and trimming whitespace. This normalized key is then used to look up the corresponding image source in the allergenImageByKey object, allowing for flexible matching of allergen names to their images regardless of formatting differences.
 function normalizeName(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "").trim();
 }
-
+// The getAllergenImageSource function retrieves the appropriate image source for a given allergen name by normalizing the name and checking if it includes any of the predefined tokens in the allergenImageByKey. If a match is found, it returns the corresponding image source; otherwise, it returns a default image source. This allows the component to display relevant images for each allergen based on its name, enhancing the user experience when managing allergens.
 function getAllergenImageSource(name: string) {
   const key = normalizeName(name);
 
@@ -52,7 +54,7 @@ function getAllergenImageSource(name: string) {
 
   return require("../../../assets/allergens/fragrance.png");
 }
-
+// The AddAllergen component is the main export of this file, responsible for rendering the UI and managing the state related to allergen selection for a user's profile. It handles data fetching, user interactions for selecting allergens, and saving changes. The component also includes navigation controls and displays relevant information about the current profile and selected allergens.
 export default function AddAllergen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "AllergenScreen">>();
@@ -74,7 +76,7 @@ export default function AddAllergen() {
     () => availableAllergens.filter((item) => draftSelectedIds.includes(item.id)),
     [availableAllergens, draftSelectedIds],
   );
-
+// The useEffect hook is responsible for fetching the user's profiles and available allergens when the component mounts. It uses a flag (isMounted) to prevent state updates if the component unmounts before the asynchronous operations complete. The hook retrieves the profiles and allergens, sets the active profile based on the route parameter or defaults, and initializes the draft selected allergen IDs based on the active profile's current allergens. It also manages loading states to provide feedback to the user during data fetching.
   React.useEffect(() => {
     let isMounted = true;
 
@@ -119,7 +121,7 @@ export default function AddAllergen() {
       isMounted = false;
     };
   }, [routeProfileId]);
-
+// The toggleAllergen function is responsible for adding or removing an allergen ID from the draftSelectedIds state. When a user selects or deselects an allergen, this function checks if the allergen ID is already in the list of selected IDs. If it is, the function removes it; if it isn't, the function adds it to the list while ensuring that all IDs remain unique. This allows users to easily manage their allergen selections before saving their changes.
   const toggleAllergen = (allergenId: string) => {
     setDraftSelectedIds((previous) =>
       previous.includes(allergenId)

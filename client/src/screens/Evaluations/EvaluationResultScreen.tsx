@@ -26,7 +26,7 @@ type EvaluationResultRoute = RouteProp<
   AuthStackParamList,
   "EvaluationResultScreen"
 >;
-
+// Type definition for an evaluation variant, which consists of an evaluation context and the associated user profile. This type is used to manage different evaluation results that may be related to the same product but evaluated under different user profiles, allowing for easy switching between them in the UI.
 type EvaluationVariant = {
   context: EvaluationContext;
   profile: Profile;

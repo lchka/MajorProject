@@ -13,7 +13,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import SelectionChip from "../general/SelectionChip";
 import OverlayPCondition from "./OverlayPCondition";
-
+// Component for managing and displaying a user's profile conditions, such as skin conditions or allergies. The component provides a search interface for users to find and add conditions from a predefined list, displays the currently selected conditions in a scrollable format, and includes an overlay modal for viewing all available conditions. The component uses React state to manage the search query, selected conditions, and the visibility of the overlay modal, and it leverages memoization to optimize the filtering and sorting of conditions based on user input and predefined preferences.
 type ConditionOption = {
 	id: string;
 	name: string;

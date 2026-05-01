@@ -37,7 +37,7 @@ type EvaluationVariant = {
 profile: Profile;
 context: EvaluationContext;
 };
-
+// The CameraScreen component provides a user interface for capturing product images, extracting product information, and running evaluations based on user profiles. It manages the camera permissions, captures photos, allows users to select images from the gallery, and handles the entire flow from image capture to displaying evaluation results. The component also includes error handling and loading states to ensure a smooth user experience throughout the process.
 export default function CameraScreen() {
 const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 const route = useRoute<RouteProp<AuthStackParamList, "CameraScreen">>();
@@ -291,7 +291,7 @@ quality: 1,
 if (picked.canceled || picked.assets.length === 0) {
 return;
 }
-
+// In case the user picks multiple images, we only take the first one. This is a safeguard; the UI should ideally prevent multiple selection if we only support one image.
 const imageUri = picked.assets[0].uri;
 setCapturedUri(imageUri);
 setShowImagePreview(true);
@@ -325,7 +325,7 @@ avatarSource: profile.profile_image ? { uri: profile.profile_image } : undefined
 isMain: profile.main_profile,
 }));
 }, [allProfiles]);
-
+// useEffect to determine when the camera framing is ready based on the camera's readiness and whether a photo has been captured. It sets a timeout to allow the framing animation to complete before enabling the framing UI, and it resets the framing readiness when a new photo is captured or when the camera becomes ready again.
 React.useEffect(() => {
 if (!isCameraReady || capturedUri) {
 setIsFramingReady(false);
@@ -364,7 +364,7 @@ avatarSource: avatarUri ? { uri: avatarUri } : undefined,
 isMain: profile.main_profile,
 };
 });
-
+//  The CreateEvaluations component is rendered when there is a captured image and an evaluation context available. It displays the evaluation results for the captured product, allowing the user to switch between different profiles if multiple evaluations were run. The component also provides options to view the profile details or retake the photo. The displayed profile and context are determined based on the active evaluation variant, and the component handles user interactions for selecting different profiles and navigating to the profile editing screen.
 return (
 <CreateEvaluations
 imageUri={resolvedProduct?.product_image ?? capturedUri}
@@ -450,6 +450,7 @@ return <LoadingScreen />;
 if (capturedUri && resolvedProduct) {
 return (
 <>
+{/* show product */}
 <ShowProduct
 product={resolvedProduct!}
 capturedUri={capturedUri!}

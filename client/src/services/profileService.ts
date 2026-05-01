@@ -5,7 +5,7 @@ export interface ProfileImageUploadFile {
   name?: string;
   type?: string;
 }
-
+// The profileService module provides functions for managing user profiles, including fetching profiles, creating and updating profiles, deleting profiles, and retrieving related data such as conditions, allergens, and preferences. It also includes a subscription mechanism to listen for profile changes and a banner system to display messages related to profile operations. Each function interacts with the backend API to perform the necessary operations and returns the relevant data or handles errors as needed.
 export interface Profile {
   id: string;
   userId: string;

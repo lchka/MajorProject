@@ -54,7 +54,7 @@ const AVATAR_OPTIONS: AvatarOption[] = [
 	{ id: "avatar-7", source: require("../../../assets/avatars/avatar (7).png") },
 	{ id: "avatar-8", source: require("../../../assets/avatars/avatar (8).png") },
 ];
-
+// CreateProfile component is responsible for guiding the user through the process of creating or completing a profile, which includes entering basic details, selecting skin conditions, allergens, cosmetic preferences, and optionally adding a profile image. The component manages multiple steps of the profile creation process, handles form validation, interacts with the profile hook for data fetching and submission, and provides a user-friendly interface with navigation and feedback.
 export default function CreateProfile() {
 	const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
 	const route = useRoute<RouteProp<AuthStackParamList, "ProfileScreen">>();

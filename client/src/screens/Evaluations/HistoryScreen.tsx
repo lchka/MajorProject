@@ -29,7 +29,7 @@ import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
 import type { LocalEvaluation } from "../../services";
 import { styles } from "../../style/LandingPageStyle";
-
+// Cached profiles to avoid refetching when navigating back to this screen. This is a simple optimization; in a more complex app, you might want to use a global state management solution or context for this.
 let cachedProfiles: Profile[] = [];
 
 export default function HistoryScreen() {

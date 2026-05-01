@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Text } from "@gluestack-ui/themed";
 import type { DangerousIngredient } from "../../types/evaluationContext.type";
-
+// Component for displaying a list of dangerous ingredients associated with a product evaluation. The component accepts an array of dangerous ingredient objects, each containing the ingredient name, a danger level (0-10), and an optional reason for the danger level. The component uses Moti for smooth fade-in and slide-up animations when rendered, and it displays the dangerous ingredients in a styled card format with a header and individual entries for each ingredient. Each entry includes the ingredient name, a color-coded risk label based on the danger level, a progress bar visualizing the danger level, and an optional reason text providing more context about the potential risks of the ingredient.
 type DangerousIngredientsProps = {
 	items?: DangerousIngredient[];
 	index?: number;

@@ -5,7 +5,7 @@ import Feather from "@expo/vector-icons/Feather";
 import { Box, HStack, Pressable, Text } from "@gluestack-ui/themed";
 import EditButton from "../Buttons/EditButton";
 import CurrentProfile from "../general/CurrentProfileName";
-
+//
 type ResolvedConditionItem = {
 	label: string;
 	runtimeId: string;
@@ -19,7 +19,7 @@ type AllConditionsProps = {
 	onPressCondition?: (conditionName: string) => void;
 	variant?: "visual" | "chips";
 };
-
+// Component for displaying a list of conditions associated with a user's profile, such as skin conditions or allergies. The component can render in two variants: a "visual" variant that displays condition cards with icons and colors for quick scanning, and a "chips" variant that shows conditions as small labeled chips. The component accepts props for the list of condition names or objects, the user's first name for personalization, and callbacks for editing conditions or pressing individual condition cards. The layout adapts to the number of conditions, switching to a horizontal scrollable format if there are more than two conditions to display.
 function normalizeConditionName(value: string) {
 	return value.toLowerCase().replace(/\s+/g, " ").trim();
 }

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const EvaluationStatusEnum = z.enum(["safe", "caution", "avoid"]);
 export type EvaluationStatus = z.infer<typeof EvaluationStatusEnum>;
-
+// The evaluationContext.type module defines TypeScript types and Zod schemas for managing evaluation contexts, which are used to evaluate products based on user profiles and preferences. It includes types for the evaluation result, dangerous ingredients, citation sources, and the overall evaluation context structure. Additionally, it defines input types for evaluating a product and persisting evaluation results. These types and schemas ensure that the application works with well-defined data structures when handling product evaluations and related information.
 export const DangerousIngredientSchema = z.object({
   ingredient: z.string(),
   danger_level: z.number(),

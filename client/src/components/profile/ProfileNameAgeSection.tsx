@@ -1,6 +1,6 @@
 import React from "react";
 import { Input, InputField, Text, VStack } from "@gluestack-ui/themed";
-
+// Component for managing the input of a user's first name, last name, and age in a profile setup or edit screen. The component provides labeled input fields for each piece of information, with optional fields for last name and age. It accepts props for the current values of the first name, last name, and age, as well as callback functions for handling changes to each field. The component also includes a disabled state to prevent user interaction when necessary, such as during loading states or when certain conditions are not met. The input fields are styled with rounded borders and appropriate keyboard types for text and numeric input.
 type ProfileNameAgeSectionProps = {
 	firstName: string;
 	lastName: string;

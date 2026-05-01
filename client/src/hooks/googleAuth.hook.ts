@@ -6,7 +6,7 @@ import { Platform } from "react-native";
 import { authService } from "../services";
 import { saveAuthToken } from "../utils/authStorage";
 import type { AuthResponse } from "../services";
-
+//NOT FUNCTIONAL DUE TO EAS AND IOS 16+ CHANGES TO EXPO AUTH SESSION. KEEPING THIS FILE FOR FUTURE REFERENCE AND POSSIBLE REIMPLEMENTATION WITH CUSTOM BROWSER FLOW.
 WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_AUTH_DEBUG_PREFIX = "[GoogleAuthDebug]";
 
@@ -64,7 +64,7 @@ export const useGoogleAuth = (
   }
 
   const [request, response, promptAsync] = Google.useAuthRequest(config);
-
+// The useEffect hook logs the initialization of the Google auth hook, including the redirect URI, request details, and whether the app is running in Expo Go. This information can be helpful for debugging issues related to the authentication flow, such as misconfigured client IDs or redirect URIs. By monitoring these values, developers can ensure that the authentication setup is correct and identify potential problems early in the development process.
   useEffect(() => {
     console.log(
       `${GOOGLE_AUTH_DEBUG_PREFIX} hook initialized`,
@@ -101,7 +101,7 @@ export const useGoogleAuth = (
     },
     [options],
   );
-
+// The useEffect hook listens for changes in the authentication response from the Google auth request. When a response is received, it checks for errors and handles successful authentication by extracting the ID token and passing it to the backend login handler. If there are any issues during this process, such as missing tokens or errors from the authentication flow, it sets appropriate error messages and calls the onLoginError callback if provided. This ensures that the app can respond to both successful and failed authentication attempts in a user-friendly manner.
   useEffect(() => {
     if (!response) return;
 
@@ -129,7 +129,7 @@ export const useGoogleAuth = (
       void handleBackendLogin(idToken);
     }
   }, [handleBackendLogin, options, response]);
-
+// The promptGoogleAuth function is responsible for initiating the Google authentication flow when called. It first checks if the authentication request object is available, which indicates that the hook has been properly initialized. If the request object is missing, it sets an error message and calls the onLoginError callback if provided. If the request object is present, it calls the promptAsync function to start the authentication process. This function can be used in response to user actions, such as tapping a "Sign in with Google" button, to trigger the authentication flow.
   const promptGoogleAuth = useCallback(async () => {
     setError(null);
 

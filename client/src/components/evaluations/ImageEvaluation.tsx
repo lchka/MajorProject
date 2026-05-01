@@ -2,7 +2,7 @@ import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import { Box, Image } from "@gluestack-ui/themed";
-
+// Component for displaying an image associated with a product evaluation, such as a photo of the product packaging or a scanned image. The component accepts an optional imageUri prop that specifies the URI of the image to display. If the imageUri is provided, it renders the image in a styled format; if not, it shows a placeholder icon indicating that no image is available. The component uses Moti for smooth fade-in and scale animations when rendered, and it centers the content within a box with defined dimensions and styling.
 type ImageEvaluationProps = {
 	imageUri?: string | null;
 };

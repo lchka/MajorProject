@@ -19,7 +19,7 @@ type AllergenOption = {
   id: string;
   name: string;
 };
-
+// AllergenScreen component allows users to manage their allergen information associated with their profile. It fetches the user's profiles and available allergens from the API, displays the current allergens for the active profile, and provides an interface for adding or removing allergens. The component handles loading and saving states, and ensures that changes are persisted to the backend when the user saves their selections.
 const allergenImageByKey: Record<string, number> = {
   balsam: require("../../assets/allergens/balsam.png"),
   cocamidopropylbetaine: require("../../assets/allergens/Cocamidopropyl-Betaine.png"),
@@ -34,7 +34,7 @@ const allergenImageByKey: Record<string, number> = {
   mcimi: require("../../assets/allergens/preservative.png"),
   propyleneglycol: require("../../assets/allergens/Propylene Glycol.png"),
 };
-
+// Utility function to ensure that allergen IDs are unique when toggling selections. It takes an array of IDs and returns a new array with duplicates removed, which helps maintain the integrity of the selected allergens list when users add or remove allergens from their profile.
 const uniqueIds = (ids: string[]) => Array.from(new Set(ids));
 
 function normalizeName(value: string) {
@@ -52,7 +52,7 @@ function getAllergenImageSource(name: string) {
 
   return require("../../assets/allergens/fragrance.png");
 }
-
+// AllergenScreen component allows users to manage their allergen information associated with their profile. It fetches the user's profiles and available allergens from the API, displays the current allergens for the active profile, and provides an interface for adding or removing allergens. The component handles loading and saving states, and ensures that changes are persisted to the backend when the user saves their selections.
 export default function AllergenScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "AllergenScreen">>();
@@ -127,7 +127,7 @@ export default function AllergenScreen() {
         : uniqueIds([...previous, allergenId]),
     );
   };
-
+// Handler for saving the selected allergens to the backend. It checks if there is an active profile, and if so, it calls the API to save the selected allergen IDs for that profile. During the save operation, it manages the loading state to provide feedback to the user, and after saving, it navigates back to the previous screen. If there is no active profile, it simply navigates back without attempting to save.
   const handleSave = async () => {
     if (!activeProfileId) {
       navigation.goBack();

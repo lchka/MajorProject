@@ -1,7 +1,7 @@
 import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, HStack, Input, InputField, Pressable } from "@gluestack-ui/themed";
-
+// Component for a search input field specifically designed for searching through product evaluations. The component includes a search icon, an input field for entering the search query, and a clear button that appears when there is text in the input. The component accepts props for the current value of the search input, a callback function to handle changes to the input text, and an optional placeholder text. The styling includes a rounded border, background color, and shadow to make it visually distinct and user-friendly within the app's interface.
 type SearchEvaluationsProps = {
 	value: string;
 	onChangeText: (value: string) => void;

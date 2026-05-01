@@ -2,7 +2,7 @@ import React from "react";
 import LottieView from "lottie-react-native";
 import { AnimatePresence, MotiView, MotiText } from "moti";
 import { Box } from "@gluestack-ui/themed";
-
+//	Component for a loading screen that can display different stages of a loading process with corresponding animations and messages. The component accepts props for a custom message, whether to use staged loading with multiple steps, and a compact mode for smaller displays. It manages the current stage of the loading process using state and uses the useEffect hook to transition between stages based on specified durations. The component renders an animation, a message, and a progress bar that visually indicates the completion percentage of the loading process, providing users with feedback on the status of their request or action.
 type LoadingStage = {
 	key: "ai" | "files" | "hourglass";
 	message: string;

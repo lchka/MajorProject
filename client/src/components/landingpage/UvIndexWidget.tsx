@@ -2,7 +2,7 @@ import React from "react";
 import { Box, Text, HStack, VStack, Pressable } from "@gluestack-ui/themed";
 import { LinearGradient } from "expo-linear-gradient";
 import { CurrentUvSnapshot } from "../../services/weatherService";
-
+// Component for displaying the UV index and related recommendations based on current weather conditions. The component accepts props for the UV index value, an optional snapshot of current UV conditions, a loading state for UV data, and customizable title, subtitle, and recommendation text. It uses a color-coded system to indicate the severity of the UV index and provides a visual progress bar to represent the UV level. The component also includes a recommendation section that offers guidance on sun protection measures based on the UV index and current weather conditions, making it a useful tool for users to understand their sun exposure risk and take appropriate precautions.
 type Props = {
   uvIndex: number;
   uvSnapshot?: CurrentUvSnapshot | null;

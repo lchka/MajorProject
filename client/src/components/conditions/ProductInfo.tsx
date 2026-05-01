@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Text } from "@gluestack-ui/themed";
 import type { EvaluationStatus } from "../../types/evaluationContext.type";
-
+// Component for displaying product information, including the product name, a summary of the evaluation results, and an overall status indicator. The component accepts props for the product name, a summary text, the evaluation status (which can be "safe", "caution", or "avoid"), and a flag indicating whether the evaluation is still processing. Based on the evaluation status, the component displays a colored card with corresponding text to indicate the overall safety of the product, and it adjusts the styling of the summary text if the evaluation is still in progress.
 type ProductInfoProps = {
 	productName: string;
 	summary: string;

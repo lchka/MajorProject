@@ -4,7 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Pressable, Text } from "@gluestack-ui/themed";
 import type { EvaluationResultJson } from "../../types/evaluationContext.type";
-
+// Component for displaying a list of citation sources associated with a product evaluation. The component accepts an optional resultJson prop that contains an array of citation sources, each with a title, lead author, publication year, and URL. The component uses Moti for smooth fade-in and slide-up animations when rendered, and it displays the citation sources in a styled card format with a header and individual entries for each source. Each entry includes the title, lead author with publication year, and a clickable URL that opens the link in the device's default browser. If there are no citation sources available, it shows a message indicating that no citation data is available.
 type CitationsProps = {
   resultJson?: EvaluationResultJson | null;
   index?: number;

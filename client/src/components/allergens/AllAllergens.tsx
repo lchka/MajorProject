@@ -5,7 +5,7 @@ import { AddIcon, Box, Icon, Image, Pressable, Text } from "@gluestack-ui/themed
 import CurrentProfile from "../general/CurrentProfileName";
 import EditButton from "../Buttons/EditButton";
 import RemoveIconTag from "../general/RemoveIconTag";
-
+// Types and helper functions for the AllAllergens component, which displays a user's allergens in either a visual card format or as chips. The component supports editing mode for removing allergens and includes an option to add more allergens. The allergen visuals are determined by matching allergen names to predefined tokens, with a fallback for unknown allergens.
 type AllergenItem = {
 	id?: string;
 	name: string;

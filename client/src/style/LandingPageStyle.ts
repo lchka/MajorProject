@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-
+// The LandingPageStyle module defines a collection of styles for the landing page of the application. It includes styles for various components such as the screen layout, header, profile switching card, section headers, analysis cards, bottom navigation bar, preference badges, and condition cards. These styles are created using React Native's StyleSheet API and are designed to provide a consistent and visually appealing user interface across the landing page.
 export const styles = StyleSheet.create({
 	// Page scaffolding
 	screen: {

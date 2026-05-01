@@ -18,7 +18,7 @@ import {
 	Text,
 } from "@gluestack-ui/themed";
 import SwipeHandleButton from "../Buttons/SwipeHandleButton";
-
+// Component for managing a user's allergens, allowing them to view their current allergens and add or remove allergens from a predefined list. The component uses a modal to display the allergen options, with animations for opening and closing, and handles saving the selected allergens back to the parent component. The allergen options are displayed in a scrollable view, and the user can toggle selection by pressing on each allergen item.
 type AllergenOption = {
 	id: string;
 	name: string;

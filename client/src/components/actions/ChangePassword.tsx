@@ -23,7 +23,7 @@ import {
 } from "@gluestack-ui/themed";
 import { MotiView } from "moti";
 import ValidationAnimation from "../general/ValidationAnimation";
-
+// Component for changing the user's password, with form validation and loading states. It uses a modal to display the form, and includes input fields for the current password, new password, and confirm password, along with validation rules for each field. The component also handles form submission and displays success or error alerts based on the outcome.
 type ChangePasswordProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -33,7 +33,7 @@ type ChangePasswordProps = {
     confirmPassword: string
   ) => Promise<void>;
 };
-
+// Validation rules for the new password field, including length, uppercase, lowercase, number, and symbol requirements
 const PASSWORD_RULES = [
   {
     id: "length",
@@ -61,7 +61,7 @@ const PASSWORD_RULES = [
     test: (value: string) => /[^A-Za-z\d]/.test(value),
   },
 ];
-
+// Validation rules for the confirm password field, which checks that the field is not empty and matches the new password
 export default function ChangePassword({
   isOpen,
   onClose,

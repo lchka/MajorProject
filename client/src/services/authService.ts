@@ -1,5 +1,5 @@
 import api from '../config/api';
-
+// The authService module provides functions for handling user authentication and profile management. It includes methods for registering a new user, logging in, logging in with Google, logging out, fetching the current user's information, and updating the user's email and password. Each function interacts with the backend API to perform the necessary operations and returns the relevant data or handles errors as needed.
 export interface RegisterInput {
   first_name: string;
   last_name?: string;

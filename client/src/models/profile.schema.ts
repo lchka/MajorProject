@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { OptionalImageFileSchema } from "./general.schema";
-import { relationIdsSchema } from "./general.schema";
+import { OptionalImageFileSchema,relationIdsSchema } from "./general.schema";
+// The profileBaseSchema defines the base structure for profile data, including fields for first name, last name, age, profile image, and related condition, allergen, and preference IDs. The createProfileSchema is identical to the base schema and is used for validating new profile creation. The updateProfileSchema extends the base schema with optional fields for isComplete and main_profile, allowing for partial updates to existing profiles. Both schemas utilize Zod for validation and provide clear error messages for invalid inputs.
 const nameSchema = z
 	.string()
 	.trim()

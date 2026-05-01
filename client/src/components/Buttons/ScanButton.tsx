@@ -5,7 +5,7 @@ import LottieView from "lottie-react-native";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { Box, Pressable } from "@gluestack-ui/themed";
 import { AuthStackParamList } from "../../types/navigation";
-
+//	Component for a scan button that can be used to trigger a scanning action, such as opening a camera screen for QR code scanning. The button features a pulsing animation to draw attention and can be customized with props for handling press events, changing the icon size, and disabling the button when necessary. The component uses Moti for smooth animations, LottieView for displaying an animated icon, and Gluestack UI's Pressable for handling user interactions and styling. If no onPress callback is provided, the button will navigate to the "CameraScreen" in the navigation stack when pressed.
 type ScanButtonProps = {
 	onPress?: () => void;
 	iconColor?: string;

@@ -30,7 +30,7 @@ import Banner from "../../components/banners/GenBanner";
 const REMEMBER_ME_KEY = "rememberMe";
 const REMEMBERED_EMAIL_KEY = "rememberedEmail";
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
-
+// The LoginScreen component provides a user interface for signing into the app. It includes input fields for email and password, validation rules, and options for remembering the user's login. The component also integrates social authentication options for Google and GitHub, handling the respective authentication flows and managing loading and error states to provide feedback to the user during the login process.
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
@@ -116,7 +116,7 @@ export default function LoginScreen() {
     { clientId: GITHUB_CLIENT_ID || "", scopes: ["read:user", "user:email"], redirectUri: githubRedirectUri },
     { authorizationEndpoint: "https://github.com/login/oauth/authorize" }
   );
-
+// The useEffect hook listens for changes in the GitHub authentication response. If a successful authentication response is received, it extracts the authorization code and sends it to the backend API to exchange for an authentication token. Upon successful exchange, it saves the token and completes the login flow. If any errors occur during this process, it displays an appropriate error message to the user.
   useEffect(() => {
     const loadRememberedLogin = async () => {
       try {
@@ -130,7 +130,7 @@ export default function LoginScreen() {
     };
     loadRememberedLogin();
   }, []);
-
+//  The useEffect hook listens for changes in the GitHub authentication response. If a successful authentication response is received, it extracts the authorization code and sends it to the backend API to exchange for an authentication token. Upon successful exchange, it saves the token and completes the login flow. If any errors occur during this process, it displays an appropriate error message to the user.
   const handleLogin = async () => {
     setTouched({ email: true, password: true });
     const result = loginSchema.safeParse({ email, password });

@@ -9,8 +9,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "@expo/vector-icons/Feather";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import BackButton from "../../components/Buttons/BackButton";
-import { MotiView,AnimatePresence  } from "moti";
-
+import { MotiView  } from "moti";
+// Component for displaying a list of all past evaluations associated with a user's profile, including product name, profile name, evaluation date, status, and an optional summary. The component supports searching and sorting evaluations, pagination for large lists, and swipe-to-delete functionality for individual evaluation entries. It also includes an optional profile switcher at the top for users with multiple profiles, allowing them to filter evaluations by profile. The component uses React state to manage search queries, sorting options, pagination, and the visibility of the profile switcher, and it leverages memoization to optimize filtering and sorting operations on the evaluations list.
 import {
   Box,
   Image,

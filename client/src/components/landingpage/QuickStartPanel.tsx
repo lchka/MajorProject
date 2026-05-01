@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, HStack, Pressable, Text, VStack } from "@gluestack-ui/themed";
-
+// Component for a quick start panel that guides users through the initial setup of their profile by prompting them to add preferences, conditions, and allergens. The component accepts props for the user's first name, counts of added preferences, conditions, and allergens, and callback functions for handling the addition of each item. It displays a progress bar indicating the completion percentage of the setup steps and provides buttons for each action with dynamic labels based on whether the user has already added items in that category. The panel is styled with borders, background color, and spacing to create a visually appealing and user-friendly interface for onboarding users to complete their profile setup.
 type QuickStartPanelProps = {
   profileFirstName?: string;
   preferenceCount: number;

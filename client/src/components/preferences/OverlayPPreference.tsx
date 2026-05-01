@@ -18,7 +18,7 @@ import {
 	Text,
 } from "@gluestack-ui/themed";
 import SwipeHandleButton from "../Buttons/SwipeHandleButton";
-
+// Component for managing user preferences in an overlay modal that allows users to view, add, and remove their preferences. The component accepts props for controlling the open state of the modal, a list of available preferences, the user's currently selected preferences, and a callback function for saving changes. It uses local state to manage draft selections while the user interacts with the modal and provides a smooth animated transition when opening and closing. The modal displays the current preferences at the top and a scrollable list of all available preferences with toggle buttons for selection. Users can save their changes, which triggers the onSave callback and then closes the modal with an exit animation.
 type PreferenceOption = {
 	id: string;
 	name: string;
@@ -31,7 +31,7 @@ type OverlayPPreferenceProps = {
 	selectedPreferenceIds: string[];
 	onSave: (preferenceIds: string[]) => Promise<void> | void;
 };
-
+// The component uses the useEffect hook to reset the draft selection whenever the modal opens, ensuring that users start with their currently saved preferences when they open the modal. It also manages a delayed close mechanism to allow exit animations to complete smoothly before unmounting the modal. The togglePreference function updates the local draft state when users select or deselect preferences, and the handleSave function persists these changes by calling the onSave callback and then triggering the close sequence.
 export default function OverlayPPreference({
 	isOpen,
 	onClose,

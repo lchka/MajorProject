@@ -23,7 +23,7 @@ import {
 } from "@gluestack-ui/themed";
 import { MotiView } from "moti";
 import ValidationAnimation from "../general/ValidationAnimation";
-
+// Component for changing the user's email, with form validation and loading states. It uses a modal to display the form, and includes input fields for the current email (non-editable), new email, and confirm email, along with validation rules for each field. The component also handles form submission and displays success or error alerts based on the outcome.
 type ChangeEmailProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -44,7 +44,7 @@ const InputField = ({
     <Text fontSize={13} fontFamily="RobotoMedium" color="#0F172A">
       {label}
     </Text>
-
+{/* colours   */}
     <Box
       borderWidth={1}
       borderColor={error ? "#F87171" : "#E6EEF5"}
@@ -88,7 +88,7 @@ export default function ChangeEmail({
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [isClosing, setIsClosing] = React.useState(false);
-
+//validation rules for the new email and confirm email fields, with tests for required fields, valid email format, and matching emails
   const emailRules = [
     {
       id: "email-required",
@@ -111,7 +111,7 @@ export default function ChangeEmail({
         value.length > 0 && value === newEmail,
     },
   ];
-
+// useEffect to reset form fields and state when the modal is opened or closed, and to set the current email field based on the prop when the modal opens
   React.useEffect(() => {
     if (isOpen) {
       setCurrentEmail(currentEmailProp || "");
@@ -130,7 +130,7 @@ export default function ChangeEmail({
       newEmail !== currentEmail
     );
   };
-
+// handleSubmit function to validate the form, call the onSubmit prop with the new email, and manage loading state and alerts based on the outcome
   const handleSubmit = async () => {
     if (!validateForm()) {
       Alert.alert("Error", "Please fix the errors before continuing.");
@@ -152,7 +152,7 @@ export default function ChangeEmail({
   const triggerClose = () => {
   onClose();
 };
-
+// Render the modal with the form fields and validation animations, along with cancel and update buttons that are disabled during loading. The modal also includes a backdrop and handles keyboard avoiding behavior on iOS.
   return (
     <Modal isOpen={isOpen} onClose={triggerClose}>
       <ModalBackdrop />

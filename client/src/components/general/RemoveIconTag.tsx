@@ -1,7 +1,7 @@
 import React from "react";
 import { Animated, Easing } from "react-native";
 import { Image, Pressable } from "@gluestack-ui/themed";
-
+// Component for a removable icon tag that can be used to indicate deletable items in the UI. The component displays an "X" icon that can be pressed to trigger a delete action, and it includes optional props for accessibility labeling, disabled state, size, shaking animation, and positioning. The shaking animation is implemented using the Animated API to create a subtle shake effect when the component is rendered, drawing attention to the delete action. The component also handles disabled states by reducing opacity and preventing interaction when the disabled prop is true.
 type RemoveIconTagProps = {
 	onDelete: () => void;
 	accessibilityLabel?: string;

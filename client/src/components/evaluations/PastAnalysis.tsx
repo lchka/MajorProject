@@ -28,7 +28,7 @@ import type { Product } from "../../services/productService";
 import type { Profile } from "../../services/profileService";
 
 const DEFAULT_SORT_OPTION: PastAnalysisSortOption = "Newest First (DEFAULT)";
-
+// Utility function to convert a date string to a timestamp for sorting purposes. The function attempts to parse the input string as a date and returns the corresponding timestamp in milliseconds. If the input string cannot be parsed as a valid date, it returns 0, which can be used as a fallback value in sorting operations.
 const toTimestamp = (value: string): number => {
   const parsed = new Date(value).getTime();
   return Number.isFinite(parsed) ? parsed : 0;
@@ -47,7 +47,7 @@ const getSkinConcernKey = (evaluation: LocalEvaluation): string => {
   const profileConditions = toStringArray(evaluation.resultJson.profile_conditions);
   return (matchedConditions[0] ?? profileConditions[0] ?? "").toLowerCase();
 };
-
+// Utility function to determine the risk rank of a product evaluation based on its status. The function normalizes the status string and assigns a numerical rank for sorting purposes, where 0 represents low risk, 1 represents moderate risk, 2 represents high risk, and 3 represents unknown or unrecognized statuses. This ranking can be used to sort evaluations by their associated skin concern risk levels in the Past Analysis component.
 const getRiskRank = (evaluation: LocalEvaluation): number => {
   const normalizedStatus =
     typeof evaluation.resultJson.status === "string"
@@ -68,7 +68,7 @@ const getRiskRank = (evaluation: LocalEvaluation): number => {
 
   return 3;
 };
-
+// Utility function to determine if a product evaluation is missing historical data based on the presence of key information in the evaluation result. The function checks for the existence of a summary, matched conditions, profile conditions, matched allergens, profile allergens, matched preferences, and profile preferences. If all of these fields are absent or empty, the function returns true, indicating that the evaluation may be missing historical context or data that could be relevant for understanding the evaluation results. This can be used to sort evaluations in the Past Analysis component by whether they have complete historical information or not.
 const isMissingHistory = (evaluation: LocalEvaluation): boolean => {
   const hasSummary = typeof evaluation.resultJson.summary === "string" && evaluation.resultJson.summary.trim().length > 0;
   const hasConditionSignals =
@@ -131,7 +131,7 @@ const sortEvaluations = (
 
   return entries.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt));
 };
-
+// React component for displaying a user's past product evaluations in a paginated, horizontally scrollable format. The component fetches evaluation data from local storage and the server, reconciles any differences, and allows users to sort their evaluations by various criteria such as date, brand name, skin concern, or completeness of historical data. Each evaluation is displayed as a card with an image, product name, and status indicator, and users can tap on a card to view detailed results or start a new analysis by tapping on a placeholder card. The component also handles loading states and updates in real-time when local evaluations change.
 type AnalysisCard = {
   id: string;
   title: string;

@@ -25,7 +25,7 @@ import profileApiService, {
   setPendingProfileBanner,
 } from "../../services/profileService";
 import { AuthStackParamList } from "../../types/navigation";
-
+// EditProfileScreen component allows users to edit their profile information, including their name, age, profile image, and preferences related to conditions, allergens, and cosmetic preferences. The screen provides a user-friendly interface for making changes to the profile, saving those changes, and handling the main profile status. It also includes error handling and feedback mechanisms to ensure a smooth user experience during the editing process.
 export default function EditProfileScreen() {
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const route = useRoute<RouteProp<AuthStackParamList, "EditProfileScreen">>();
@@ -158,7 +158,7 @@ export default function EditProfileScreen() {
       };
     }, [profileId, profilePreferenceNames]),
   );
-
+// useCallback to handle the submission of profile changes. It validates the input, prepares the data for the API request, and manages the loading state during the save operation. Upon successful save, it refreshes the profile data and updates the navigation parameters to reflect the new profile information. It also handles error scenarios by displaying appropriate messages to the user.
 const refreshProfile = React.useCallback(async () => {
   if (!profileId) return;
 
@@ -276,7 +276,7 @@ const refreshProfile = React.useCallback(async () => {
       );
       return;
     }
-
+// Confirmation alert before deleting a profile, which informs the user about the irreversible nature of this action and provides options to cancel or proceed with the deletion. If the user confirms the deletion, it calls the API to delete the profile and handles the response accordingly, including error handling and navigation after successful deletion.
     Alert.alert(
       "Remove Profile",
       "Are you sure you want to remove this profile? This action cannot be undone.",
@@ -307,7 +307,7 @@ const refreshProfile = React.useCallback(async () => {
       ],
     );
   }, [navigation, profileId]);
-
+// Confirmation alert before deleting a profile, which informs the user about the irreversible nature of this action and provides options to cancel or proceed with the deletion. If the user confirms the deletion, it calls the API to delete the profile and handles the response accordingly, including error handling and navigation after successful deletion.
   const handleMainToggleAttempt = React.useCallback(() => {
     if (isMainStatus) {
       if (mainWarningTimeoutRef.current) {
@@ -325,7 +325,7 @@ const refreshProfile = React.useCallback(async () => {
     if (!profileId || isUpdatingMain) {
       return;
     }
-
+// Confirmation alert before setting a profile as the main profile, which explains the implications of this action and provides options to cancel or proceed. If the user confirms, it calls the API to update the profile's main status and handles the response, including error handling and updating the local state to reflect the new main profile status.
     Alert.alert("Set as main profile", "Make this your main profile?", [
       { text: "Cancel", style: "cancel" },
       {
@@ -374,7 +374,7 @@ const refreshProfile = React.useCallback(async () => {
         }}
       />
       <NavBarTop showNotifications={false} />
-
+{/* scrollview */}
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 20,
@@ -401,7 +401,7 @@ const refreshProfile = React.useCallback(async () => {
             Edit Profile
           </Text>
         </Box>
-
+{/*   */}
         <Box
           style={{
             borderRadius: 24,

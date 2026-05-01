@@ -17,7 +17,7 @@ import {
   ScrollView,
 } from "@gluestack-ui/themed";
 import { MotiView } from "moti";
-
+// Component for changing the user's email, with form validation and loading states. It uses a modal to display the form, and includes input fields for the current email (non-editable), new email, and confirm email, along with validation rules for each field. The component also handles form submission and displays success or error alerts based on the outcome.
 const InputField = ({
   label,
   value,
@@ -55,7 +55,7 @@ const InputField = ({
     </Box>
   </VStack>
 );
-
+// Main component for changing the user's name, which includes a modal with input fields for the current first and last name (non-editable) and new first and last name, along with cancel and update buttons. The component manages local state for the input fields, loading state during form submission, and handles opening and closing animations for the modal.
 type ChangeNameProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -77,7 +77,7 @@ export default function ChangeName({
   const [isClosing, setIsClosing] = React.useState(false);
 
   const initialisedRef = React.useRef(false);
-
+// useEffect to reset form fields and state when the modal is opened or closed, and to set the current email field based on the prop when the modal opens
   React.useEffect(() => {
     if (!isOpen) {
       initialisedRef.current = false;
@@ -96,7 +96,7 @@ export default function ChangeName({
     setIsClosing(true);
     setTimeout(onClose, 180);
   }, [onClose]);
-
+//validation rules for the new email and confirm email fields, with tests for required fields, valid email format, and matching emails
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
@@ -106,7 +106,7 @@ export default function ChangeName({
       setIsLoading(false);
     }
   };
-
+// Render the modal with the form fields and validation animations, along with cancel and update buttons that are disabled during loading. The modal also includes a backdrop and handles keyboard avoiding behavior on iOS.
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalBackdrop />

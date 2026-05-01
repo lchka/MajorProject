@@ -1,11 +1,11 @@
 import React from "react";
-import { AddIcon, Box, Icon, Image, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, ScrollView, Text, CloseIcon } from "@gluestack-ui/themed";
+import { Box, Icon, Image, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, ScrollView, Text, CloseIcon } from "@gluestack-ui/themed";
 
 type PreferenceOption = {
 	id: string;
 	name: string;
 };
-
+// Component for managing user preferences in a modal interface. It allows users to view their current preferences, add new ones from a list of available options, and save their changes. The component handles the state of selected preferences, provides visual feedback for selected items, and manages the saving process with loading states and error handling.
 type AddPreferenceProps = {
 	isOpen: boolean;
 	onClose: () => void;

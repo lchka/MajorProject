@@ -5,7 +5,7 @@ export interface ProductImageUploadFile {
   name?: string;
   type?: string;
 }
-
+// The productService module provides functions for managing products, including fetching product details by ID, scanning product images to extract information, retrieving official product images, and updating product information. Each function interacts with the backend API to perform the necessary operations and returns the relevant data or handles errors as needed.
 export interface Product {
   id: string;
   name: string;

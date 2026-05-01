@@ -3,7 +3,7 @@ export const SWITCH_PROFILE_IDS = {
 	handleButton: "switch-profile-handle-button",
 	closeButton: "switch-profile-close-button",
 } as const;
-
+// The SWITCH_PROFILE_IDS constant defines unique identifiers for various elements of the profile switching component, such as the overlay motion, handle button, and close button. These IDs can be used for targeting specific elements in the DOM for styling, animations, or testing purposes, ensuring that the component's interactive elements are easily identifiable and manageable within the codebase.
 export const SWITCH_PROFILE_CLOSE_DURATION_MS = 220;
 
 export const SWITCH_PROFILE_MOTION = {

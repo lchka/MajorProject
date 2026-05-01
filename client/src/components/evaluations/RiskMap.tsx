@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Text } from "@gluestack-ui/themed";
 import type { EvaluationStatus } from "../../types/evaluationContext.type";
-
+//	Component for displaying a risk map of ingredients associated with a product evaluation. The component accepts an array of ingredient objects, each containing a label and a risk status (safe, caution, avoid). It uses Moti for smooth fade-in and slide-up animations when rendered, and it displays the ingredients in a styled card format with a header and individual entries for each ingredient. Each entry includes the ingredient label and a horizontal bar visualizing the risk level with color coding based on the status. The component provides a quick visual overview of the risk levels of different ingredients in the evaluated product.
 type RiskIngredient = {
 	label: string;
 	status: EvaluationStatus;

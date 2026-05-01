@@ -32,7 +32,7 @@ import type { AuthResponse } from "../../services";
 import NavBarTop from "../../components/general/NavBarTop";
 import ValidationAnimation from "../../components/general/ValidationAnimation";
 import { MotiView } from "moti";
-
+//  The RegisterScreen component provides a user interface for signing up for an account in the app. It includes multiple steps for entering user information such as name, email, and password, along with validation rules for each field. The component also integrates social authentication options for Google and GitHub, handling the respective authentication flows and managing loading and error states to provide feedback to the user during the registration process. Upon successful registration, it navigates the user to the profile setup screen with pre-filled information.
 const GITHUB_CLIENT_ID = process.env.EXPO_PUBLIC_GITHUB_CLIENT_ID;
 
 WebBrowser.maybeCompleteAuthSession();
@@ -74,7 +74,7 @@ export default function RegisterScreen() {
     password: false,
     confirmPassword: false,
   });
-
+// Validation rules for each input field
   const validateFirstName = (value: string) => {
     if (!value.trim()) return "First name is required.";
     return "";
@@ -86,14 +86,14 @@ export default function RegisterScreen() {
       return "Last name must be at least 2 characters.";
     return "";
   };
-
+// Validation rules for each input field
   const validateEmail = (value: string) => {
     if (!value.trim()) return "Email is required.";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value.trim())) return "Enter a valid email address.";
     return "";
   };
-
+// Validation rules for each input field
   const validatePassword = (value: string) => {
     if (!value) return "Password is required.";
     const strongPasswordRegex =
@@ -103,7 +103,7 @@ export default function RegisterScreen() {
     }
     return "";
   };
-
+// Validation rules for each input field
   const validateConfirmPassword = (value: string, sourcePassword: string) => {
     if (!value) return "Please confirm your password.";
     if (value !== sourcePassword) return "Passwords do not match.";
@@ -222,7 +222,7 @@ export default function RegisterScreen() {
     }
     return true;
   })();
-
+// Function to complete the login flow after successful authentication, checking if the user's profile is complete and navigating to the appropriate screen based on that.
   const completeLoginFlow = async (response: AuthResponse) => {
     let shouldGoToAnalyse = false;
     let profileIdForEdit: string | undefined =
@@ -252,7 +252,7 @@ export default function RegisterScreen() {
       profileId: profileIdForEdit,
     });
   };
-
+// Hook for handling Google authentication, which provides a prompt function to initiate the authentication flow and callbacks for handling successful login and errors. The completeLoginFlow function is called upon successful authentication to determine the next navigation step based on the user's profile completeness.
   const { promptGoogleAuth } = useGoogleAuth({
     onLoginSuccess: async (response) => {
       await completeLoginFlow(response);
@@ -321,6 +321,7 @@ export default function RegisterScreen() {
     setStep((prev) => Math.max(prev - 1, 0));
   };
 
+  // Function to handle the registration process when the user submits the form. It validates the input fields, sends the registration data to the backend API, and manages loading and error states to provide feedback to the user. Upon successful registration, it navigates the user to the profile setup screen with pre-filled information.
 const handleRegister = async () => {
   const isValidForSubmit = validateStepFields(3);
 

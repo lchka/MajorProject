@@ -2,7 +2,7 @@ import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MotiView } from "moti";
 import { Box, Text } from "@gluestack-ui/themed";
-
+// Component for displaying a list of all ingredients associated with a product evaluation, including both soothing and warning ingredients. The component accepts an array of ingredient names and an optional index for staggered animation. It uses Moti for smooth fade-in and slide-up animations when the component is rendered, and it displays the ingredients in a styled card format with a header and a list of ingredient chips. If there are no ingredients to display, it shows a "None" message instead.
 type AllIngredientsProps = {
 	items: string[];
 	index?: number;

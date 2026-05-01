@@ -16,7 +16,7 @@ import EvaluationProfile, {
 } from "../../components/profile/EvaluationProfile";
 import type { Product } from "../../services/productService";
 import BackButton from "../../components/Buttons/BackButton";
-
+// Component for displaying the details of a product that has been captured and evaluated. It shows the product image, name, brand, category, and pulled ingredients, allowing the user to confirm the information before proceeding to the evaluation results. The component also provides options to edit the pulled ingredients and to continue to the evaluation profile selection or retake the photo if the product information is incorrect.
 type ShowProductProps = {
   product: Product;
   capturedUri: string;
@@ -59,7 +59,7 @@ export default function ShowProduct({
     setIngredientsText(ingredients.join(", "));
     setIsEditingIngredients(false);
   }, [product.id, product.ingredients]);
-
+// useMemo to parse the ingredients text into a list of individual ingredients whenever the text changes. It splits the text by commas, trims whitespace from each ingredient, and filters out any empty strings, resulting in a clean array of ingredient names that can be used for the evaluation.
   const parsedIngredients = React.useMemo(() => {
     return ingredientsText
       .split(",")
@@ -143,7 +143,7 @@ export default function ShowProduct({
                   </Box>
                 )}
               </HStack>
-
+{/* Ingredients */}
               <Box mt="$3">
                 <HStack
                   alignItems="center"

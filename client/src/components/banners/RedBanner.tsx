@@ -2,7 +2,7 @@ import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { MotiView } from "moti";
 import { Box, Text } from "@gluestack-ui/themed";
-
+//	Component for displaying a red banner notification, typically used for error messages or important alerts. The banner includes an alert icon and a message, and it uses Moti for smooth animations when appearing or disappearing. The visibility of the banner can be controlled through the `visible` prop, allowing it to be shown or hidden based on certain conditions in the parent component.
 type RedBannerProps = {
 	message: string;
 	visible?: boolean;

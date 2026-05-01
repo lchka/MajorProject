@@ -8,7 +8,7 @@ import {
 	TextStyle,
 	ViewStyle,
 } from "react-native";
-
+// Component for a customizable "Re-evaluate" button that can be used in various parts of the app, such as confirming re-evaluation actions. The button supports disabled and loading states, and allows customization of its appearance through props for background color, border color, text color, and width. The component uses the Pressable component from Gluestack UI for handling press interactions and styling.
 type ReEvaluateButtonProps = {
 	onPress?: () => void;
 	label?: string;

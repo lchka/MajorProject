@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const relationIdsSchema = z.array(z.string().uuid("Must be a valid UUID"));
-
+// The relationIdsSchema defines a Zod schema for validating an array of strings, where each string must be a valid UUID. This schema can be used to ensure that any data representing relationships (such as user IDs, profile IDs, etc.) adheres to the expected format of UUIDs, providing a layer of validation and error handling for any operations that involve these IDs.
 export const prefererenceEnum = z.enum([
   "Cruelty-Free",
   "Vegan",

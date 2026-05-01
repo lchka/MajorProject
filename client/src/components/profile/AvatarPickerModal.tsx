@@ -14,7 +14,7 @@ import {
   VStack,
 } from "@gluestack-ui/themed";
 import CreateButton from "../Buttons/CreateButton";
-
+// Component for an avatar picker modal that allows users to choose from a selection of built-in avatars or continue without selecting an image. The component accepts props for controlling the open state of the modal, a list of avatar options with their IDs and image sources, the currently selected avatar ID, and callback functions for handling avatar selection, continuing without an image, and closing the modal. The modal displays a header with instructions, a scrollable grid of avatar options that users can select from, and buttons for proceeding without an avatar or closing the modal. The selected avatar is visually highlighted, and the component provides a user-friendly interface for customizing the user's profile with an avatar image.
 export type AvatarOption = {
   id: string;
   source: number;

@@ -1,7 +1,7 @@
 import React from "react";
 import Feather from "@expo/vector-icons/Feather";
 import { Box, Pressable, Text, Image } from "@gluestack-ui/themed";
-
+// Component for displaying a preview of an image taken by the user, allowing them to either approve the image for analysis or retake it. The component accepts props for the image URI, callback functions for approving and retaking the image, and an optional callback for going back to the previous screen. The layout includes a darkened background with the image displayed in a focus frame, and camera-style controls at the bottom for user actions. The component is designed to provide a clear and intuitive interface for users to review their captured image before proceeding with the evaluation process.
 type ImagePreviewProps = {
   imageUri: string;
   onApprove: () => void;

@@ -2,7 +2,7 @@ import React from "react";
 import { PanResponder, Pressable as RNPressable, View } from "react-native";
 import { MotiView } from "moti";
 import { Box } from "@gluestack-ui/themed";
-
+// Component for a swipe handle button that can be used in modals or bottom sheets to indicate that the user can swipe down to close or reveal additional content. The button features a small horizontal bar that animates up and down to draw attention, and it uses PanResponder to detect swipe gestures. The component accepts props for handling press events, swipe down actions, and disabling the button when necessary.
 type SwipeHandleButtonProps = {
 	onPress?: () => void;
 	onSwipeDown?: () => void;

@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text } from "@gluestack-ui/themed";
-
+// Component for a selection chip that can be used to represent selectable options in the UI. The component accepts props for the display text, an optional onPress callback for handling selection, a disabled state, and a variant that determines the styling of the chip. The chip styles are defined in a constant object that maps each variant to specific border, background, text color, font family, and shadow properties. The component renders a Pressable element with the appropriate styles based on the variant and disabled state, and it displays the provided text within the chip. The text alignment is centered for the "viewAll" variant and left-aligned for other variants.
 type SelectionChipVariant = "suggestion" | "selected" | "common" | "viewAll";
 
 type SelectionChipProps = {

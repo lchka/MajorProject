@@ -17,7 +17,7 @@ import {
 import Feather from "@expo/vector-icons/Feather";
 import { conditionIngredientData, IngredientInfo } from "./conditionIngredientData";
 import SwipeHandleButton from "../Buttons/SwipeHandleButton";
-
+// Component for displaying detailed information about a single condition, such as a skin condition or allergy. The component is rendered as a modal overlay that includes the condition name, a description, and lists of soothing and warning ingredients associated with the condition. The modal can be closed by tapping a close button or swiping down on the handle, and it uses Moti for smooth animations when opening and closing. The component accepts props for the condition name, description, and a callback function to handle closing the modal. It also retrieves ingredient information from a predefined data structure based on the condition name.
 type SingleConditionProps = {
 	isOpen: boolean;
 	conditionName?: string;

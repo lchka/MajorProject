@@ -8,7 +8,7 @@ import {
 	TextStyle,
 	ViewStyle,
 } from "react-native";
-
+// Component for a customizable "Edit" button that can be used in various parts of the app, such as editing user profiles or modifying settings. The button supports a disabled state and allows customization of its appearance through props for border color, text color, width, and label. The component uses the Pressable component from Gluestack UI for handling press interactions and styling, and it provides visual feedback by changing opacity when pressed or disabled.
 type EditButtonProps = {
 	onPress?: () => void;
 	label?: string;
@@ -19,7 +19,7 @@ type EditButtonProps = {
 	borderColor?: string;
 	textColor?: string;
 };
-
+// The EditButton component renders a Pressable button that changes its appearance based on the disabled state. When the button is pressed, it triggers the onPress callback if provided. The button's label defaults to "EDIT" but can be customized through props. The opacity of the button is reduced when disabled or pressed to provide visual feedback to the user. The styles for the button and label are defined using StyleSheet for better performance and maintainability.
 export default function EditButton({
 	onPress,
 	label = "EDIT",

@@ -2,7 +2,7 @@ import React from "react";
 import LottieView from "lottie-react-native";
 import { MotiText } from "moti";
 import { Box } from "@gluestack-ui/themed";
-
+//	Component for a simple loading screen that displays a loading animation and an optional message. The component accepts props for the message text, whether to take up the full screen, a compact mode for smaller displays, the size of the animation, and the background color. It uses a Lottie animation to provide visual feedback during loading processes and styles the container and text to create a clean and user-friendly interface. The component is flexible and can be used in various parts of the app where a loading state needs to be indicated to the user.	
 type SimpleLoadingScreenProps = {
 	message?: string;
 	fullScreen?: boolean;

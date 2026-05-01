@@ -7,7 +7,7 @@ type ProfileRetakeBannerProps = {
   isVisible: boolean;
   onRetake?: () => void;
 };
-
+// Component for displaying a banner notification when a user's profile details have changed since their last analysis, prompting them to retake the analysis for updated results. The banner includes an alert icon, a message about the profile changes, and an optional button to retake the analysis. The banner can be dismissed by the user, and it will reappear if the profile changes again.
 export default function ProfileRetakeBanner({
   isVisible,
   onRetake,

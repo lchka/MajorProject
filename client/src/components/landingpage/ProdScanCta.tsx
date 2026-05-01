@@ -1,7 +1,7 @@
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Box, HStack, Pressable, Text } from "@gluestack-ui/themed";
-
+// Component for a call-to-action (CTA) button that encourages users to scan their products using AI. The component accepts props for the onPress action and an optional label, which defaults to "Scan your Products with AI". The CTA is styled with a background color, border, and rounded corners to make it visually appealing and attention-grabbing. It includes an icon on the left side to indicate the scanning action and an arrow icon on the right side to suggest forward navigation. The text is styled for clarity and prominence, making it an effective prompt for users to engage with the product scanning feature.
 type ProdScanCtaProps = {
   onPress: () => void;
   label?: string;

@@ -7,7 +7,7 @@ type ProfileWarningProps = {
 	message: string;
 	visible?: boolean;
 };
-
+// Component for displaying a warning banner on the user's profile page, typically used to alert the user about important information or issues related to their profile. The banner includes an alert icon and a message, and it uses Moti for smooth animations when appearing or disappearing. The visibility of the banner can be controlled through the `visible` prop, allowing it to be shown or hidden based on certain conditions in the parent component.
 export default function ProfileWarning({ message, visible = false }: ProfileWarningProps) {
 	return (
 		<MotiView

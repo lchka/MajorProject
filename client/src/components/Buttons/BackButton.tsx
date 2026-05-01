@@ -3,7 +3,7 @@ import { StyleProp, ViewStyle } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Pressable } from "@gluestack-ui/themed";
 import Feather from "@expo/vector-icons/Feather";
-
+// Component for a back button that can be used in navigation headers or other parts of the app. The button displays a left arrow icon and can trigger a custom onPress action or navigate back using the navigation stack. The component accepts props for customizing the icon color, size, style, and hit slop for better touch targets.
 type BackButtonProps = {
   onPress?: () => void;
   color?: string;
@@ -20,7 +20,7 @@ export default function BackButton({
   hitSlop = 10,
 }: BackButtonProps) {
   const navigation = useNavigation();
-
+//  Handle the back button press by either calling the provided onPress callback or using the navigation stack to go back if possible. The useCallback hook is used to memoize the handler function, preventing unnecessary re-renders when the component's props or navigation state change.
   const handleBack = React.useCallback(() => {
     if (onPress) return onPress();
     if (navigation.canGoBack()) navigation.goBack();

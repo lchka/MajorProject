@@ -11,7 +11,7 @@ import {
 import { SWITCH_PROFILE_CLOSE_DURATION_MS } from "../../style/Animation";
 import { styles } from "../../style/LandingPageStyle";
 import ProfileChoice from "./ChooseProfile";
-
+// Component for allowing users to choose between different profiles in a modal overlay. The component accepts props for controlling the open state of the modal, a list of profile items with their IDs, names, and optional avatar sources, the currently active profile ID, and callback functions for selecting, adding, and editing profiles. The modal displays the active profile prominently at the top with its avatar and name, while secondary profiles are shown below. Users can tap on a profile to select it or enter edit mode to manage their profiles. The component also includes swipe-to-close functionality and visual feedback for reaching the maximum number of profiles allowed.
 type SwitchProfileItem = {
 	id: string;
 	name: string;
@@ -69,7 +69,7 @@ export default function SwitchProfile({
 	const [isClosing, setIsClosing] = React.useState(false);
 	const [openCycle, setOpenCycle] = React.useState(0);
 	const closeFallbackRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
+// The requestClose function initiates the closing of the profile selection modal. It sets a flag to prevent multiple close requests, triggers the closing animation, and uses a fallback timeout to ensure the modal closes even if the animation doesn't complete as expected. The useEffect hooks manage the open and close states of the modal, resetting flags and counters as needed when the modal is opened or closed. The component also adjusts its layout based on whether the user has scrolled or if a back button is present, providing a responsive and user-friendly interface for switching profiles.
 	const requestClose = React.useCallback(() => {
 		if (isClosingRef.current) return;
 		isClosingRef.current = true;
@@ -87,7 +87,7 @@ export default function SwitchProfile({
 
 		closeFallbackRef.current = setTimeout(finishClose, SWITCH_PROFILE_CLOSE_DURATION_MS + 30);
 	}, []);
-
+// The useEffect hooks manage the open and close states of the modal, resetting flags and counters as needed when the modal is opened or closed. The component also adjusts its layout based on whether the user has scrolled or if a back button is present, providing a responsive and user-friendly interface for switching profiles.
 	React.useEffect(() => {
 		if (isOpen) {
 			isClosingRef.current = false;
