@@ -1,55 +1,70 @@
 # Gemini Image Analyzer - Expo App
 
-React Native app that uses Google Gemini AI to analyze images from camera or gallery.
+A React Native (Expo) mobile application that uses Google Gemini AI to analyse images from the camera or photo library.
+
+---
 
 ## Setup
 
 1. Install dependencies:
-```bash
-cd client
-npm install
-```
 
-2. Get a Gemini API key:
-   - Go to https://aistudio.google.com/apikey
-   - Create a new API key
-   - Copy the API key
+    cd client
+    npm install
 
-3. Create `.env` file:
-```bash
-cp .env.example .env
-```
+2. Generate a Gemini API key:
+
+- Visit: https://aistudio.google.com/apikey  
+- Create a new API key  
+- Copy the generated key  
+
+3. Create an environment file:
+
+    cp .env.example .env
 
 4. Add your API key to `.env`:
-```
-EXPO_PUBLIC_GEMINI_API_KEY=your_actual_api_key_here
-```
 
-5. Update [App.tsx](App.tsx#L14) to use the environment variable:
-```typescript
-const genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY || '');
-```
+    EXPO_PUBLIC_GEMINI_API_KEY=your_actual_api_key_here
 
-## Run
+Environment variables prefixed with `EXPO_PUBLIC_` are accessible within the application.
 
-```bash
-npm start
-```
+5. Use the API key in your application:
 
-Then:
-- Press `a` for Android
-- Press `i` for iOS
-- Press `w` for web
-- Or scan QR code with Expo Go app
+    const genAI = new GoogleGenerativeAI(
+      process.env.EXPO_PUBLIC_GEMINI_API_KEY || ""
+    );
+
+---
+
+## Running the App
+
+    npm start
+
+Then choose a platform:
+
+- Press `a` for Android  
+- Press `i` for iOS  
+- Press `w` for web  
+- Or scan the QR code using the Expo Go app  
+
+---
 
 ## Features
 
-- 📷 Take photos with camera
-- 🖼️ Pick images from gallery
-- 🤖 AI analysis with Google Gemini
-- 📱 Native mobile experience
+- Capture images using the device camera  
+- Select images from the photo library  
+- AI-powered image analysis using Google Gemini  
+- Cross-platform support (iOS, Android, Web)  
+
+---
 
 ## Required Permissions
 
-- Camera access
-- Photo library access
+- Camera access  
+- Photo library access  
+
+---
+
+## Notes
+
+- Ensure the API key is valid and active  
+- Restart the application after updating environment variables  
