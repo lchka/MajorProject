@@ -7,7 +7,7 @@ type Props = {
   onChange: (value: string) => void;
   error?: boolean;
 };
-
+//animated input component that scales up slightly on focus and shakes if there is an error
 export default function AnimatedInput({
   type = "text",
   placeholder,
@@ -16,6 +16,7 @@ export default function AnimatedInput({
   error,
 }: Props) {
   return (
+    //motion input that scales up on focus and shakes if there is an error, with a transparent background and white text
     <motion.input
       type={type}
       placeholder={placeholder}
@@ -26,6 +27,7 @@ export default function AnimatedInput({
       autoComplete={
         type === "password" ? "current-password" : "email"
       }
+      //styles for the input with a red text color if there is an error
       className={`
         w-full
         bg-transparent

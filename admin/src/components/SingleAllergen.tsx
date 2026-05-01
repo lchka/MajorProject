@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Allergen } from "../services/allergenService";
-
+//modal component for editing a single allergen, with inputs for name and description, and save/cancel buttons
 type Props = {
   allergen: Allergen | null;
   isOpen: boolean;
@@ -15,7 +15,7 @@ export default function SingleAllergenModal({
   onSave,
 }: Props) {
   if (!isOpen || !allergen) return null;
-
+//render the modal content with the allergen data and handlers for closing and saving
   return (
     <ModalContent
       key={allergen.id}
@@ -25,19 +25,20 @@ export default function SingleAllergenModal({
     />
   );
 }
-
+//separate component for the modal content to handle local state for the inputs
 function ModalContent({
   allergen,
   onClose,
   onSave,
 }: {
+  //the allergen being edited, with its current name and description
   allergen: Allergen;
   onClose: () => void;
   onSave: (id: string, data: { name: string; description: string }) => void;
 }) {
   const [name, setName] = useState(allergen.name);
   const [desc, setDesc] = useState(allergen.description || "");
-
+//render the modal with a backdrop and a centered content area, with inputs for name and description, and save/cancel buttons
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
 

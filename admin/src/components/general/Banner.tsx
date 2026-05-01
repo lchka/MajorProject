@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, AlertCircle, Info } from "lucide-react";
 
+//banner component that shows a message at the top of the screen with an icon and a progress bar that disappears after 2 seconds
 type BannerProps = {
   message: string;
   type?: "success" | "error" | "info";
@@ -11,7 +12,9 @@ export default function Banner({
   message,
   type = "info",
   isVisible,
+
 }: BannerProps) {
+  //styles for different types of banners
   const styles = {
     success: {
       color: "text-green-300",
@@ -20,6 +23,7 @@ export default function Banner({
       glow: "shadow-green-500/20",
       icon: <CheckCircle size={18} />,
     },
+    //error banner with red colors and an alert icon
     error: {
       color: "text-red-300",
       border: "border-red-400/30",
@@ -27,6 +31,7 @@ export default function Banner({
       glow: "shadow-red-500/20",
       icon: <AlertCircle size={18} />,
     },
+    //info banner with blue colors and an info icon
     info: {
       color: "text-blue-300",
       border: "border-blue-400/30",

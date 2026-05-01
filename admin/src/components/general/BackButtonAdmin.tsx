@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
+//back button component with a glow effect and an arrow that moves slightly on hover
 export default function BackButton() {
   const navigate = useNavigate();
 

@@ -1,7 +1,7 @@
 type UsageBadgeProps = {
   count?: number;
 };
-
+//usage badge component that shows the number of items in use with a glow effect and a border
 export default function UsageBadge({ count }: UsageBadgeProps) {
   if (!count || count === 0) return null;
 

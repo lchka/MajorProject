@@ -7,7 +7,7 @@ type Props = {
   onClose: () => void;
   onSave: (id: string, data: { name: string; description: string }) => void;
 };
-
+//modal component for editing a single condition, with inputs for name and description, and save/cancel buttons
 export default function SingleConditionModal({
   condition,
   isOpen,
@@ -15,7 +15,7 @@ export default function SingleConditionModal({
   onSave,
 }: Props) {
   if (!isOpen || !condition) return null;
-
+//render the modal content with the condition data and handlers for closing and saving
   return (
     <ModalContent
       key={condition.id}
@@ -25,7 +25,7 @@ export default function SingleConditionModal({
     />
   );
 }
-
+//separate component for the modal content to handle local state for the inputs
 function ModalContent({
   condition,
   onClose,
@@ -37,7 +37,7 @@ function ModalContent({
 }) {
   const [name, setName] = useState(condition.name);
   const [desc, setDesc] = useState(condition.description || "");
-
+    
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
 

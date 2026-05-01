@@ -1,13 +1,13 @@
 import { useState } from "react";
 import type { Preference } from "../services/preferenceService";
-
+//modal component for editing a single preference, with inputs for name and description, and save/cancel buttons
 type Props = {
   preference: Preference | null;
   isOpen: boolean;
   onClose: () => void;
   onSave: (id: string, data: { name: string; description: string }) => void;
 };
-
+//renders the modal content with the preference data and handlers for closing and saving
 export default function SinglePreferenceModal({
   preference,
   isOpen,
@@ -25,7 +25,7 @@ export default function SinglePreferenceModal({
     />
   );
 }
-
+//separate component for the modal content to handle local state for the inputs
 function ModalContent({
   preference,
   onClose,

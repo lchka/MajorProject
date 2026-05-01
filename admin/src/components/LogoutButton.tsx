@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function LogoutButton() {
   const navigate = useNavigate();
-
+//handle logout by removing the token from local storage and navigating to the login page
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
