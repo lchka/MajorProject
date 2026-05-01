@@ -3,7 +3,7 @@ import userService from "../services/user.service.js";
 import { UpdateUserDto } from "../types/user.dto.js";
 import { SUCCESS_RES } from "../utils/HttpError.js";
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling user-related API requests, including fetching the current user's profile, listing all users, retrieving a user by ID, updating user information, soft deleting users, hard deleting users, and restoring soft-deleted users
 export class UserController {
   // get current logged-in user
   async getProfile(

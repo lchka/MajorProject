@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import weatherUvService from "../services/weatherUv.service.js";
 import { BAD_REQUEST, SUCCESS_RES } from "../utils/HttpError.js";
-
+//CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
+// controller functions for handling weather-related API requests, specifically for fetching the current UV index based on provided latitude and longitude coordinates, with validation for query parameters and error handling
 export class WeatherController {
   async getCurrentUv(
     req: Request,

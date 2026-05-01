@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+//  DTOs and validation schemas for authentication, using zod for schema definitions and type inference
 export const registerSchema = z
   .object({
     first_name: z

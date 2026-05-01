@@ -1,5 +1,5 @@
 import prisma from "../../lib/prisma.js";
-
+// Seeder script to populate the database with common allergens for testing and development purposes
 interface AllergenData {
 	name: string;
 	description: string;

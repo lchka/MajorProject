@@ -5,7 +5,7 @@ import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 
 const promptService = new PromptService();
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling prompt-related API requests, including creating prompts, retrieving prompts (by ID and all), updating prompts, and deleting prompts
 export class promptController {
   async createPrompt(
     req: Request<Record<string, never>, Record<string, never>, CreatePromptDto>,

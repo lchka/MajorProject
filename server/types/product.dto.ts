@@ -8,7 +8,7 @@ export const ingredientsJsonSchema = z.json().refine(
 		value.every((item) => typeof item === "string" && item.trim().length > 0),
 	"Ingredients must be a non-empty JSON array of strings",
 );
-
+//  DTOs and validation schemas for products, using zod for schema definitions and type inference
 export const productResponseSchema = z.object({
 	id: z.string().uuid("Product id must be a valid UUID"),
 	name: z.string().min(1, "Product name is required"),

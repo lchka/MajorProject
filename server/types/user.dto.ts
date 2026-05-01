@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+// DTOs and validation schemas for users, using zod for schema definitions and type inference
 export const roleSummarySchema = z.object({
   id: z.string().uuid("Role id must be a valid UUID"),
   name: z.string().min(1, "Role name is required"),

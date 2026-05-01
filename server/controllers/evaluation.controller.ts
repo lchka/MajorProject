@@ -6,7 +6,7 @@ import {
 } from "../types/evaluationContext.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES, HttpError, NOT_FOUND } from "../utils/HttpError.js";
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling evaluation-related API requests, specifically for archiving evaluations by creating or retrieving evaluation contexts based on provided data
 type ArchiveEvaluationBody = CreateEvaluationContextDto & {
   evaluationContextId?: string;
 };

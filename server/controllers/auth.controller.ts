@@ -7,7 +7,7 @@ import {
 } from "../utils/validators/authValidator.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling authentication-related API requests, including user registration, login, Google login, logout, and fetching the current user's profile
 export class AuthController {
   async register(
     req: Request<Record<string, never>, Record<string, never>, RegisterInput>,

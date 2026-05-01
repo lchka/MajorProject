@@ -1,5 +1,5 @@
 import {z} from "zod"
-
+// DTOs and validation schemas for prompts, using zod for schema definitions and type inference
 export const categoryEnum = z.enum([
     "Shampoo", 
     "Deodorant & Antiperspirant",

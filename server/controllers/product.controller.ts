@@ -14,6 +14,7 @@ import {
 
 const productService = new ProductService();
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
+// controller functions for handling product-related API requests, including creating products (with optional image scanning), retrieving products, updating products, fetching product images, and deleting products
 type ProductScanBody = {
 	name?: unknown;
 	brand?: unknown;

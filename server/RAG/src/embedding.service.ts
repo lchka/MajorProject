@@ -1,5 +1,5 @@
 import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../../utils/HttpError.js";
-
+// Service class for generating text embeddings using Google's Gemini API, with support for configurable models, output dimensions, rate limit handling, and request timeouts, designed to be used in a Retrieval-Augmented Generation (RAG) system for embedding text data before storing it in a vector database or using it for similarity search.
 type GeminiEmbedResponse = {
 	embedding?: {
 		values?: number[];
@@ -9,19 +9,19 @@ type GeminiEmbedResponse = {
 		message?: string;
 	};
 };
-
+// Default configuration values for the embedding service, which can be overridden by environment variables or constructor options, providing sensible defaults for model selection, output dimensionality, rate limit handling, and request timeouts to ensure robust operation of the embedding generation process.
 const DEFAULT_EMBEDDING_MODEL = "gemini-embedding-001";
 const DEFAULT_OUTPUT_DIMENSION = 768;
 const DEFAULT_MIN_INTERVAL_MS = 700;
 const DEFAULT_MAX_RATE_LIMIT_RETRIES = 30;
 const DEFAULT_RATE_LIMIT_WAIT_MS = 60_000;
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
-
+// Utility function to pause execution for a specified number of milliseconds, used to implement delays between embedding requests when handling rate limits or spacing out batch requests to the Gemini API.
 const sleep = (ms: number): Promise<void> =>
 	new Promise((resolve) => {
 		setTimeout(resolve, ms);
 	});
-
+// Utility function to perform a fetch request with a timeout, using the AbortController API to abort the request if it exceeds the specified timeout duration, and throwing an appropriate HttpError if a timeout occurs or if other errors are encountered during the fetch operation.
 const fetchWithTimeout = async (
 	url: string,
 	init: RequestInit,
@@ -50,7 +50,7 @@ const fetchWithTimeout = async (
 		clearTimeout(timeoutId);
 	}
 };
-
+// Utility function to parse the retry delay from a Gemini API error response, which may include a retry delay in the error details when a rate limit is hit, allowing the embedding service to respect the recommended wait time before retrying the request.
 const parseRetryDelayMs = (errorText: string): number | null => {
 	try {
 		const parsed = JSON.parse(errorText) as {
@@ -80,7 +80,7 @@ const parseRetryDelayMs = (errorText: string): number | null => {
 		return null;
 	}
 };
-
+// Main service class for generating text embeddings using the Gemini API, with methods for embedding single texts and batches of texts, and handling various edge cases such as empty input, API errors, rate limits, and model compatibility issues, while providing informative error messages and configurable behavior through environment variables and constructor options.
 export class RagEmbeddingService {
 	private readonly apiKey: string;
 	private readonly modelCandidates: string[];
@@ -159,7 +159,7 @@ export class RagEmbeddingService {
 			);
 		}
 	}
-
+// Method to embed a single text string, which includes validation for empty input, iterating through candidate models with retry logic for rate limits, and error handling for various failure scenarios, ultimately returning the embedding vector or throwing an appropriate HttpError.
 	async embedText(text: string): Promise<number[]> {
 		const cleanText = text.trim();
 		if (!cleanText) {
@@ -233,7 +233,7 @@ export class RagEmbeddingService {
 
 		throw new HttpError(INTERNAL_SERVER_ERROR, lastErrorMessage);
 	}
-
+// Method to embed an array of text strings in batch, which validates the input array, iterates through the texts while embedding them individually with spacing between requests to respect rate limits, and collects the resulting embeddings into an array, ultimately returning the array of embedding vectors or throwing an appropriate HttpError if validation fails.
 	async embedTexts(texts: string[]): Promise<number[][]> {
 		if (!Array.isArray(texts) || texts.length === 0) {
 			throw new HttpError(BAD_REQUEST, "At least one text is required for batch embeddings.");

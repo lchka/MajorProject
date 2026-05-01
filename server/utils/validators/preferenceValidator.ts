@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+//  DTOs and validation schemas for user preferences, using zod for schema definitions and type inference
 export const preferenceSchema = z.object({
   name: z
     .string()

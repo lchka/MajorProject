@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+// DTOs and validation schemas for preferences, using zod for schema definitions and type inference
 export const preferenceResponseSchema = z.object({
   id: z.string().uuid("Preference id must be a valid UUID"),
   name: z.string().min(1, "Preference name is required"),

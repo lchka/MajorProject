@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 
 const ARRAY_FIELDS = ["conditionIds", "allergenIds", "preferenceIds"] as const;
 const BOOLEAN_FIELDS = ["isComplete", "main_profile"] as const;
-
+// Utility function to normalize various forms of array input from form-data into consistent string arrays, supporting multiple formats such as JSON arrays, comma-separated strings, and repeated fields, while also trimming whitespace and filtering out empty values for robust handling of array inputs in Express request bodies.
 const toStringArray = (value: unknown): string[] => {
     if (value === undefined || value === null) {
         return [];
@@ -37,7 +37,7 @@ const toStringArray = (value: unknown): string[] => {
         .map((item) => (typeof item === "string" ? item.trim() : String(item)))
         .filter((item) => item.length > 0);
 };
-
+// Middleware function to normalize form-data inputs for specific fields that are expected to be arrays or booleans, transforming them into consistent formats for easier processing in route handlers, and ensuring that the request body is properly structured before reaching the controllers.
 export const normalizeFormDataArrays = (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.body || typeof req.body !== "object") {
         next();

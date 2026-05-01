@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+// DTOs and validation schemas for permissions, using zod for schema definitions and type inference
 export const permissionSchema = z.enum([
   "user:view-all",
   "user:view-own",
@@ -42,7 +42,7 @@ export const permissionSchema = z.enum([
   "role:manage",
   "system:settings",
 ]);
-
+// Define a type for permissions based on the schema
 export const Permission = {
   USER_VIEW_ALL: "user:view-all",
   USER_VIEW_OWN: "user:view-own",
@@ -94,7 +94,7 @@ export const Permission = {
   SYSTEM_SETTINGS: "system:settings",
 } as const;
 export type Permission = z.infer<typeof permissionSchema>;
-
+// Define a type for role names based on the schema
 export const roleNameSchema = z.enum(["admin", "moderator", "user"]);
 export type RoleName = z.infer<typeof roleNameSchema>;
 

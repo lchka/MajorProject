@@ -1,6 +1,6 @@
 import prisma from "../../lib/prisma.js";
 import UserSecurity from "../UserSecurity.js";
-
+// Seeder script to populate the database with predefined users for testing and development purposes
 interface UserData {
   email: string;
   password: string;

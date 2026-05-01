@@ -6,7 +6,7 @@ import { uploadProfileImageToS3 } from "../lib/s3.js";
 
 const profileService = new ProfileService();
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling profile-related API requests, including creating profiles, retrieving profiles (by ID and by user ID), updating profiles, and deleting profiles, with support for profile image uploads to S3
 export class ProfileController {
     // create profile for the logged-in user
     async createProfile(

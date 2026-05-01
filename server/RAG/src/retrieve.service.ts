@@ -1,6 +1,6 @@
 import { BAD_REQUEST, HttpError, INTERNAL_SERVER_ERROR } from "../../utils/HttpError.js";
 import { ragEmbeddingService } from "./embedding.service.js";
-
+// Type definition for a chunk match returned from the retrieval process, which includes metadata about the source document, the chunk's position within the document, and the relevance score, allowing for structured handling of retrieved context when generating answers in the RAG system.
 export type RagChunkMatch = {
 	id: string;
 	score: number;
@@ -31,7 +31,7 @@ type PineconeQueryResponse = {
 
 const DEFAULT_TOP_K = 8;
 const DEFAULT_NAMESPACE = "research-pdfs";
-
+// Utility function to ensure that the Pinecone host URL is properly formatted with a protocol, which is necessary for making API requests to the Pinecone service, and provides a helpful error message if the host is not configured.
 const toPineconeHost = (host: string): string => {
 	const normalized = host.trim();
 	if (!normalized) {
@@ -44,7 +44,7 @@ const toPineconeHost = (host: string): string => {
 
 	return `https://${normalized}`;
 };
-
+// Function to retrieve relevant chunks from the Pinecone vector database based on a question, which generates an embedding for the question, queries Pinecone for the most relevant chunks, and returns a structured list of matches with metadata, while handling errors related to missing configuration and invalid responses from the Pinecone API.
 export const retrieveRelevantChunks = async (params: {
 	question: string;
 	topK?: number;
@@ -63,7 +63,7 @@ export const retrieveRelevantChunks = async (params: {
 			"PINECONE_API_KEY or PINECONE_HOST is missing from server environment.",
 		);
 	}
-
+// Determine the number of top matches to retrieve and the Pinecone namespace to query, using function parameters or falling back to environment variables or defaults, which allows for flexible configuration of the retrieval process based on different use cases or environments.
 	const topK = params.topK ?? Number(process.env.RAG_TOP_K ?? DEFAULT_TOP_K);
 	const namespace = params.namespace ?? process.env.PINECONE_NAMESPACE ?? DEFAULT_NAMESPACE;
 
@@ -93,7 +93,7 @@ export const retrieveRelevantChunks = async (params: {
 
 	const data = (await response.json()) as PineconeQueryResponse;
 	const matches = data.matches ?? [];
-
+// Filter and map the raw Pinecone matches to the structured RagChunkMatch format, ensuring that only valid matches with necessary metadata are included, and providing default values for any missing metadata fields to maintain consistency in the returned results.
 	return matches
 		.filter((match) => match.id && typeof match.metadata?.text === "string")
 		.map((match) => ({
@@ -107,7 +107,7 @@ export const retrieveRelevantChunks = async (params: {
 			text: match.metadata?.text as string,
 		}));
 };
-
+// Utility function to format retrieved chunks into a string suitable for inclusion in the prompt to the generative model, which includes metadata about each chunk and the chunk text itself, and handles the case where no matches were retrieved by providing a default message, ensuring that the prompt is informative and well-structured for the model to generate an answer based on the provided context.
 export const formatChunksForPrompt = (matches: RagChunkMatch[]): string => {
 	if (matches.length === 0) {
 		return "No supporting context was retrieved.";

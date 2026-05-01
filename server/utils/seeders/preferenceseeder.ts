@@ -1,5 +1,5 @@
 import prisma from "../../lib/prisma.js";
-
+// Seeder script to populate the database with common user preferences for testing and development purposes
 interface PreferenceData {
 	name: string;
 	description: string;

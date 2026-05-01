@@ -3,7 +3,7 @@ import conditionService from "../services/condition.service.js";
 import { CreateConditionDto, UpdateConditionDto } from "../types/condition.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling condition-related API requests, including creating, retrieving, updating, and deleting conditions, as well as fetching conditions associated with a specific user profile
 export class ConditionController {
 	// create a new condition
 	async createCondition(

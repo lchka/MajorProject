@@ -2,7 +2,7 @@ import "dotenv/config";
 import { answerWithRag } from "./rag-analyzer.service.js";
 
 const question = process.argv.slice(2).join(" ").trim();
-
+// Simple command-line interface to ask a question to the RAG system, allowing users to input a query and receive an answer along with relevant citations from the knowledge base, demonstrating the capabilities of the RAG implementation in a straightforward manner.
 if (!question) {
 	console.error("Usage: tsx RAG/src/ask-rag.ts \"your question\"");
 	process.exit(1);

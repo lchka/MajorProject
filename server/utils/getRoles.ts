@@ -1,5 +1,5 @@
 import prismaClientPkg from "@prisma/client";
-
+// Utility script to fetch and display all roles from the database, and specifically identify the 'user' role for use in the RegisterScreen component. This helps ensure that the correct role ID is used when creating new users during registration.
 const { PrismaClient } = prismaClientPkg;
 
 const prisma = new PrismaClient();

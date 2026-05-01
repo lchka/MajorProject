@@ -1,5 +1,5 @@
 import prisma from "../../lib/prisma.js";
-
+// Seeder script to populate the database with common skin conditions for testing and development purposes
 interface ConditionData {
 	name: string;
 	description: string;

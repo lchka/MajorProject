@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+// DTOs and validation schemas for evaluation contexts, using zod for schema definitions and type inference
 const normalizeEvaluationContextInput = (value: unknown): unknown => {
 	if (!value || typeof value !== "object") {
 		return value;

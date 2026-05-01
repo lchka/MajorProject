@@ -22,7 +22,7 @@ async findAll(){
         orderBy:{createdAt:"desc"}
     })
 }
-
+//fnd profile by id
 async findById(id:string){
 
     return await prisma.profile.findUnique({
@@ -38,7 +38,7 @@ async findByUserId(userId: string){
         include: profileInclude
     })
 }
-
+//create a new profile
 async create (data:Prisma.ProfileCreateInput){
     return await prisma.profile.create({
         data,

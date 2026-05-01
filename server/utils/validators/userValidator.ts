@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+//  DTOs and validation schemas for user data, using zod for schema definitions and type inference
 export const updateUserSchema = z
   .object({
     email: z

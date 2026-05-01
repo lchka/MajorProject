@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+//  DTOs and validation schemas for skin conditions, using zod for schema definitions and type inference
 export const conditionSchema = z.object({
   name: z
     .string()

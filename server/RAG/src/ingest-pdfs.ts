@@ -4,7 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { PDFParse } from "pdf-parse";
 import { ragEmbeddingService } from "./embedding.service.js";
-
+// Script for ingesting PDF documents from a specified directory, extracting text content, generating embeddings using the RagEmbeddingService, and upserting the embeddings into a Pinecone vector database, with support for configurable parameters such as chunk size, overlap, namespace, and handling of existing vectors to avoid duplication.
 type PineconeVector = {
 	id: string;
 	values: number[];
@@ -17,14 +17,14 @@ type PineconeVector = {
 		text: string;
 	};
 };
-
+// Default configuration values for the PDF ingestion process, including the directory to read PDFs from, the Pinecone namespace to use for storing vectors, chunking parameters for splitting text into manageable pieces, and HTTP timeout settings for API requests, which can be overridden by environment variables or function options to allow flexibility in different deployment environments.
 const DEFAULT_PDF_DIR = path.resolve(process.cwd(), "RAG", "pdfs");
 const DEFAULT_NAMESPACE = "research-pdfs";
 const DEFAULT_CHUNK_SIZE = 1200;
 const DEFAULT_CHUNK_OVERLAP = 200;
 const UPSERT_BATCH_SIZE = 50;
 const DEFAULT_HTTP_TIMEOUT_MS = 30_000;
-
+// Utility function to perform a fetch request with a timeout, using the AbortController API to abort the request if it exceeds the specified timeout duration, and throwing an appropriate error message if a timeout occurs or if other errors are encountered during the fetch operation, which is used for making API requests to Pinecone and the Gemini embedding service while respecting configured timeouts.
 const fetchWithTimeout = async (
 	url: string,
 	init: RequestInit,
@@ -51,7 +51,7 @@ const fetchWithTimeout = async (
 		clearTimeout(timeoutId);
 	}
 };
-
+// Utility function to normalize the Pinecone host URL, ensuring that it includes the proper protocol prefix (https://) if not already provided, and validating that the host is not empty, which is important for constructing correct API request URLs when interacting with the Pinecone vector database.
 const toPineconeHost = (host: string): string => {
 	const normalized = host.trim();
 	if (!normalized) {
@@ -64,7 +64,7 @@ const toPineconeHost = (host: string): string => {
 
 	return `https://${normalized}`;
 };
-
+// Utility function to split a given text into chunks of a specified size with a certain amount of overlap between chunks, which is used to break down large text content extracted from PDFs into smaller pieces that can be embedded and stored in the vector database, while ensuring that the chunks are not too small and that important contextual information is preserved across chunk boundaries.
 const chunkText = (text: string, chunkSize = DEFAULT_CHUNK_SIZE, overlap = DEFAULT_CHUNK_OVERLAP): string[] => {
 	const cleanText = text.replace(/\s+/g, " ").trim();
 	if (!cleanText) {
@@ -89,12 +89,12 @@ const chunkText = (text: string, chunkSize = DEFAULT_CHUNK_SIZE, overlap = DEFAU
 
 	return chunks.filter(Boolean);
 };
-
+// Utility function to create a unique chunk ID based on the file name and chunk index, using a hash of the file name to ensure that the same file will produce the same chunk IDs across different runs, which helps in identifying and avoiding duplicate chunks when ingesting PDFs multiple times.
 const createChunkId = (fileName: string, chunkIndex: number): string => {
 	const stablePart = createHash("sha1").update(fileName).digest("hex").slice(0, 12);
 	return `${stablePart}-chunk-${chunkIndex}`;
 };
-
+// Utility function to normalize metadata fields such as title and author, ensuring that they are non-empty strings or null, which helps in maintaining consistent metadata for the chunks stored in the vector database and avoids issues with empty or invalid metadata values.
 const normalizeMetadataField = (value: unknown): string | null => {
 	if (typeof value !== "string") {
 		return null;
@@ -103,14 +103,14 @@ const normalizeMetadataField = (value: unknown): string | null => {
 	const clean = value.trim();
 	return clean.length > 0 ? clean : null;
 };
-
+// Utility function to extract a title from the PDF file name by removing the extension, replacing common separators with spaces, and trimming whitespace, which serves as a fallback method for determining the title of the document when metadata is missing or cannot be inferred from the content.
 const titleFromFileName = (fileName: string): string =>
 	fileName
 		.replace(/\.pdf$/i, "")
 		.replace(/[_-]+/g, " ")
 		.replace(/\s+/g, " ")
 		.trim();
-
+// Utility function to determine if a line of text is likely to be noise rather than meaningful content, based on common patterns found in PDF documents such as DOIs, journal names, copyright notices, and other boilerplate text, which helps in filtering out irrelevant lines when trying to infer the title and author from the first page of the PDF.
 const isLikelyNoiseLine = (line: string): boolean => {
 	const lower = line.toLowerCase();
 	return (
@@ -127,7 +127,7 @@ const isLikelyNoiseLine = (line: string): boolean => {
 		lower.includes("http")
 	);
 };
-
+// Utility function to infer the title and author of a PDF document from the text of its first page, using heuristics to identify likely title lines and author lines while filtering out noise, which provides a way to populate metadata for the chunks when the PDF's embedded metadata is missing or incomplete.
 const inferFromFirstPageText = (firstPageText: string): { title: string | null; author: string | null } => {
 	const rawLines = firstPageText
 		.split(/\r?\n/)
@@ -160,7 +160,7 @@ const inferFromFirstPageText = (firstPageText: string): { title: string | null; 
 			break;
 		}
 	}
-
+// Join the captured title lines into a single title string, ensuring that it is not excessively long and that whitespace is normalized, which results in a more accurate and clean title metadata for the document chunks.
 	const title = titleLines.length > 0 ? titleLines.join(" ").replace(/\s+/g, " ").trim() : null;
 
 	let author: string | null = null;
@@ -188,7 +188,7 @@ const inferFromFirstPageText = (firstPageText: string): { title: string | null; 
 
 	return { title, author };
 };
-
+// Utility function to upsert a batch of vectors into the Pinecone vector database, making a POST request to the Pinecone upsert API endpoint with the provided vectors and namespace, and handling errors by checking the response status and throwing an appropriate error message if the request fails, which is used to efficiently store the generated embeddings for the PDF chunks while respecting API limits and ensuring data integrity.
 const upsertVectors = async (params: {
 	host: string;
 	apiKey: string;
@@ -218,7 +218,7 @@ const upsertVectors = async (params: {
 		throw new Error(`Pinecone upsert failed (${response.status}): ${errorText || response.statusText}`);
 	}
 };
-
+// Utility function to fetch existing vector IDs from Pinecone for a given list of IDs, which helps in determining which chunks have already been indexed and avoiding duplicate entries when ingesting PDFs multiple times, by making a POST request to the Pinecone fetch API endpoint and returning a set of existing IDs based on the response.
 const fetchExistingVectorIds = async (params: {
 	host: string;
 	apiKey: string;
@@ -266,7 +266,7 @@ const fetchExistingVectorIds = async (params: {
 
 	return new Set(Object.keys(data.vectors ?? {}));
 };
-
+// Function to ingest a single PDF file, which reads the file, extracts text using PDFParse, splits the text into chunks, generates embeddings for the chunks, and upserts the new vectors into Pinecone while checking for existing vectors to avoid duplication, ultimately returning the number of new chunks that were indexed.
 const ingestSinglePdf = async (params: {
 	pdfDir: string;
 	fileName: string;
@@ -385,7 +385,7 @@ const ingestSinglePdf = async (params: {
 	);
 	return indexedNow;
 };
-
+// Function to ingest PDF documents from a specified directory into Pinecone, which reads all PDF files in the directory, processes each file to extract text and generate embeddings, and upserts the embeddings into the specified Pinecone namespace while providing informative logging throughout the process, and handling configuration through environment variables or function options for flexibility.
 export const ingestPdfsToPinecone = async (options?: {
 	pdfDirectory?: string;
 	namespace?: string;

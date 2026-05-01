@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+// DTOs and validation schemas for allergens, using zod for schema definitions and type inference
 export const allergenResponseSchema = z.object({
   id: z.string().uuid("Allergen id must be a valid UUID"),
   name: z.string().min(1, "Allergen name is required"),

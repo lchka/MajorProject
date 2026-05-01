@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+//  DTOs and validation schemas for allergens, using zod for schema definitions and type inference
 export const allergenSchema = z.object({
   name: z
     .string()

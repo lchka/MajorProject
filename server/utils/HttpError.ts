@@ -1,6 +1,6 @@
 export class HttpError extends Error {
   statusCode: number;
-
+// Custom error class to represent HTTP errors, allowing us to throw errors with specific status codes and messages in our API routes and middleware
   constructor(statusCode: number, message: string) {
     super(message);
     this.statusCode = statusCode;

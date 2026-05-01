@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { HttpError } from "../utils/HttpError.js";
-
+// Centralized error handling middleware for Express applications, designed to catch and handle errors thrown in route handlers and other middleware, providing consistent error responses to clients while also logging errors for debugging purposes. This middleware checks if the error is an instance of a custom HttpError class to determine the appropriate status code and message to return, and includes stack traces in development mode for easier debugging.
 export const errorHandler = (
   err: Error | HttpError,
   _req: Request,

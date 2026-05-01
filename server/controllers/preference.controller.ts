@@ -3,7 +3,7 @@ import { PreferenceService } from "../services/preference.service.js";
 import { CreatePreferenceDto, UpdatePreferenceDto } from "../types/preference.dto.js";
 import { CREATED_SUCCESS, SUCCESS_RES } from "../utils/HttpError.js";
 //CHECK AUTH MIDDLARE AND PERMISSION TYPES FOR ROLE POLICIES
-
+// controller functions for handling preference-related API requests, including creating, retrieving, updating, and deleting preferences, as well as fetching preferences associated with a specific user profile	
 const preferenceService = new PreferenceService();
 
 export class PreferenceController {

@@ -1,5 +1,5 @@
 import prisma from "../../lib/prisma.js";
-
+// Seeder script to populate the database with predefined roles for testing and development purposes
 interface RoleData {
   name: string;
   description: string;

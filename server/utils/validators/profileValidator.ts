@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+//  DTOs and validation schemas for user profiles, using zod for schema definitions and type inference
 const imageValid = z
   .string()
   .trim()

@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+// DTOs and validation schemas for conditions, using zod for schema definitions and type inference
 export const conditionResponseSchema = z.object({
   id: z.string().uuid("Condition id must be a valid UUID"),
   name: z.string().min(1, "Condition name is required"),
