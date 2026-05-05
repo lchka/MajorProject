@@ -57,8 +57,7 @@ export default function NavBarBottom({
 	/**
 	 * Navigate to home screen
 	 * - Uses override if provided
-	 * - Otherwise pops to root if possible
-	 * - Falls back to LandingScreen
+	 * - Otherwise replaces entire stack with LandingScreen
 	 */
 	const handleHomePress = React.useCallback(() => {
 		if (onPressHome) {
@@ -66,12 +65,7 @@ export default function NavBarBottom({
 			return;
 		}
 
-		if (navigation.canGoBack()) {
-			navigation.dispatch(StackActions.popToTop());
-			return;
-		}
-
-		navigation.navigate("LandingScreen");
+		navigation.dispatch(StackActions.replace("LandingScreen"));
 	}, [navigation, onPressHome]);
 
 	/**
