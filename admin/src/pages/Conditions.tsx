@@ -194,7 +194,7 @@ export default function Conditions() {
 
   return (
     <>
-    // banner component to show success/error/info messages after actions, with auto-hide functionality
+     {/* banner component to show success/error/info messages after actions, with auto-hide functionality */}
       <Banner
         message={banner.message}
         type={banner.type}
